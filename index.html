@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RakhSutra - Digital Rakhi Connection</title>
+    <style>
+        :root {
+            --primary-color: #8e44ad; --secondary-color: #d2b4de; --text-color: #4a235a;
+            --bg-color: #fdf2e9; --light-bg: #ffffff; --golden-color: #f39c12;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); }
+        .container { max-width: 480px; margin: 0 auto; background-color: var(--light-bg); box-shadow: 0 0 20px rgba(0,0,0,0.1); min-height: 100vh; position: relative; overflow: hidden; }
+        .header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 25px 20px; text-align: center; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
+        .header h1 { margin: 0; font-size: 2.2em; font-family: 'Georgia', serif; }
+        .header p { margin: 5px 0 0; font-size: 1em; opacity: 0.9; }
+        .main-content { padding: 25px; }
+        .welcome-message { text-align: center; margin-bottom: 25px; }
+        .welcome-message h2 { margin: 0; color: var(--primary-color); }
+        .cta-button { display: block; width: 100%; padding: 18px; background: linear-gradient(135deg, var(--golden-color), #f1c40f); color: white; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.4); transition: transform 0.2s; }
+        .cta-button:active { transform: scale(0.98); }
+        .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .feature-card { background-color: #f8f9fa; border: 1px solid #e8daef; border-radius: 15px; padding: 20px 15px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(142, 68, 173, 0.2); }
+        .feature-card .icon { font-size: 2.5em; }
+        .feature-card h3 { margin: 10px 0 5px; font-size: 1em; }
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; animation: slide-up 0.4s ease-out; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
+        .modal-header h2 { margin: 0; color: var(--primary-color); }
+        .modal-close-btn { font-size: 1.8em; color: #aaa; cursor: pointer; background: none; border: none; }
+        .status-message { margin-top: 15px; text-align: center; color: #27ae60; font-weight: bold; }
+        .flower { position: absolute; top: -50px; font-size: 20px; opacity: 0.8; animation: fall linear forwards; }
+        @keyframes slide-up { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div class="container" id="app-container">
+        <header class="header"><h1>RakhSutra</h1><p>जो दूरियों को मिटा दे...</p></header>
+        <main class="main-content">
+            <div class="welcome-message"><h2>नमस्ते बहन!</h2><p>इस रक्षा बंधन, अपना प्यार भेजें!</p></div>
+            <button class="cta-button" data-modal-target="rakhiModal">✨ लाइव राखी सेरेमनी शुरू करें ✨</button>
+            <div class="feature-grid">
+                <div class="feature-card" data-modal-target="thaliModal"><div class="icon">🕉️</div><h3>वर्चुअल पूजा थाली</h3></div>
+                <div class="feature-card" data-modal-target="giftModal"><div class="icon">🎁</div><h3>दिल से गिफ्ट</h3></div>
+                <div class="feature-card" data-modal-target="aiModal"><div class="icon">🎤</div><h3>AI वॉयस नोट</h3></div>
+                <div class="feature-card" data-modal-target="memoryModal"><div class="icon">💌</div><h3>यादों का पिटारा</h3></div>
+            </div>
+        </main>
+    </div>
+    <div id="rakhiModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>लाइव राखी सेरेमनी</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><p style="text-align: center;">कैमरे में भाई की कलाई पर फोकस करें।</p><div style="background:#eee; height:150px; border-radius:10px; display:flex; justify-content:center; align-items:center; color:#999;">[यहां भाई का लाइव वीडियो दिखेगा]</div><button id="tieRakhiBtn" style="width:100%; padding:12px; margin-top:10px; background-color:var(--primary-color); color:white; border:none; border-radius:8px;">AR राखी बांधें</button></div></div></div>
+    <div id="thaliModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>वर्चुअल पूजा थाली</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><p id="thali-status" class="status-message"></p></div></div></div>
+    <div id="giftModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>दिल से गिफ्ट भेजें</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><textarea placeholder="भाई के लिए एक प्यारा सा मैसेज लिखें..." style="width: calc(100% - 20px); height: 80px;"></textarea><button id="sendGiftBtn" style="width:100%; padding:12px; margin-top:10px; background-color:var(--primary-color); color:white; border:none; border-radius:8px;">प्यार भेजें</button></div></div></div>
+    <div id="aiModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>AI इमोशनल वॉयस नोट</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body" style="text-align:center;"><p>अपनी आवाज रिकॉर्ड करें, और AI उसे एक खूबसूरत कविता में बदल देगा।</p><button id="recordBtn" style="padding:10px 20px;">🎤 रिकॉर्ड करें</button><p id="aiStatus" class="status-message"></p><div id="aiPoem" style="background:#f0e6f6; padding:15px; border-radius:10px; margin-top:15px; display:none;"></div></div></div></div>
+    <div id="memoryModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>यादों का पिटारा</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><p>इस साल की राखी की यादें यहां सुरक्षित रहेंगी।</p></div></div></div>
+    
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalTriggers = document.querySelectorAll('[data-modal-target]');
+            const closeButtons = document.querySelectorAll('.modal-close-btn');
+            const modalBackdrops = document.querySelectorAll('.modal-backdrop');
+            const openModal = (modal) => modal.style.display = 'flex';
+            const closeModal = (modal) => modal.style.display = 'none';
+            modalTriggers.forEach(trigger => trigger.addEventListener('click', () => openModal(document.getElementById(trigger.dataset.modalTarget))));
+            closeButtons.forEach(button => button.addEventListener('click', () => closeModal(button.closest('.modal-backdrop'))));
+            modalBackdrops.forEach(backdrop => backdrop.addEventListener('click', e => e.target === backdrop && closeModal(backdrop)));
+
+            document.getElementById('tieRakhiBtn').addEventListener('click', () => {
+                for (let i = 0; i < 30; i++) {
+                    const flower = document.createElement('div');
+                    flower.classList.add('flower');
+                    flower.innerHTML = '🌸';
+                    flower.style.left = Math.random() * 100 + 'vw';
+                    flower.style.animationDuration = Math.random() * 2 + 3 + 's';
+                    document.getElementById('app-container').appendChild(flower);
+                    setTimeout(() => flower.remove(), 5000);
+                }
+            });
+            
+            const recordBtn = document.getElementById('recordBtn');
+            const aiStatus = document.getElementById('aiStatus');
+            const aiPoem = document.getElementById('aiPoem');
+            let generator;
+
+            recordBtn.addEventListener('click', async () => {
+                aiStatus.textContent = "AI को तैयार किया जा रहा है... कृपया प्रतीक्षा करें।";
+                recordBtn.disabled = true;
+                if (!generator) {
+                    generator = await pipeline('text-generation', 'Xenova/distilgpt2');
+                }
+                aiStatus.textContent = "AI कविता बना रहा है...";
+                const result = await generator("My dear brother, this thread of rakhi", { max_new_tokens: 30 });
+                aiPoem.innerHTML = result[0].generated_text.replace(/\n/g, '<br>');
+                aiPoem.style.display = 'block';
+                aiStatus.textContent = "आपकी कविता तैयार है!";
+                recordBtn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
