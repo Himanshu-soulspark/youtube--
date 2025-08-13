@@ -318,11 +318,6 @@ let hapticFeedbackEnabled = true;
 // ★★★ YOUTUBE API INTEGRATION - START ★★★
 // =============================================================================
 
-// !!! महत्वपूर्ण: अपनी यूट्यूब डेटा एपीआई कुंजी यहाँ दर्ज करें !!!
-// यह एक सुरक्षित जगह (जैसे सर्वर-साइड या एनवायरनमेंट वेरिएबल) पर होनी चाहिए, 
-// लेकिन अभी के लिए हम इसे यहीं रख रहे हैं।
-const YOUTUBE_API_KEY = "YOUR_YOUTUBE_API_KEY"; // <<-- अपनी API कुंजी यहाँ पेस्ट करें
-
 let nextPageToken = null; // यूट्यूब से और वीडियो लोड करने के लिए
 
 /**
@@ -335,28 +330,17 @@ async function searchYouTubeVideos(query, loadMore = false) {
     const loader = document.getElementById('youtube-grid-loader');
     const loadMoreBtn = document.getElementById('youtube-load-more-btn');
 
-    if (!YOUTUBE_API_KEY || YOUTUBE_API_KEY === "YOUR_YOUTUBE_API_KEY") {
-        resultsContainer.innerHTML = `<p class="static-message">Please configure the YouTube API Key in the script.js file.</p>`;
-        return;
-    }
-
     if (!loadMore) {
         resultsContainer.innerHTML = '';
-        nextPageToken = null; // नई खोज के लिए रीसेट करें
+        nextPageToken = null;
     }
 
     loader.style.display = 'block';
     if(loadMoreBtn) loadMoreBtn.style.display = 'none';
 
-    let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&type=video&key=${YOUTUBE_API_KEY}`;
+    // अब हम अपने सर्वर के API रूट को कॉल कर रहे हैं
+    let url = `/api/youtube?q=${encodeURIComponent(query)}`;
     
-    if (query) {
-        url += `&q=${encodeURIComponent(query)}`;
-    } else {
-        // अगर कोई क्वेरी नहीं है, तो भारत में ट्रेंडिंग वीडियो दिखाएं
-        url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&chart=mostPopular&regionCode=IN&maxResults=20&key=${YOUTUBE_API_KEY}`;
-    }
-
     if (loadMore && nextPageToken) {
         url += `&pageToken=${nextPageToken}`;
     }
@@ -366,22 +350,17 @@ async function searchYouTubeVideos(query, loadMore = false) {
         const data = await response.json();
         
         if (data.error) {
-            throw new Error(data.error.message);
+            throw new Error(data.error);
         }
 
         nextPageToken = data.nextPageToken || null;
         
-        // यूट्यूब खोज और वीडियो सूची के लिए डेटा संरचना अलग होती है
-        const videos = data.items.map(item => {
-            return {
-                id: typeof item.id === 'string' ? item.id : item.id.videoId,
-                title: item.snippet.title,
-                thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-                channelTitle: item.snippet.channelTitle,
-                // वीडियो की लंबाई (duration) पाने के लिए अतिरिक्त एपीआई कॉल की आवश्यकता होगी,
-                // लेकिन अभी के लिए हम इसे सरल रख रहे हैं।
-            };
-        });
+        const videos = data.items.map(item => ({
+            id: typeof item.id === 'string' ? item.id : item.id.videoId,
+            title: item.snippet.title,
+            thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
+            channelTitle: item.snippet.channelTitle,
+        }));
         
         renderYouTubeResults(videos, loadMore);
 
@@ -390,7 +369,7 @@ async function searchYouTubeVideos(query, loadMore = false) {
         }
 
     } catch (error) {
-        console.error("Error fetching YouTube videos:", error);
+        console.error("Error fetching from server API:", error);
         resultsContainer.innerHTML += `<p class="static-message" style="color:var(--error-red);">Error: ${error.message}</p>`;
     } finally {
         loader.style.display = 'none';
@@ -490,7 +469,7 @@ const closeDescriptionBtn = document.getElementById('close-description-btn');
 const categories = [ "Entertainment", "Comedy", "Music", "Dance", "Education", "Travel", "Food", "DIY", "Sports", "Gaming", "News", "Lifestyle" ];
 const earnsureContent = {
     hi: `<h4>🌟 आपका अपना वीडियो प्लेटफॉर्म – जहां हर व्यू की क़ीमत है! 🎥💰</h4><hr><p><strong>🎥 क्रिएटर्स के लिए (Creators):</strong></p><p>अगर आप अपना खुद का वीडियो इस प्लेटफ़ॉर्म पर डालते हैं और लोग उसे देखते हैं, तो आपके वीडियो के Watch Time के आधार पर आपको कमाई (Ad Revenue Share) दी जाएगी।</p><p>🛑 <strong>अगर आप किसी और का वीडियो डालते हैं, तो:</strong></p><ul><li>आपको उससे कोई कमाई नहीं मिलेगी।</li><li>जब दूसरे लोग आपके द्वारा अपलोड किए गए वीडियो को देखेंगे, तो उससे होने वाली कमाई असली क्रिएटर को जाएगी (अगर वे हमसे संपर्क करते हैं)।</li></ul><hr><p><strong>🧾 पेमेंट पॉलिसी (Payment Policy):</strong></p><p>🗓️ <strong>हर सोमवार को पेमेंट Apply करें – 24 घंटे का समय!</strong></p><p>अब से, आप हर सोमवार को पूरे दिन (00:00 से 23:59 तक) "Payment Apply" बटन पर क्लिक कर सकते हैं।</p><p>✅ अगर आप सोमवार को अप्लाई नहीं करते, तो उस सप्ताह की कमाई रद्द (forfeit) मानी जाएगी।</p><hr><p><strong>💵 पेमेंट कब मिलेगा?</strong></p><p>पहली बार पेमेंट तब मिलेगा जब आपकी कुल कमाई ₹5000 (लगभग $60 USD) हो जाएगी।</p><p>इसके बाद आप चाहे ₹2 (लगभग $0.02 USD) भी कमाएं, आप उसे कभी भी निकाल सकते हैं।</p><hr><p><strong>💼 ऐप की दो खास विशेषताएं:</strong></p><p>📢 <strong>1. ब्रांड प्रमोशन का मौका</strong></p><p>इस ऐप पर आप अपने ब्रांड, प्रोडक्ट या सर्विस का विज्ञापन कर सकते हैं — वो भी सही टारगेटेड ऑडियंस के सामने।</p><p>📬 <strong>2. सीधे यूज़र से संपर्क करें</strong></p><p>अगर आपको किसी यूज़र से बात करनी है – सुझाव, फीडबैक या काम के लिए – तो आप ऐप के ज़रिए सीधे मैसेज या संपर्क कर सकते हैं।</p><hr><p><strong>✅ वेरिफिकेशन के नियम:</strong></p><p>अगर आप अपने वीडियो से क्रिएटर के रूप में कमाई करना चाहते हैं, तो आपको:</p><ol><li>अपनी कम से कम 5 यूट्यूब वीडियो में ऐप का नाम या लिंक (Shout-out) देना होगा।</li><li>इससे हम यह पुष्टि कर सकेंगे कि चैनल आपका है।</li></ol><hr><p><strong>🔒 ईमानदारी और पारदर्शिता हमारी प्राथमिकता है</strong></p><p>हम चाहते हैं कि हर Creator को उनका पूरा हक़ मिले — बिना किसी धोखे और बिना किसी मुश्किल के।</p><blockquote>"कमाई और विश्वास का रिश्ता तभी टिकता है, जब दोनों तरफ से इज्ज़त हो।"</blockquote><hr><p><strong>📩 संपर्क करें:</strong></p><p>कोई सवाल या सहायता चाहिए? ईमेल करें 👉 udbhavscience12@gmail.com</p><hr><h4>🌈 आइए, साथ मिलकर कुछ बड़ा बनाएं।</h4><p>आप देखिए, कमाइए, प्रमोट कीजिए, जुड़िए — यह मंच आपका है। 🚀💖</p>`,
-    en: `<h4>🌟 Your Own Video Platform – Where Every View Has Value! 🎥💰</h4><hr><p><strong>🎥 For Creators:</strong></p><p>If you upload your own videos to this platform and people watch them, you earn money (Ad Revenue Share) based on the watch time of those videos.</p><p>🛑 <strong>But if you upload someone else’s video:</strong></p><ul><li>You won’t earn any revenue from it.</li><li>The revenue generated from views on videos you upload will go to the original creator if they contact us.</li></ul><hr><p><strong>🧾 Payment Policy:</strong></p><p>🗓️ <strong>Apply for Payment Every Monday – Full 24 Hours!</strong></p><p>You can apply for payment every Monday, anytime between 00:00 and 23:59 (24 hours window).</p><p>✅ If you do not apply on Monday, the earnings for that week will be forfeited.</p><hr><p><strong>💵 When Will You Get Paid?</strong></p><p>Your first payment will be released only when your total earnings reach ₹5000 (approx. $60 USD).</p><p>After that, even if you earn just ₹2 (approx. $0.02 USD), you can withdraw it anytime.</p><hr><p><strong>💼 Two Special Features of This App:</strong></p><p>📢 <strong>1. Promote Your Own Brand</strong></p><p>You can advertise your brand, product, or services directly on this platform — to a real, engaged audience who already loves content.</p><p>📬 <strong>2. Contact Any User Directly</strong></p><p>Need to reach out to a user for collaboration, feedback, or business? The app allows you to directly contact any user via messaging.</p><hr><p><strong>✅ Verification Rules for Creators:</strong></p><p>If you want to earn revenue as a creator, you must:</p><ol><li>Give a shout-out (mentioning/link to this app) in at least 5 videos on your YouTube channel.</li><li>This helps us verify that the channel is genuinely yours.</li></ol><hr><p><strong>🔒 Honesty & Transparency Come First</strong></p><p>We are committed to giving every creator their fair share, with zero cheating and zero complications.</p><blockquote>"True earnings and trust grow only when there's respect on both sides."</blockquote><hr><p><strong>📩 Need Help? Contact Us:</strong></p><p>Have questions or suggestions? 📧 Email us at: udbhavscience12@gmail.com</p><hr><h4>🌈 Let’s build something great, together.</h4><p>Watch, Earn, Promote, and Connect — This platform is truly yours. 🚀💖</p>`
+    en: `<h4>🌟 Your Own Video Platform – Where Every View Has Value! 🎥💰</h4><hr><p><strong>🎥 For Creators:</strong></p><p>If you upload your own videos to this platform and people watch them, you earn money (Ad Revenue Share) based on the watch time of those videos.</p><p>🛑 <strong>But if you upload someone else’s video:</strong></p><ul><li>You won’t earn any revenue from it.</li><li>The revenue generated from views on videos you upload will go to the original creator if they contact us.</li></ul><hr><p><strong>🧾 Payment Policy:</strong></p><p>🗓️ <strong>Apply for Payment Every Monday – Full 24 Hours!</strong></p><p>You can apply for payment every Monday, anytime between 00:00 and 23:59 (24 hours window).</p><p>✅ If you do not apply on Monday, the earnings for that week will be forfeited.</p><hr><p><strong>💵 When Will You Get Paid?</strong></p><p>Your first payment will be released only when your total earnings reach ₹5000 (approx. $60 USD).</p><p>After that, even if you earn just ₹2 (approx. $0.02 USD), you can withdraw it anytime.</p><hr><p><strong>💼 Two Special Features of This App:</strong></p><p>📢 <strong>1. Promote Your Own Brand</strong></p><p>You can advertise your brand, product, or services directly on this platform — to a real, engaged audience who already loves content.</p><p>📬 <strong>2. Contact Any User Directly</strong></p><p>Need to reach out to a user for collaboration, feedback, or business? The app allows you to directly contact any user via messaging.</p><hr><p><strong>✅ Verification Rules for Creators:</strong></p><p>If you want to earn revenue as a creator, you must:</p><ol><li>Give a shout-out (mentioning/link to this app) in any 5 videos on your YouTube channel.</li><li>This helps us verify that the channel is genuinely yours.</li></ol><hr><p><strong>🔒 Honesty & Transparency Come First</strong></p><p>We are committed to giving every creator their fair share, with zero cheating and zero complications.</p><blockquote>"True earnings and trust grow only when there's respect on both sides."</blockquote><hr><p><strong>📩 Need Help? Contact Us:</strong></p><p>Have questions or suggestions? 📧 Email us at: udbhavscience12@gmail.com</p><hr><h4>🌈 Let’s build something great, together.</h4><p>Watch, Earn, Promote, and Connect — This platform is truly yours. 🚀💖</p>`
 };
 let currentEarnsureLanguage = 'hi';
 
