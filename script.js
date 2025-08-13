@@ -1,8 +1,8 @@
 
 /* ================================================= */
-/* === Shubhzone App Script (Code 2) - FINAL v5.14 === */
+/* === Shubhzone App Script (Code 2) - FINAL v5.15 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
-/* === SOLVED: Full YouTube API Integration      === */
+/* === SOLVED: Player, Load More & UI Bugs Fixed === */
 /* ================================================= */
 
 // Firebase कॉन्फ़िगरेशन
@@ -279,7 +279,6 @@ let appState = {
     currentScreen: 'splash-screen',
     navigationStack: ['splash-screen'],
     currentScreenPayload: null,
-    // allVideos, userShortVideos, userLongVideos are now deprecated
     viewingHistory: [],
     youtubeNextPageTokens: {
         long: null,
@@ -296,7 +295,6 @@ let appState = {
     adState: {
         timers: { fullscreenAdLoop: null },
         fullscreenAd: { 
-            // Heavily prioritized Monetag Interstitial & Direct Link
             sequence: [
                 'monetag_interstitial', 
                 'monetag_directlink', 
@@ -314,9 +312,8 @@ let appState = {
 };
 
 let isYouTubeApiReady = false;
-let players = {}; // Player instances for the shorts swiper
+let players = {};
 let videoObserver;
-// fullVideoList is deprecated.
 let activePlayerId = null;
 let userHasInteracted = false;
 let hasShownAudioPopup = false;
@@ -330,8 +327,8 @@ let currentVideoCache = new Map();
 
 /**
  * YouTube API से वीडियो लाने के लिए जेनेरिक फ़ंक्शन।
- * @param {string} type 'search', 'trending', or 'channel' में से एक।
- * @param {object} params API के लिए पैरामीटर (जैसे, q, pageToken, channelId)।
+ * @param {string} type 'search', 'trending', 'channel', or 'videoDetails' में से एक।
+ * @param {object} params API के लिए पैरामीटर।
  * @returns {Promise<object>} API से प्रतिक्रिया।
  */
 async function fetchFromYouTubeAPI(type, params) {
@@ -350,7 +347,6 @@ async function fetchFromYouTubeAPI(type, params) {
         }
         const data = await response.json();
         
-        // नए प्राप्त वीडियो को कैश में जोड़ें
         if (data.items) {
             data.items.forEach(video => {
                 const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
@@ -373,7 +369,7 @@ async function fetchFromYouTubeAPI(type, params) {
  */
 function renderYouTubeLongVideos(videos, append = false) {
     const grid = document.getElementById('long-video-grid');
-    const loader = document.getElementById('youtube-grid-loader'); // Assuming a general loader
+    const loader = document.getElementById('youtube-grid-loader');
     const loadMoreBtn = document.getElementById('long-video-load-more-btn');
 
     if (!grid) return;
@@ -407,7 +403,10 @@ function renderYouTubeLongVideos(videos, append = false) {
 
 async function loadMoreLongVideos() {
     const loadMoreBtn = document.getElementById('long-video-load-more-btn');
-    if (loadMoreBtn) loadMoreBtn.disabled = true;
+    if (loadMoreBtn) {
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = "Loading...";
+    }
 
     const activeCategoryChip = document.querySelector('#long-video-category-scroller .category-chip.active');
     const category = activeCategoryChip ? activeCategoryChip.textContent : 'All';
@@ -424,6 +423,10 @@ async function loadMoreLongVideos() {
     if(data.items) {
         renderYouTubeLongVideos(data.items, true);
     }
+    
+    if (loadMoreBtn) {
+        loadMoreBtn.textContent = "Load More";
+    }
 }
 
 function playYouTubeVideoFromCard(videoId) {
@@ -436,7 +439,7 @@ function playYouTubeVideoFromCard(videoId) {
     const channelId = video.snippet.channelId;
     
     navigateTo('creator-page-screen', { 
-        creatorId: channelId, // Pass channelId as creatorId
+        creatorId: channelId, 
         startWith: 'long', 
         videoId: videoId
     });
@@ -486,17 +489,15 @@ const earnsureContent = {
 let currentEarnsureLanguage = 'hi';
 
 function activateScreen(screenId) {
-    // Animation logic removed for performance
     document.querySelectorAll('.screen').forEach(screen => {
         screen.style.display = 'none';
     });
     const activeScreen = document.getElementById(screenId);
     if (activeScreen) {
         activeScreen.style.display = 'flex';
-        activeScreen.classList.add('active'); // Keep class for state checking
+        activeScreen.classList.add('active'); 
     }
     
-    // Clean up active class from others
     document.querySelectorAll('.screen').forEach(screen => {
         if (screen.id !== screenId) {
             screen.classList.remove('active');
@@ -531,12 +532,11 @@ function navigateTo(nextScreenId, payload = null) {
     activateScreen(nextScreenId);
     appState.currentScreenPayload = payload;
 
-    if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase(); // Now this will show a message
+    if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase(); 
     if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
     if (nextScreenId === 'history-screen') initializeHistoryScreen();
     if (nextScreenId === 'your-zone-screen') populateYourZoneScreen();
     if (nextScreenId === 'home-screen') setupShortsScreen();
-    // if (nextScreenId === 'upload-screen') initializeNewHomeScreen(); // Deprecated
     if (nextScreenId === 'earnsure-screen') initializeEarnsureScreen();
     if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) initializeCreatorPage(payload.creatorId, payload.startWith, payload.videoId);
     if (nextScreenId === 'advertisement-screen') initializeAdvertisementPage();
@@ -640,21 +640,7 @@ function initializeApp() {
 
 
 function loadUserVideosFromFirebase() {
-    // This function is now deprecated for showing videos, as they come from YouTube.
-    // We'll just show a message on the profile screen.
     renderUserProfileVideos(); 
-}
-
-// DEPRECATED - Videos are fetched on demand from YouTube.
-// async function refreshAndRenderFeed() { }
-
-
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-// ★★★ महत्वपूर्ण सुधार: बॉटम नेविगेशन के लिए नया सेटअप ★★★
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-
-function setupBottomNav() {
-    // This function's content has been moved to DOMContentLoaded to ensure elements exist.
 }
 
 function updateNavActiveState(activeNav) {
@@ -724,16 +710,13 @@ async function saveAndContinue() {
     }
 
     try {
-        // उपयोगकर्ता डेटा को अपडेट करते समय merge: true का उपयोग करें ताकि पुराने फ़ील्ड बने रहें
         await db.collection('users').doc(appState.currentUser.uid).set(userData, { merge: true });
 
-        // यह सुनिश्चित करें कि referralCode मौजूद है
         const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
         if (!userDoc.data().referralCode) {
             await generateAndSaveReferralCode(appState.currentUser.uid, name);
         }
 
-        // लोकल स्टेट को अपडेट करें
         const refreshedUserData = (await db.collection('users').doc(appState.currentUser.uid).get()).data();
         appState.currentUser = { ...appState.currentUser, ...refreshedUserData };
 
@@ -764,8 +747,7 @@ function updateProfileUI() {
     document.getElementById('info-country').value = appState.currentUser.country || 'India';
 }
 
-function openUploadDetailsModal(lengthType = 'short', videoData = null) {
-    // This function is now deprecated
+function openUploadDetailsModal() {
     alert("This feature is no longer available. All video content is sourced directly from YouTube.");
 }
 
@@ -783,7 +765,7 @@ function selectCategory(category) {
 
 function selectAudience(audienceType) {
     appState.uploadDetails.audience = audienceType;
-    audienceOptions.forEach(option => option.classList.remove('selected'));
+    audienceOptions.forEach(option => option.classList.remove('active'));
     const selectedOption = document.querySelector(`.audience-option[data-audience="${audienceType}"]`);
     if (selectedOption) {
         selectedOption.classList.add('selected');
@@ -793,10 +775,7 @@ function selectAudience(audienceType) {
     }
 }
 
-// Deprecated functions for Firebase video management
 async function handleSave() { openUploadDetailsModal(); }
-async function saveVideoEdits(videoId) { openUploadDetailsModal(); }
-async function saveNewVideo() { openUploadDetailsModal(); }
 
 let appStartLogicHasRun = false;
 const startAppLogic = async (restoreScreen = null) => {
@@ -815,14 +794,13 @@ const startAppLogic = async (restoreScreen = null) => {
     renderCategories();
     renderCategoriesInBar();
     
-    // Default screen is now 'long-video-screen'
     const screenToNavigate = restoreScreen || 'long-video-screen';
     
     navigateTo(screenToNavigate);
     
     if (screenToNavigate === 'long-video-screen') {
         updateNavActiveState('long-video');
-    } else if (screenToNavigate === 'home-screen') { // This is now shorts
+    } else if (screenToNavigate === 'home-screen') {
         updateNavActiveState('shorts');
     } else {
         const navId = screenToNavigate.replace('-screen', '');
@@ -849,6 +827,7 @@ function renderVideoSwiper(videos, append = false) {
         videoSwiper.innerHTML = '';
         players = {};
         if (videoObserver) videoObserver.disconnect();
+        setupVideoObserver(); // Re-initialize observer for new content set
     }
     
     if (!videos || videos.length === 0) {
@@ -879,16 +858,10 @@ function renderVideoSwiper(videos, append = false) {
             if (e.target.closest('.video-actions-overlay') || e.target.closest('.uploader-info') || e.target.closest('.credit-btn')) return;
             togglePlayPause(videoId);
         });
-        slide.addEventListener('dblclick', (e) => {
-            if (!e.target.closest('.video-actions-overlay') && !e.target.closest('.uploader-info')) {
-                // Like action can be implemented here if needed, requires auth state
-            }
-        });
-
+        
         const playerHtml = `<div class="player-container" id="player-${videoId}"></div>`;
         const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
         const uploaderName = video.snippet.channelTitle;
-        // Since we can't get avatar easily from search results, we use a placeholder
         const uploaderAvatar = 'https://via.placeholder.com/40'; 
         const title = video.snippet.title;
 
@@ -908,10 +881,6 @@ function renderVideoSwiper(videos, append = false) {
                     <i class="fas fa-user-circle icon"></i>
                     <span class="count">Creator</span>
                 </div>
-                <div class="action-icon-container haptic-trigger" data-action="like">
-                    <i class="far fa-heart icon"></i>
-                    <span class="count">...</span>
-                </div>
                 <div class="action-icon-container haptic-trigger" data-action="comment" onclick="openCommentsModal('${videoId}', null, '${video.snippet.channelId}')">
                     <i class="fas fa-comment-dots icon"></i>
                     <span class="count">...</span>
@@ -919,9 +888,9 @@ function renderVideoSwiper(videos, append = false) {
             </div>`;
         videoSwiper.appendChild(slide);
         
-        if (!append) videoObserver.observe(slide);
+        videoObserver.observe(slide);
 
-        if ((index + 1) % 5 === 0) { // Show ad every 5 videos
+        if ((index + 1) % 5 === 0) {
             const adSlide = document.createElement('div');
             adSlide.className = 'video-slide native-ad-slide';
             const adSlotContainer = document.createElement('div');
@@ -933,20 +902,15 @@ function renderVideoSwiper(videos, append = false) {
         }
     });
     
-    const loadMoreTrigger = document.getElementById('shorts-load-more-trigger');
-    if (!loadMoreTrigger && appState.youtubeNextPageTokens.shorts) {
+    const oldTrigger = document.getElementById('shorts-load-more-trigger');
+    if (oldTrigger) oldTrigger.remove();
+
+    if (appState.youtubeNextPageTokens.shorts) {
         const trigger = document.createElement('div');
         trigger.id = 'shorts-load-more-trigger';
+        trigger.innerHTML = `<div class="loader-container" style="padding: 20px 0;"><div class="loader"></div></div>`;
         videoSwiper.appendChild(trigger);
         videoObserver.observe(trigger);
-    } else if (loadMoreTrigger && !appState.youtubeNextPageTokens.shorts) {
-        videoObserver.unobserve(loadMoreTrigger);
-        loadMoreTrigger.remove();
-    }
-
-
-    if (isYouTubeApiReady && !append) {
-        initializePlayers();
     }
 }
 
@@ -956,27 +920,15 @@ function onYouTubeIframeAPIReady() {
         window.pendingAppStartResolve();
         delete window.pendingAppStartResolve;
     }
-    // Player initialization is now handled dynamically by the observer
 }
 
-function initializePlayers() {
-    // This is now handled by the intersection observer one by one.
-    // This function can be kept for pre-loading logic if needed, but for now it's better to load on demand.
-}
-
-// ★★★ AUTO PLAY FIX ★★★
 function onPlayerReady(event) {
     const iframe = event.target.getIframe();
     const slide = iframe.closest('.video-slide');
     if (!slide) return;
 
-    // Hide preloader once player is ready to be controlled
     const preloader = slide.querySelector('.video-preloader');
     if (preloader) preloader.style.display = 'none';
-
-    // IMPORTANT: Do not trigger play here.
-    // The IntersectionObserver will handle the play logic exclusively
-    // to prevent race conditions and ensure the correct video plays.
 }
 
 
@@ -998,15 +950,6 @@ function onPlayerStateChange(event) {
     if (event.data !== YT.PlayerState.UNSTARTED && preloader) {
         preloader.style.display = 'none';
     }
-    
-    const videoData = currentVideoCache.get(videoId);
-    if (!videoData) return;
-
-    if (event.data === YT.PlayerState.PLAYING) {
-        // Watch time tracking can be re-implemented here if needed.
-    } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-        //
-    }
 }
 
 function addVideoToHistory(videoId) {
@@ -1019,17 +962,15 @@ function addVideoToHistory(videoId) {
         watchedAt: new Date().toISOString(),
         title: videoData.snippet.title,
         channelTitle: videoData.snippet.channelTitle,
+        channelId: videoData.snippet.channelId,
         thumbnailUrl: videoData.snippet.thumbnails.medium.url,
-        videoLengthType: 'short' // Assuming this is called from shorts player
+        videoLengthType: 'short' 
     };
 
     const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId);
     if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1);
-    
     appState.viewingHistory.unshift(historyItem);
-    
     if (appState.viewingHistory.length > 100) appState.viewingHistory.pop();
-    
     localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
 }
 
@@ -1042,6 +983,7 @@ function addLongVideoToHistory(videoId) {
         watchedAt: new Date().toISOString(),
         title: videoData.snippet.title,
         channelTitle: videoData.snippet.channelTitle,
+        channelId: videoData.snippet.channelId,
         thumbnailUrl: videoData.snippet.thumbnails.medium.url,
         videoLengthType: 'long'
     };
@@ -1052,14 +994,6 @@ function addLongVideoToHistory(videoId) {
     localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
 }
 
-
-function isElementVisible(el, container) {
-    if (!el || !container) return false;
-    const containerRect = container.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-    return (elRect.top >= containerRect.top && elRect.bottom <= containerRect.bottom);
-}
-
 function togglePlayPause(videoId) {
     const player = players[videoId];
     if (!player || typeof player.getPlayerState !== 'function') return;
@@ -1067,12 +1001,10 @@ function togglePlayPause(videoId) {
     if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING) {
         player.pauseVideo();
     } else {
-        if (activePlayerId && activePlayerId !== videoId) pauseActivePlayer();
         playActivePlayer(videoId);
     }
 }
 
-// ★★★ UNMUTE FIX ★★★
 function playActivePlayer(videoId) {
     if (!videoId) return;
     
@@ -1084,37 +1016,33 @@ function playActivePlayer(videoId) {
     
     const player = players[videoId];
     if (!player || typeof player.playVideo !== 'function' || !player.getIframe() || !document.body.contains(player.getIframe())) {
-        // Player not ready, create it
         const slide = document.querySelector(`.video-slide[data-video-id="${videoId}"]`);
         if(slide) createPlayerForSlide(slide);
         return;
     }
     
-    if (userHasInteracted) {
-        player.unMute();
-    } else {
-        player.mute();
-    }
+    if (userHasInteracted) player.unMute();
+    else player.mute();
+
     player.playVideo();
 }
 
 function pauseActivePlayer() {
     if (!activePlayerId) return;
     const player = players[activePlayerId];
-    if (!player || typeof player.pauseVideo !== 'function') return;
-    
-    if (player.getPlayerState() === YT.PlayerState.PLAYING || player.getPlayerState() === YT.PlayerState.BUFFERING) {
-         player.pauseVideo();
+    if (player && typeof player.pauseVideo === 'function') {
+        if (player.getPlayerState() === YT.PlayerState.PLAYING || player.getPlayerState() === YT.PlayerState.BUFFERING) {
+             player.pauseVideo();
+        }
+        player.mute();
     }
-    player.mute();
 }
 
 function createPlayerForSlide(slide) {
     const videoId = slide.dataset.videoId;
-    if (players[videoId]) { // Player already exists or is being created
-        // If it exists, just play it.
-        if (typeof players[videoId].playVideo === 'function') {
-            playActivePlayer(videoId);
+    if (players[videoId] || !isYouTubeApiReady) { 
+        if(players[videoId] && typeof players[videoId].playVideo === 'function'){
+             playActivePlayer(videoId);
         }
         return;
     }
@@ -1134,7 +1062,6 @@ function createPlayerForSlide(slide) {
         events: {
             'onReady': (event) => {
                 onPlayerReady(event);
-                // Now that it's ready, play it if it's the active slide
                 if (videoId === activePlayerId) {
                     playActivePlayer(videoId);
                 }
@@ -1152,9 +1079,7 @@ function setupVideoObserver() {
         for (const entry of entries) {
             if (entry.target.id === 'shorts-load-more-trigger') {
                 if(entry.isIntersecting) {
-                    console.log('loading more shorts');
                     videoObserver.unobserve(entry.target);
-                    entry.target.remove();
                     await loadMoreShorts();
                 }
                 continue;
@@ -1175,9 +1100,6 @@ function setupVideoObserver() {
             }
         }
     }, options);
-
-    const allSlides = document.querySelectorAll('.video-slide, #shorts-load-more-trigger');
-    allSlides.forEach(slide => videoObserver.observe(slide));
 }
 
 
@@ -1186,9 +1108,6 @@ async function openCommentsModal(videoId, videoOwnerUid = null, channelId = null
     commentsModal.classList.add('active');
     commentsList.innerHTML = '<li style="text-align:center; color: var(--text-secondary);">Loading comments...</li>';
     try {
-        // YouTube comments require API call, which is complex and quota-intensive.
-        // For now, we will show a placeholder message.
-        // In a real app, this would call a server endpoint to get comments for videoId.
         commentsList.innerHTML = '<li style="text-align:center; color: var(--text-secondary);">Comments are not available at this moment.</li>';
         sendCommentBtn.disabled = true;
         commentInput.disabled = true;
@@ -1223,18 +1142,7 @@ function closeCommentsModal() {
 }
 
 async function postComment() {
-    // Commenting is disabled as it requires YouTube API authentication
     alert("Commenting is not available at this moment.");
-}
-
-async function deleteComment(videoId, commentId) {
-    // Also disabled
-    alert("Commenting is not available at this moment.");
-}
-
-async function toggleLikeAction(videoId, slideElement) {
-    // Liking is disabled as it requires YouTube API authentication
-    alert("Liking is not available at this moment.");
 }
 
 function logoutUser() {
@@ -1278,13 +1186,13 @@ function filterVideosByCategory(scrollerId, category, element) {
     scroller.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
     if (element) element.classList.add('active');
 
-    if (scrollerId === 'category-scroller') { // This is for Shorts screen
+    if (scrollerId === 'category-scroller') { 
         if (activePlayerId) {
             pauseActivePlayer();
             activePlayerId = null;
         }
         setupShortsScreen(category);
-    } else { // This is for Long Video screen
+    } else { 
         populateLongVideoGrid(category);
     }
 }
@@ -1302,24 +1210,6 @@ function renderUserProfileVideos() {
     }
 }
 
-// These functions are deprecated as users can't have their own videos anymore.
-function renderUserProfileShortGrid() {}
-function renderUserProfileLongGrid() {}
-
-function playVideoFromProfile(videoId) {
-    // Deprecated. Playing is handled by playYouTubeVideoFromCard
-}
-
-async function editVideoDetails(videoId) {
-    // Deprecated
-    openUploadDetailsModal();
-}
-
-async function deleteVideo(videoId) {
-    // Deprecated
-    openUploadDetailsModal();
-}
-
 function showAudioIssuePopup() {
     if (!hasShownAudioPopup) {
         document.getElementById('audio-issue-popup').classList.add('active');
@@ -1331,8 +1221,8 @@ function closeAudioIssuePopup() {
     document.getElementById('audio-issue-popup').classList.remove('active');
 }
 
-function setupShortsScreen(category = 'All') {
-    const query = category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`;
+async function setupShortsScreen(category = 'All') {
+    const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`);
 
     if (homeStaticMessageContainer) {
         videoSwiper.innerHTML = '';
@@ -1341,19 +1231,19 @@ function setupShortsScreen(category = 'All') {
         homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div> Loading shorts...';
     }
 
-    fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short' }).then(data => {
-        appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
-        if(data.items) {
-            renderVideoSwiper(data.items, false);
-            setupVideoObserver();
-        }
-    });
+    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short' });
+    appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
+    if(data.items && data.items.length > 0) {
+        renderVideoSwiper(data.items, false);
+    } else {
+        homeStaticMessageContainer.querySelector('.static-message').textContent = 'No shorts found for this category.';
+    }
 }
 
 async function loadMoreShorts() {
     const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
     const category = activeCategoryChip ? activeCategoryChip.textContent : 'All';
-    const query = category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`;
+    const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`);
 
     const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short', pageToken: appState.youtubeNextPageTokens.shorts });
 
@@ -1366,7 +1256,7 @@ async function loadMoreShorts() {
 
 function setupLongVideoScreen() {
     populateLongVideoCategories();
-    populateLongVideoGrid('All');
+    populateLongVideoGrid('Trending');
     
     const gridContainer = document.querySelector('.long-video-screen-content');
     let loadMoreBtn = document.getElementById('long-video-load-more-btn');
@@ -1375,7 +1265,7 @@ function setupLongVideoScreen() {
         loadMoreBtn.id = 'long-video-load-more-btn';
         loadMoreBtn.className = 'continue-btn haptic-trigger';
         loadMoreBtn.textContent = 'Load More';
-        loadMoreBtn.style.margin = '20px';
+        loadMoreBtn.style.margin = '0 20px 20px 20px';
         loadMoreBtn.style.display = 'none';
         loadMoreBtn.onclick = loadMoreLongVideos;
         gridContainer.appendChild(loadMoreBtn);
@@ -1383,19 +1273,7 @@ function setupLongVideoScreen() {
 }
 
 function populateLongVideoCategories() {
-    // This is now handled by the generic renderCategoriesInBar
-}
-
-function filterLongVideosByCategory(category, element) {
-    document.querySelectorAll('#long-video-category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
-    if (element) element.classList.add('active');
-    populateLongVideoGrid(category);
-}
-
-function populateLongVideoCarousel() {
-    // Carousel is removed for simplicity, focusing on the main grid.
-    const carouselContainer = document.getElementById('long-video-carousel-container');
-    if (carouselContainer) carouselContainer.style.display = 'none';
+    renderCategoriesInBar();
 }
 
 async function populateLongVideoGrid(category = 'All') {
@@ -1405,9 +1283,9 @@ async function populateLongVideoGrid(category = 'All') {
     
     let data;
     if (category.toLowerCase() === 'trending') {
-        data = await fetchFromYouTubeAPI('trending', { limit: 10 }); // Fetches 10 trending videos
+        data = await fetchFromYouTubeAPI('trending', { limit: 10 });
     } else {
-        const query = category.toLowerCase() === 'all' ? 'new songs' : category; // Default to something popular
+        const query = category.toLowerCase() === 'all' ? 'latest music videos' : category; 
         data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
     }
     
@@ -1420,7 +1298,7 @@ async function populateLongVideoGrid(category = 'All') {
 }
 
 
-function performLongVideoSearch() {
+async function performLongVideoSearch() {
     const input = document.getElementById('long-video-search-input');
     const query = input.value.trim().toLowerCase();
     
@@ -1428,17 +1306,16 @@ function performLongVideoSearch() {
     if (!grid) return;
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     
-    fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' }).then(data => {
-        appState.youtubeNextPageTokens.long = data.nextPageToken || null;
-        if(data.items) {
-             renderYouTubeLongVideos(data.items, false);
-        }
-    });
+    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
+    appState.youtubeNextPageTokens.long = data.nextPageToken || null;
+    if(data.items) {
+            renderYouTubeLongVideos(data.items, false);
+    }
 }
 
 function createLongVideoCard(video) {
     const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
-    if (!videoId) return document.createElement('div'); // Return empty div if no ID
+    if (!videoId) return document.createElement('div');
 
     const card = document.createElement('div');
     card.className = 'long-video-card';
@@ -1460,14 +1337,6 @@ function createLongVideoCard(video) {
         <button class="credit-btn-long-grid haptic-trigger" onclick="navigateTo('credit-screen', { videoId: '${videoId}' })">Credit</button>
     `;
     return card;
-}
-
-
-function showLongVideoMenu(event, videoId) {
-    event.stopPropagation();
-    if (confirm("Show video description?")) {
-        showVideoDescription(event, videoId);
-    }
 }
 
 function showVideoDescription(event, videoId) {
@@ -1515,11 +1384,7 @@ function renderHistoryShortsScroller() {
         card.className = 'history-short-card haptic-trigger';
         card.style.backgroundImage = `url(${escapeHTML(video.thumbnailUrl)})`;
         card.innerHTML = `<div class="history-item-menu" onclick="event.stopPropagation(); showHistoryItemMenu(event, '${video.id}')"><i class="fas fa-trash-alt"></i></div>`;
-        // Clicking history item should go to creator page
-        card.onclick = () => {
-            alert("This function needs channelId stored in history. Re-implementing.");
-            // To fix this, channelId must be saved to history object.
-        };
+        card.onclick = () => navigateTo('creator-page-screen', { creatorId: video.channelId, startWith: 'short', videoId: video.id });
         scroller.appendChild(card);
     });
 }
@@ -1598,9 +1463,7 @@ function initializeEarnsureScreen() {
 
     contentArea.innerHTML = `
         <div class="earnsure-section">
-            <div class="earnsure-section-content">
-                <!-- Content populated by JS -->
-            </div>
+            <div class="earnsure-section-content"></div>
         </div>
     `;
     contentArea.prepend(adContainer);
@@ -1644,10 +1507,8 @@ function initializeEarnsureScreen() {
 
 function populateYourZoneScreen() {
     const content = document.getElementById('your-zone-content');
-    if (!content) {
-        console.error("'your-zone-content' element not found in HTML.");
-        return;
-    }
+    if (!content) return;
+    
     const { uid, referralCode, avatar, name, email } = appState.currentUser;
     content.innerHTML = `
         <div class="your-zone-header">
@@ -1676,15 +1537,6 @@ function populateYourZoneScreen() {
             <i class="fas fa-sign-out-alt"></i> Log Out
         </button>
     `;
-}
-
-async function populateLeaderboard() {
-    console.log("Leaderboard is disabled.");
-    const content = document.getElementById('leaderboard-content');
-    if(content) {
-        content.innerHTML = '<p class="static-message">Leaderboard is currently unavailable.</p>';
-    }
-    return;
 }
 
 async function sendFriendRequest(receiverId, buttonElement) {
@@ -1822,7 +1674,6 @@ async function rejectFriendRequest(event, requestId) {
     }
 }
 
-// ★★★ UI FIX ★★★
 async function populateMembersList() {
     const membersContent = document.getElementById('members-content');
     if (!membersContent) return;
@@ -1845,7 +1696,6 @@ async function populateMembersList() {
             .map(doc => ({ id: doc.id, ...doc.data() }));
 
         friends.forEach((friend, index) => {
-            // This is the corrected HTML structure for each friend card
             finalHtml += `
                 <div class="holographic-card" onclick="startChat('${friend.id}', '${escapeHTML(friend.name)}', '${escapeHTML(friend.avatar)}')">
                     <div class="profile-pic" onclick="event.stopPropagation(); showEnlargedImage('${escapeHTML(friend.avatar) || 'https://via.placeholder.com/60'}')">
@@ -2166,26 +2016,34 @@ async function initializeCreatorPage(channelId, startWith = 'short', startVideoI
     shortView.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     longView.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     
-    // Fetch videos for the channel
     const channelVideosData = await fetchFromYouTubeAPI('channel', { channelId: channelId });
     const allVideos = channelVideosData.items || [];
     
-    const shortVideos = allVideos.filter(v => v.snippet.title.toLowerCase().includes('#shorts') || (v.contentDetails && v.contentDetails.duration && parseISO8601Duration(v.contentDetails.duration) <= 60));
-    const longVideos = allVideos.filter(v => !shortVideos.includes(v));
+    // A simple heuristic to differentiate shorts from long videos from channel feed
+    const shortVideos = allVideos.filter(v => v.snippet.title.toLowerCase().includes('#shorts'));
+    const longVideos = allVideos.filter(v => !shortVideos.some(short => (short.id.videoId || short.id) === (v.id.videoId || v.id)));
 
     let startShortVideo = shortVideos.find(v => (v.id.videoId || v.id) === startVideoId) || shortVideos[0];
     let startLongVideo = longVideos.find(v => (v.id.videoId || v.id) === startVideoId) || longVideos[0];
 
-    // Setup menus and tabs
     const menu = document.getElementById('more-function-menu');
-    let commentBtn = document.getElementById('creator-page-comment-btn');
-    if (!commentBtn) {
-        commentBtn = document.createElement('button');
+    
+    // Ensure comment and rotate buttons are present
+    if (!document.getElementById('creator-page-comment-btn')) {
+        const commentBtn = document.createElement('button');
         commentBtn.id = 'creator-page-comment-btn';
         commentBtn.className = 'function-menu-item haptic-trigger';
         commentBtn.innerHTML = `<i class="fas fa-comment-dots"></i> Comment`;
         commentBtn.onclick = openCommentsForCurrentCreatorVideo;
         menu.appendChild(commentBtn);
+    }
+     if (!document.getElementById('rotate-video-btn')) {
+        const rotateBtn = document.createElement('button');
+        rotateBtn.id = 'rotate-video-btn';
+        rotateBtn.className = 'function-menu-item haptic-trigger';
+        rotateBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Rotate`;
+        rotateBtn.onclick = toggleVideoRotation;
+        menu.appendChild(rotateBtn);
     }
 
     const tabs = document.querySelectorAll('#creator-page-tabs .creator-page-tab-btn');
@@ -2197,7 +2055,9 @@ async function initializeCreatorPage(channelId, startWith = 'short', startVideoI
             const activeView = document.getElementById(`creator-page-${tab.dataset.type}-view`);
             if (activeView) activeView.classList.add('active');
             
-            commentBtn.style.display = tab.dataset.type === 'long' ? 'flex' : 'none';
+            // Show/hide buttons based on tab
+            document.getElementById('creator-page-comment-btn').style.display = tab.dataset.type === 'long' ? 'flex' : 'none';
+            document.getElementById('rotate-video-btn').style.display = tab.dataset.type === 'long' ? 'flex' : 'none';
 
             const otherType = tab.dataset.type === 'short' ? 'long' : 'short';
             if(appState.creatorPagePlayers[otherType] && typeof appState.creatorPagePlayers[otherType].pauseVideo === 'function') {
@@ -2205,11 +2065,6 @@ async function initializeCreatorPage(channelId, startWith = 'short', startVideoI
             }
             if(appState.creatorPagePlayers[tab.dataset.type] && typeof appState.creatorPagePlayers[tab.dataset.type].playVideo === 'function') {
                 appState.creatorPagePlayers[tab.dataset.type].playVideo();
-            }
-
-            const videoWrapper = document.querySelector('#creator-page-long-view .main-video-card-wrapper');
-            if (videoWrapper && videoWrapper.classList.contains('rotated')) {
-                videoWrapper.classList.remove('rotated');
             }
         };
     });
@@ -2225,7 +2080,8 @@ async function initializeCreatorPage(channelId, startWith = 'short', startVideoI
     document.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
     document.getElementById(`creator-page-${startWith}-view`).classList.add('active');
     document.querySelector(`.creator-page-tab-btn[data-type="${startWith}"]`).classList.add('active');
-    commentBtn.style.display = startWith === 'long' ? 'flex' : 'none';
+    document.getElementById('creator-page-comment-btn').style.display = startWith === 'long' ? 'flex' : 'none';
+    document.getElementById('rotate-video-btn').style.display = startWith === 'long' ? 'flex' : 'none';
 }
 
 
@@ -2238,7 +2094,7 @@ function renderCreatorVideoView(container, videos, type, channelId, startVideoId
     
     let firstVideo = videos.find(v => (v.id.videoId || v.id) === startVideoId) || videos[0];
     
-    const videoListHtml = videos.map((v, index) => {
+    const videoListHtml = videos.map((v) => {
         const thumbClass = (type === 'long') ? 'side-video-thumb-long' : 'side-video-thumb-short';
         const videoId = v.id.videoId || v.id;
         return `<img src="${v.snippet.thumbnails.medium.url}" class="side-video-thumb haptic-trigger ${thumbClass}" onclick="playCreatorVideo('${type}', '${videoId}', '${channelId}')">`;
@@ -2285,8 +2141,7 @@ function initializeCreatorPagePlayer(videoId, containerId, type) {
         width: '100%',
         videoId: videoId,
         playerVars: {
-            'autoplay': 1,
-            'controls': (type === 'short' ? 0 : 1), 
+            'autoplay': 1, 'controls': (type === 'short' ? 0 : 1), 
             'rel': 0, 'showinfo': 0, 'mute': 0, 'modestbranding': 1,
             'fs': 1, 'origin': window.location.origin
         },
@@ -2364,21 +2219,17 @@ function handleCreatorPlayerStateChange(event) {
     const playerState = event.data;
     const iframe = player.getIframe();
     
-    const playPauseBtn = iframe.closest('.main-video-card').querySelector('.control-btn-main');
+    const playPauseBtn = iframe.closest('.main-video-card')?.querySelector('.control-btn-main');
     if (playPauseBtn) {
         if (playerState === YT.PlayerState.PLAYING) playPauseBtn.classList.replace('fa-play-circle', 'fa-pause-circle');
         else playPauseBtn.classList.replace('fa-pause-circle', 'fa-play-circle');
     }
 
     const videoId = player.getVideoData().video_id;
-    const videoData = currentVideoCache.get(videoId);
-    if (!videoData) return;
+    if (!videoId) return;
     
     if (playerState === YT.PlayerState.PLAYING) {
-        // tracking logic can be here
         addLongVideoToHistory(videoId);
-    } else if (playerState === YT.PlayerState.PAUSED || playerState === YT.PlayerState.ENDED) {
-        //
     }
 }
 
@@ -2503,8 +2354,7 @@ function startAppTimeTracker() {
 }
 
 async function updateWatchTimeStats(creatorId, videoId, isStarting) {
-    // This feature is currently disabled to avoid heavy Firestore writes from direct YouTube browsing.
-    // It can be re-enabled if a proper tracking and revenue sharing model is established.
+    // Disabled
 }
 
 
@@ -2728,23 +2578,23 @@ async function submitReport() {
 }
 
 // =======================================================
-// ★★★ NEW HOME SCREEN LOGIC (DEPRECATED) ★★★
-// =======================================================
-function initializeNewHomeScreen() {
-    // This screen is no longer used. The functionality is merged into Long Video and Shorts screens.
-    const container = document.querySelector('#upload-screen .upload-container-new');
-    if (container) {
-        container.innerHTML = '<p class="static-message">This section is no longer in use.</p>';
-    }
-}
-// =======================================================
 // ★★★ CREDIT SCREEN LOGIC - START ★★★
 // =======================================================
-function initializeCreditScreen(videoId) {
+async function initializeCreditScreen(videoId) {
     const screen = document.getElementById('credit-screen');
     if (!screen) return;
+    screen.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
-    const video = currentVideoCache.get(videoId);
+    let video = currentVideoCache.get(videoId);
+    if (!video) {
+        // If not in cache, fetch details
+        const data = await fetchFromYouTubeAPI('videoDetails', { id: videoId });
+        if (data.items && data.items.length > 0) {
+            video = data.items[0];
+            currentVideoCache.set(videoId, video);
+        }
+    }
+    
     if (!video) {
         screen.innerHTML = `<p class="static-message">Video details not found.</p><button onclick="navigateBack()">Back</button>`;
         return;
@@ -2752,7 +2602,6 @@ function initializeCreditScreen(videoId) {
 
     const channelName = escapeHTML(video.snippet.channelTitle) || 'Original Creator';
     const channelLink = `https://www.youtube.com/channel/${video.snippet.channelId}`;
-    const youtubeLink = `https://www.youtube.com/watch?v=${videoId}`;
     
     const watchOnYoutubeHTML = `<a href="${channelLink}" target="_blank" rel="noopener noreferrer">${channelName}</a>`;
 
@@ -2769,15 +2618,6 @@ function initializeCreditScreen(videoId) {
             <p><strong>🎥 क्रेडिट:</strong> ${channelName}</p>
             <p><strong>📺 यूट्यूब पर देखें:</strong> ${watchOnYoutubeHTML}</p>
             <p><strong>अस्वीकरण:</strong> यह वीडियो यूट्यूब से एम्बेड किया गया है। इस वीडियो के सभी अधिकार इसके मूल निर्माता के पास सुरक्षित हैं।</p>
-            <p>यदि आप इस वीडियो के असली निर्माता हैं और चाहते हैं कि यह वीडियो इस प्लेटफ़ॉर्म से हटा दिया जाए, तो कृपया हमें इस ईमेल आईडी पर संपर्क करें: udbhavscience12@gmail.com</p>
-            <p>यदि आप चाहते हैं कि यह वीडियो प्लेटफ़ॉर्म पर बना रहे और आप इसके माध्यम से होने वाली कमाई में भागीदार बनें, तो हम आगे आने वाले व्यूज़ पर 10% विज्ञापन राजस्व (ad revenue) साझा करने के लिए तैयार हैं।</p>
-            <p>बस एक छोटी-सी अनुरोध है:</p>
-            <ul>
-                <li>🔹 पुष्टि (verification) के लिए आपको अपने यूट्यूब चैनल की किसी भी 5 वीडियो में हमारा एक छोटा सा शाउटआउट (नाम या वेबसाइट का ज़िक्र) देना होगा, ताकि यह प्रमाणित किया जा सके कि चैनल वास्तव में आपका ही है।</li>
-                <li>🔹 साथ ही, हर महीने कम से कम एक बार अपने किसी वीडियो या पोस्ट में हमारी वेबसाइट का उल्लेख (mention) करना होगा, ताकि हम दोनों मिलकर आगे बढ़ सकें।</li>
-            </ul>
-            <p>यह कोई व्यापारिक लेन-देन नहीं, बल्कि एक आपसी सहयोग (collaboration) है — जिसमें हम दोनों एक-दूसरे की इज़्ज़त करते हुए और पारदर्शिता के साथ आगे बढ़ें।</p>
-            <p>आइए मिलकर एक अच्छा और ईमानदार डिजिटल सफर तय करें ✨</p>
         </div>
     `;
     
@@ -2786,15 +2626,6 @@ function initializeCreditScreen(videoId) {
              <p><strong>🎥 Credit:</strong> ${channelName}</p>
              <p><strong>📺 Watch on YouTube:</strong> ${watchOnYoutubeHTML}</p>
              <p><strong>Disclaimer:</strong> This video is embedded directly from YouTube. All rights to the content belong to its original creator.</p>
-             <p>If you are the original creator of this video and would like it to be removed from this platform, please feel free to contact us at: udbhavscience12@gmail.com</p>
-             <p>However, if you would like the video to remain on this platform and are open to collaborating, we are happy to offer 10% of the ad revenue generated from future views of your video.</p>
-             <p>We do have a small request:</p>
-             <ul>
-                 <li>🔹 For verification, we ask you to give a short shout-out (mentioning our name or website) in any 5 videos on your YouTube channel. This helps us confirm that the channel truly belongs to you.</li>
-                 <li>🔹 Additionally, we request that you kindly mention our website at least once a month in any of your videos or posts — so that we can grow together, as true collaborators.</li>
-             </ul>
-             <p>This is not just a financial agreement — it’s a respectful and transparent collaboration built on mutual support.</p>
-             <p>Let’s grow together ✨</p>
         </div>
     `;
 
@@ -2860,63 +2691,8 @@ function showEnlargedImage(imageUrl) {
 }
 // ★★★ IMAGE ENLARGE LOGIC - END ★★★
 
-
-// ★★★ SPECIAL VIDEO PLAYER LOGIC - START ★★★
-function showSpecialVideoPlayer(videoId, title = '', channelTitle = '') {
-    let modal = document.getElementById('special-video-player-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'special-video-player-modal';
-        modal.className = 'modal-overlay active';
-        modal.style.zIndex = '9997';
-        modal.innerHTML = `
-            <div class="modal-content" style="padding: 10px; background-color: #000; border: 2px solid var(--primary-neon); max-width: 800px;">
-                <span class="close-button" onclick="closeSpecialVideoPlayer()" style="top: 15px; right: 15px; color: #fff; font-size: 2em;">&times;</span>
-                <div style="width: 100%; aspect-ratio: 16 / 9; background-color: #000;">
-                    <div id="special-video-player-container" style="width: 100%; height: 100%;"></div>
-                </div>
-                <div id="special-video-info" style="padding: 10px; text-align: left; color: white;">
-                     <h4 style="margin: 5px 0; font-size: 1.1em;">${escapeHTML(title)}</h4>
-                     <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">${escapeHTML(channelTitle)}</p>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-    } else {
-        modal.querySelector('#special-video-info h4').textContent = title;
-        modal.querySelector('#special-video-info p').textContent = channelTitle;
-        modal.classList.add('active');
-    }
-
-    if (isYouTubeApiReady) initializeSpecialPlayer(videoId);
-}
-
-function closeSpecialVideoPlayer() {
-    const modal = document.getElementById('special-video-player-modal');
-    if (modal) modal.classList.remove('active');
-    if (appState.specialVideoPlayer && typeof appState.specialVideoPlayer.destroy === 'function') {
-        appState.specialVideoPlayer.destroy();
-        appState.specialVideoPlayer = null;
-    }
-}
-
-function initializeSpecialPlayer(videoId = 'UL5Q1rDsDtg') { // डिफ़ॉल्ट वीडियो को पैरामीटर से बदलें
-    if (appState.specialVideoPlayer) appState.specialVideoPlayer.destroy();
-    appState.specialVideoPlayer = new YT.Player('special-video-player-container', {
-        height: '100%', width: '100%', videoId: videoId,
-        playerVars: {
-            'autoplay': 1, 'controls': 1, 'rel': 0, 'showinfo': 0,
-            'modestbranding': 1, 'origin': window.location.origin
-        },
-        events: { 'onReady': (event) => event.target.playVideo() }
-    });
-}
-// ★★★ SPECIAL VIDEO PLAYER LOGIC - END ★★★
-
-
 document.addEventListener('DOMContentLoaded', () => {
     
-    // Hide the "Home" button as requested
     document.querySelectorAll('.nav-item[data-nav="new-home"]').forEach(item => {
         item.style.display = 'none';
     });
@@ -2926,14 +2702,11 @@ document.addEventListener('DOMContentLoaded', () => {
         item.classList.add('haptic-trigger');
         item.addEventListener('click', () => {
             const targetNav = item.getAttribute('data-nav');
+            if(item.style.display === 'none') return;
             
-            let targetScreen;
-            if (targetNav === 'new-home') { // Should not happen, but as a fallback
-                return;
-            } else if (targetNav === 'shorts') {
+            let targetScreen = `${targetNav}-screen`;
+            if (targetNav === 'shorts') {
                 targetScreen = 'home-screen';
-            } else {
-                targetScreen = `${targetNav}-screen`;
             }
             
             if (appState.currentScreen !== targetScreen) {
@@ -2954,11 +2727,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sidebar = document.getElementById('main-sidebar');
     if (sidebar) {
-        const paymentBtn = document.getElementById('navigate-to-payment-btn');
-        if (paymentBtn) paymentBtn.style.display = 'none';
-        const adBtn = document.getElementById('navigate-to-advertisement-btn');
-        if (adBtn) adBtn.style.display = 'none';
-
         let reportButton = document.getElementById('navigate-to-report-btn');
         if (!reportButton) {
             reportButton = document.createElement('button');
@@ -2967,11 +2735,8 @@ document.addEventListener('DOMContentLoaded', () => {
             reportButton.innerHTML = `<i class="fas fa-flag" style="margin-right: 10px;"></i>Report`;
             reportButton.onclick = () => navigateTo('report-screen');
             const premiumCard = document.querySelector('.premium-features-card');
-            if (premiumCard) {
-                sidebar.insertBefore(reportButton, premiumCard);
-            } else {
-                sidebar.appendChild(reportButton);
-            }
+            if (premiumCard) sidebar.insertBefore(reportButton, premiumCard);
+            else sidebar.appendChild(reportButton);
         }
     }
     
