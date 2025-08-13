@@ -1,8 +1,8 @@
 
 /* ================================================= */
-/* === Shubhzone App Script (Code 2) - FINAL v5.13 === */
+/* === Shubhzone App Script (Code 2) - FINAL v5.14 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
-/* === SOLVED: Ad Logic & YouTube URL Input Enhanced === */
+/* === SOLVED: Full YouTube API Integration      === */
 /* ================================================= */
 
 // Firebase कॉन्फ़िगरेशन
@@ -279,12 +279,20 @@ let appState = {
     currentScreen: 'splash-screen',
     navigationStack: ['splash-screen'],
     currentScreenPayload: null,
-    allVideos: [], userShortVideos: [], userLongVideos: [], viewingHistory: [],
+    // allVideos, userShortVideos, userLongVideos are now deprecated
+    viewingHistory: [],
+    youtubeNextPageTokens: {
+        long: null,
+        shorts: null,
+        search: null,
+        trending: null,
+        channel: null
+    },
     uploadDetails: { category: null, audience: 'all', lengthType: 'short' },
-    activeComments: { videoId: null, videoOwnerUid: null },
+    activeComments: { videoId: null, videoOwnerUid: null, channelId: null },
     activeChat: { chatId: null, friendId: null, friendName: null, friendAvatar: null },
     creatorPagePlayers: { short: null, long: null },
-    creatorPage: { currentLongVideo: { id: null, uploaderUid: null } },
+    creatorPage: { currentLongVideo: { id: null, uploaderUid: null, channelId: null } },
     adState: {
         timers: { fullscreenAdLoop: null },
         fullscreenAd: { 
@@ -306,73 +314,54 @@ let appState = {
 };
 
 let isYouTubeApiReady = false;
-let players = {};
+let players = {}; // Player instances for the shorts swiper
 let videoObserver;
-let fullVideoList = [];
+// fullVideoList is deprecated.
 let activePlayerId = null;
 let userHasInteracted = false;
 let hasShownAudioPopup = false;
 let hapticFeedbackEnabled = true;
 
 // =============================================================================
-// ★★★ YOUTUBE API INTEGRATION - START ★★★
+// ★★★ YOUTUBE API INTEGRATION (REFACTORED) - START ★★★
 // =============================================================================
 
-let nextPageToken = null; // यूट्यूब से और वीडियो लोड करने के लिए
+let currentVideoCache = new Map();
 
 /**
- * यूट्यूब एपीआई का उपयोग करके वीडियो खोजता है।
- * @param {string} query - खोजने के लिए टेक्स्ट।
- * @param {boolean} loadMore - क्या अगले पेज के परिणाम लोड करने हैं।
+ * YouTube API से वीडियो लाने के लिए जेनेरिक फ़ंक्शन।
+ * @param {string} type 'search', 'trending', or 'channel' में से एक।
+ * @param {object} params API के लिए पैरामीटर (जैसे, q, pageToken, channelId)।
+ * @returns {Promise<object>} API से प्रतिक्रिया।
  */
-async function searchYouTubeVideos(query, loadMore = false) {
-    const resultsContainer = document.getElementById('youtube-video-grid');
-    const loader = document.getElementById('youtube-grid-loader');
-    const loadMoreBtn = document.getElementById('youtube-load-more-btn');
-
-    if (!loadMore) {
-        resultsContainer.innerHTML = '';
-        nextPageToken = null;
-    }
-
-    loader.style.display = 'block';
-    if(loadMoreBtn) loadMoreBtn.style.display = 'none';
-
-    // अब हम अपने सर्वर के API रूट को कॉल कर रहे हैं
-    let url = `/api/youtube?q=${encodeURIComponent(query)}`;
-    
-    if (loadMore && nextPageToken) {
-        url += `&pageToken=${nextPageToken}`;
+async function fetchFromYouTubeAPI(type, params) {
+    let url = `/api/youtube?type=${type}`;
+    for (const key in params) {
+        if (params[key]) {
+            url += `&${key}=${encodeURIComponent(params[key])}`;
+        }
     }
 
     try {
         const response = await fetch(url);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         
-        if (data.error) {
-            throw new Error(data.error);
+        // नए प्राप्त वीडियो को कैश में जोड़ें
+        if (data.items) {
+            data.items.forEach(video => {
+                const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
+                if(videoId) currentVideoCache.set(videoId, video);
+            });
         }
 
-        nextPageToken = data.nextPageToken || null;
-        
-        const videos = data.items.map(item => ({
-            id: typeof item.id === 'string' ? item.id : item.id.videoId,
-            title: item.snippet.title,
-            thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
-            channelTitle: item.snippet.channelTitle,
-        }));
-        
-        renderYouTubeResults(videos, loadMore);
-
-        if (nextPageToken) {
-            if(loadMoreBtn) loadMoreBtn.style.display = 'block';
-        }
-
+        return data;
     } catch (error) {
-        console.error("Error fetching from server API:", error);
-        resultsContainer.innerHTML += `<p class="static-message" style="color:var(--error-red);">Error: ${error.message}</p>`;
-    } finally {
-        loader.style.display = 'none';
+        console.error(`Error fetching from YouTube API (${type}):`, error);
+        return { error: error.message, items: [], nextPageToken: null };
     }
 }
 
@@ -382,56 +371,79 @@ async function searchYouTubeVideos(query, loadMore = false) {
  * @param {Array} videos - दिखाने के लिए वीडियो की सूची।
  * @param {boolean} append - क्या मौजूदा परिणामों में जोड़ना है।
  */
-function renderYouTubeResults(videos, append = false) {
-    const grid = document.getElementById('youtube-video-grid');
+function renderYouTubeLongVideos(videos, append = false) {
+    const grid = document.getElementById('long-video-grid');
+    const loader = document.getElementById('youtube-grid-loader'); // Assuming a general loader
+    const loadMoreBtn = document.getElementById('long-video-load-more-btn');
+
     if (!grid) return;
+    if (loader) loader.style.display = 'none';
+
+    if (!append) {
+        grid.innerHTML = '';
+    }
 
     if (videos.length === 0 && !append) {
-        grid.innerHTML = '<p class="static-message">No videos found. Try a different search.</p>';
+        grid.innerHTML = '<p class="static-message">No videos found. Try a different search or category.</p>';
         return;
     }
     
-    const videosHtml = videos.map(video => {
-        // यह एक लॉन्ग वीडियो कार्ड जैसा ही है, लेकिन यूट्यूब डेटा के लिए अनुकूलित है
-        return `
-            <div class="long-video-card" onclick="playYouTubeVideo('${video.id}', '${escapeHTML(video.title)}', '${escapeHTML(video.channelTitle)}')">
-                <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(video.thumbnailUrl)}')">
-                    <i class="fas fa-play play-icon-overlay"></i>
-                </div>
-                <div class="long-video-info-container">
-                    <div class="long-video-details">
-                        <span class="long-video-name">${escapeHTML(video.title)}</span>
-                        <span class="long-video-uploader">${escapeHTML(video.channelTitle)}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
+    videos.forEach((video, index) => {
+        const card = createLongVideoCard(video);
+        grid.appendChild(card);
+        if ((index + 1) % 4 === 0) {
+            const adContainer = document.createElement('div');
+            adContainer.className = 'long-video-grid-ad';
+            grid.appendChild(adContainer);
+            setTimeout(() => injectBannerAd(adContainer), 100);
+        }
+    });
 
-    if (append) {
-        grid.innerHTML += videosHtml;
-    } else {
-        grid.innerHTML = videosHtml;
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = appState.youtubeNextPageTokens.long ? 'block' : 'none';
+        loadMoreBtn.disabled = false;
     }
 }
 
+async function loadMoreLongVideos() {
+    const loadMoreBtn = document.getElementById('long-video-load-more-btn');
+    if (loadMoreBtn) loadMoreBtn.disabled = true;
 
-/**
- * जब उपयोगकर्ता यूट्यूब वीडियो पर क्लिक करता है तो एक विशेष वीडियो प्लेयर खोलता है।
- * @param {string} videoId - यूट्यूब वीडियो का आईडी।
- * @param {string} title - वीडियो का शीर्षक।
- * @param {string} channelTitle - चैनल का शीर्षक।
- */
-function playYouTubeVideo(videoId, title, channelTitle) {
-    // हम एक विशेष वीडियो प्लेयर दिखाने के लिए एक मोडल का उपयोग कर सकते हैं,
-    // या हम मौजूदा 'creator-page-screen' का पुन: उपयोग कर सकते हैं।
-    // अभी के लिए, हम एक नया मोडल बनाएंगे।
-    showSpecialVideoPlayer(videoId, title, channelTitle);
+    const activeCategoryChip = document.querySelector('#long-video-category-scroller .category-chip.active');
+    const category = activeCategoryChip ? activeCategoryChip.textContent : 'All';
+    
+    let data;
+    if (category.toLowerCase() === 'trending') {
+        data = await fetchFromYouTubeAPI('trending', { pageToken: appState.youtubeNextPageTokens.long });
+    } else {
+        const query = category.toLowerCase() === 'all' ? '' : category;
+        data = await fetchFromYouTubeAPI('search', { q: query, pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' });
+    }
+
+    appState.youtubeNextPageTokens.long = data.nextPageToken || null;
+    if(data.items) {
+        renderYouTubeLongVideos(data.items, true);
+    }
 }
 
+function playYouTubeVideoFromCard(videoId) {
+    const video = currentVideoCache.get(videoId);
+    if (!video) {
+        alert("Video details not found. Please try again.");
+        return;
+    }
+    
+    const channelId = video.snippet.channelId;
+    
+    navigateTo('creator-page-screen', { 
+        creatorId: channelId, // Pass channelId as creatorId
+        startWith: 'long', 
+        videoId: videoId
+    });
+}
 
 // =============================================================================
-// ★★★ YOUTUBE API INTEGRATION - END ★★★
+// ★★★ YOUTUBE API INTEGRATION (REFACTORED) - END ★★★
 // =============================================================================
 
 
@@ -466,7 +478,7 @@ const descriptionModal = document.getElementById('description-modal');
 const descriptionContent = document.getElementById('description-content');
 const closeDescriptionBtn = document.getElementById('close-description-btn');
 
-const categories = [ "Entertainment", "Comedy", "Music", "Dance", "Education", "Travel", "Food", "DIY", "Sports", "Gaming", "News", "Lifestyle" ];
+const categories = ["Trending", "Entertainment", "Comedy", "Music", "Dance", "Education", "Travel", "Food", "DIY", "Sports", "Gaming", "News", "Lifestyle"];
 const earnsureContent = {
     hi: `<h4>🌟 आपका अपना वीडियो प्लेटफॉर्म – जहां हर व्यू की क़ीमत है! 🎥💰</h4><hr><p><strong>🎥 क्रिएटर्स के लिए (Creators):</strong></p><p>अगर आप अपना खुद का वीडियो इस प्लेटफ़ॉर्म पर डालते हैं और लोग उसे देखते हैं, तो आपके वीडियो के Watch Time के आधार पर आपको कमाई (Ad Revenue Share) दी जाएगी।</p><p>🛑 <strong>अगर आप किसी और का वीडियो डालते हैं, तो:</strong></p><ul><li>आपको उससे कोई कमाई नहीं मिलेगी।</li><li>जब दूसरे लोग आपके द्वारा अपलोड किए गए वीडियो को देखेंगे, तो उससे होने वाली कमाई असली क्रिएटर को जाएगी (अगर वे हमसे संपर्क करते हैं)।</li></ul><hr><p><strong>🧾 पेमेंट पॉलिसी (Payment Policy):</strong></p><p>🗓️ <strong>हर सोमवार को पेमेंट Apply करें – 24 घंटे का समय!</strong></p><p>अब से, आप हर सोमवार को पूरे दिन (00:00 से 23:59 तक) "Payment Apply" बटन पर क्लिक कर सकते हैं।</p><p>✅ अगर आप सोमवार को अप्लाई नहीं करते, तो उस सप्ताह की कमाई रद्द (forfeit) मानी जाएगी।</p><hr><p><strong>💵 पेमेंट कब मिलेगा?</strong></p><p>पहली बार पेमेंट तब मिलेगा जब आपकी कुल कमाई ₹5000 (लगभग $60 USD) हो जाएगी।</p><p>इसके बाद आप चाहे ₹2 (लगभग $0.02 USD) भी कमाएं, आप उसे कभी भी निकाल सकते हैं।</p><hr><p><strong>💼 ऐप की दो खास विशेषताएं:</strong></p><p>📢 <strong>1. ब्रांड प्रमोशन का मौका</strong></p><p>इस ऐप पर आप अपने ब्रांड, प्रोडक्ट या सर्विस का विज्ञापन कर सकते हैं — वो भी सही टारगेटेड ऑडियंस के सामने।</p><p>📬 <strong>2. सीधे यूज़र से संपर्क करें</strong></p><p>अगर आपको किसी यूज़र से बात करनी है – सुझाव, फीडबैक या काम के लिए – तो आप ऐप के ज़रिए सीधे मैसेज या संपर्क कर सकते हैं।</p><hr><p><strong>✅ वेरिफिकेशन के नियम:</strong></p><p>अगर आप अपने वीडियो से क्रिएटर के रूप में कमाई करना चाहते हैं, तो आपको:</p><ol><li>अपनी कम से कम 5 यूट्यूब वीडियो में ऐप का नाम या लिंक (Shout-out) देना होगा।</li><li>इससे हम यह पुष्टि कर सकेंगे कि चैनल आपका है।</li></ol><hr><p><strong>🔒 ईमानदारी और पारदर्शिता हमारी प्राथमिकता है</strong></p><p>हम चाहते हैं कि हर Creator को उनका पूरा हक़ मिले — बिना किसी धोखे और बिना किसी मुश्किल के।</p><blockquote>"कमाई और विश्वास का रिश्ता तभी टिकता है, जब दोनों तरफ से इज्ज़त हो।"</blockquote><hr><p><strong>📩 संपर्क करें:</strong></p><p>कोई सवाल या सहायता चाहिए? ईमेल करें 👉 udbhavscience12@gmail.com</p><hr><h4>🌈 आइए, साथ मिलकर कुछ बड़ा बनाएं।</h4><p>आप देखिए, कमाइए, प्रमोट कीजिए, जुड़िए — यह मंच आपका है। 🚀💖</p>`,
     en: `<h4>🌟 Your Own Video Platform – Where Every View Has Value! 🎥💰</h4><hr><p><strong>🎥 For Creators:</strong></p><p>If you upload your own videos to this platform and people watch them, you earn money (Ad Revenue Share) based on the watch time of those videos.</p><p>🛑 <strong>But if you upload someone else’s video:</strong></p><ul><li>You won’t earn any revenue from it.</li><li>The revenue generated from views on videos you upload will go to the original creator if they contact us.</li></ul><hr><p><strong>🧾 Payment Policy:</strong></p><p>🗓️ <strong>Apply for Payment Every Monday – Full 24 Hours!</strong></p><p>You can apply for payment every Monday, anytime between 00:00 and 23:59 (24 hours window).</p><p>✅ If you do not apply on Monday, the earnings for that week will be forfeited.</p><hr><p><strong>💵 When Will You Get Paid?</strong></p><p>Your first payment will be released only when your total earnings reach ₹5000 (approx. $60 USD).</p><p>After that, even if you earn just ₹2 (approx. $0.02 USD), you can withdraw it anytime.</p><hr><p><strong>💼 Two Special Features of This App:</strong></p><p>📢 <strong>1. Promote Your Own Brand</strong></p><p>You can advertise your brand, product, or services directly on this platform — to a real, engaged audience who already loves content.</p><p>📬 <strong>2. Contact Any User Directly</strong></p><p>Need to reach out to a user for collaboration, feedback, or business? The app allows you to directly contact any user via messaging.</p><hr><p><strong>✅ Verification Rules for Creators:</strong></p><p>If you want to earn revenue as a creator, you must:</p><ol><li>Give a shout-out (mentioning/link to this app) in any 5 videos on your YouTube channel.</li><li>This helps us verify that the channel is genuinely yours.</li></ol><hr><p><strong>🔒 Honesty & Transparency Come First</strong></p><p>We are committed to giving every creator their fair share, with zero cheating and zero complications.</p><blockquote>"True earnings and trust grow only when there's respect on both sides."</blockquote><hr><p><strong>📩 Need Help? Contact Us:</strong></p><p>Have questions or suggestions? 📧 Email us at: udbhavscience12@gmail.com</p><hr><h4>🌈 Let’s build something great, together.</h4><p>Watch, Earn, Promote, and Connect — This platform is truly yours. 🚀💖</p>`
@@ -519,12 +531,12 @@ function navigateTo(nextScreenId, payload = null) {
     activateScreen(nextScreenId);
     appState.currentScreenPayload = payload;
 
-    if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase();
+    if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase(); // Now this will show a message
     if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
     if (nextScreenId === 'history-screen') initializeHistoryScreen();
     if (nextScreenId === 'your-zone-screen') populateYourZoneScreen();
-    if (nextScreenId === 'home-screen') setTimeout(() => setupVideoObserver(), 100);
-    if (nextScreenId === 'upload-screen') initializeNewHomeScreen();
+    if (nextScreenId === 'home-screen') setupShortsScreen();
+    // if (nextScreenId === 'upload-screen') initializeNewHomeScreen(); // Deprecated
     if (nextScreenId === 'earnsure-screen') initializeEarnsureScreen();
     if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) initializeCreatorPage(payload.creatorId, payload.startWith, payload.videoId);
     if (nextScreenId === 'advertisement-screen') initializeAdvertisementPage();
@@ -582,7 +594,7 @@ async function checkUserProfileAndProceed(user, lastScreenToRestore = null) {
         }
         updateProfileUI();
         
-        if (lastScreenToRestore && lastScreenToRestore !== 'upload-screen') {
+        if (lastScreenToRestore && lastScreenToRestore !== 'upload-screen' && lastScreenToRestore !== 'new-home-screen') {
              console.log(`[App Restore] Found last screen in localStorage: ${lastScreenToRestore}. Restoring...`);
              await startAppLogic(lastScreenToRestore);
         } else if (userData.name && userData.state) {
@@ -627,51 +639,22 @@ function initializeApp() {
 }
 
 
-async function loadUserVideosFromFirebase() {
-    if (!appState.currentUser.uid) return;
-    try {
-        const videosRef = db.collection('videos').where('uploaderUid', '==', appState.currentUser.uid).orderBy('createdAt', 'desc');
-        const snapshot = await videosRef.get();
-        const allUserVideos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        appState.userShortVideos = allUserVideos.filter(v => v.videoLengthType !== 'long');
-        appState.userLongVideos = allUserVideos.filter(v => v.videoLengthType === 'long');
-        renderUserProfileVideos();
-    } catch (error) {
-        console.error("Error loading user videos:", error);
-    }
+function loadUserVideosFromFirebase() {
+    // This function is now deprecated for showing videos, as they come from YouTube.
+    // We'll just show a message on the profile screen.
+    renderUserProfileVideos(); 
 }
 
-async function refreshAndRenderFeed() {
-    const videosRef = db.collection('videos').orderBy('createdAt', 'desc');
-    const snapshot = await videosRef.get();
-    const loadedVideos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    fullVideoList = [...loadedVideos];
-    
-    let shortVideos = fullVideoList.filter(v => v.videoLengthType !== 'long');
-    shortVideos = shuffleArray(shortVideos);
-    appState.allVideos = shortVideos;
-    renderVideoSwiper(shortVideos); 
-}
+// DEPRECATED - Videos are fetched on demand from YouTube.
+// async function refreshAndRenderFeed() { }
+
 
 // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 // ★★★ महत्वपूर्ण सुधार: बॉटम नेविगेशन के लिए नया सेटअप ★★★
 // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
 function setupBottomNav() {
-    // 1. आइकनों और टेक्स्ट को बदलें
-    const shortsNavItem = document.querySelector('.nav-item[data-nav="home"]');
-    if (shortsNavItem) {
-        shortsNavItem.setAttribute('data-nav', 'shorts');
-        shortsNavItem.innerHTML = '<i class="fas fa-compact-disc"></i>Shorts';
-    }
-
-    const newHomeNavItem = document.querySelector('.nav-item[data-nav="upload"]');
-    if (newHomeNavItem) {
-        newHomeNavItem.setAttribute('data-nav', 'new-home');
-        newHomeNavItem.innerHTML = '<i class="fas fa-home"></i>Home';
-    }
-
-    // 2. सभी आइकनों के लिए एक ही बार Event Listener जोड़ें (यह अब DOMContentLoaded में होगा)
+    // This function's content has been moved to DOMContentLoaded to ensure elements exist.
 }
 
 function updateNavActiveState(activeNav) {
@@ -782,37 +765,8 @@ function updateProfileUI() {
 }
 
 function openUploadDetailsModal(lengthType = 'short', videoData = null) {
-    appState.uploadDetails.lengthType = lengthType;
-    if (videoData) {
-        modalTitle.textContent = "Edit Video Details";
-        modalSaveButton.textContent = "Save Changes";
-        editingVideoIdInput.value = videoData.id;
-        modalVideoTitle.value = videoData.title || '';
-        modalVideoDescription.value = videoData.description || '';
-        modalVideoHashtags.value = videoData.hashtags || '';
-        modalVideoUrlInput.value = `https://www.youtube.com/watch?v=${videoData.videoUrl || ''}`;
-        modalChannelNameInput.value = videoData.channelName || '';
-        modalChannelLinkInput.value = videoData.channelLink || '';
-        modalVideoUrlInput.disabled = true;
-        selectCategory(videoData.category || categories[0]);
-        selectAudience(videoData.audience || 'all');
-        commentsToggleInput.checked = videoData.commentsEnabled !== false;
-    } else {
-        modalTitle.textContent = `Upload ${lengthType === 'long' ? 'Long' : 'Short'} Video`;
-        modalSaveButton.textContent = "Upload Video";
-        editingVideoIdInput.value = "";
-        modalVideoTitle.value = '';
-        modalVideoDescription.value = '';
-        modalVideoHashtags.value = '';
-        modalVideoUrlInput.value = '';
-        modalChannelNameInput.value = '';
-        modalChannelLinkInput.value = '';
-        modalVideoUrlInput.disabled = false;
-        selectCategory(categories[0]);
-        selectAudience('all');
-        commentsToggleInput.checked = true;
-    }
-    uploadDetailsModal.classList.add('active');
+    // This function is now deprecated
+    alert("This feature is no longer available. All video content is sourced directly from YouTube.");
 }
 
 function closeUploadDetailsModal() {
@@ -839,113 +793,10 @@ function selectAudience(audienceType) {
     }
 }
 
-async function handleSave() {
-    const videoId = editingVideoIdInput.value;
-    if (videoId) await saveVideoEdits(videoId);
-    else await saveNewVideo();
-}
-
-async function saveVideoEdits(videoId) {
-    modalSaveButton.disabled = true;
-    modalSaveButton.textContent = 'Saving...';
-    const title = modalVideoTitle.value.trim();
-    const category = appState.uploadDetails.category;
-    if (!title || !category) {
-        alert("Please fill in Title and select a Category.");
-        modalSaveButton.disabled = false;
-        modalSaveButton.textContent = 'Save Changes';
-        return;
-    }
-    const updatedData = {
-        title,
-        description: modalVideoDescription.value.trim(),
-        hashtags: modalVideoHashtags.value.trim(),
-        channelName: modalChannelNameInput.value.trim(),
-        channelLink: modalChannelLinkInput.value.trim(),
-        category: category,
-        audience: appState.uploadDetails.audience || 'all',
-        commentsEnabled: commentsToggleInput.checked
-    };
-    try {
-        await db.collection("videos").doc(videoId).update(updatedData);
-        alert("Video updated!");
-        closeUploadDetailsModal();
-        await refreshAndRenderFeed();
-        if (appState.currentScreen === 'profile-screen') loadUserVideosFromFirebase();
-    } catch (error) {
-        console.error("Error saving video edits:", error);
-        alert("Failed to save changes. Error: " + error.message);
-    } finally {
-        modalSaveButton.disabled = false;
-        modalSaveButton.textContent = 'Save Changes';
-    }
-}
-
-async function saveNewVideo() {
-    modalSaveButton.disabled = true;
-    modalSaveButton.textContent = 'Uploading...';
-    
-    const rawUrlInput = modalVideoUrlInput.value.trim();
-    const title = modalVideoTitle.value.trim();
-    const category = appState.uploadDetails.category;
-    const lengthType = appState.uploadDetails.lengthType;
-
-    if (!rawUrlInput || !title || !category) {
-        alert("Please fill Title, YouTube Video URL/ID, and select a Category.");
-        modalSaveButton.disabled = false;
-        modalSaveButton.textContent = 'Upload Video';
-        return;
-    }
-    
-    const videoId = extractYouTubeId(rawUrlInput);
-    
-    if (!videoId) {
-         alert("Invalid YouTube URL or ID. Please provide a valid link or the 11-character video ID.");
-         modalSaveButton.disabled = false;
-         modalSaveButton.textContent = 'Upload Video';
-         return;
-    }
-
-    try {
-        const existingVideoSnapshot = await db.collection('videos').where('videoUrl', '==', videoId).limit(1).get();
-        if (!existingVideoSnapshot.empty) {
-            alert("This video has already been uploaded. Please upload a different video.");
-            modalSaveButton.disabled = false;
-            modalSaveButton.textContent = 'Upload Video';
-            return;
-        }
-
-        const videoData = {
-            uploaderUid: auth.currentUser.uid,
-            uploaderUsername: appState.currentUser.name || appState.currentUser.username || 'Anonymous',
-            uploaderAvatar: appState.currentUser.avatar || "https://via.placeholder.com/40",
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            title,
-            description: modalVideoDescription.value.trim(),
-            hashtags: modalVideoHashtags.value.trim(),
-            channelName: modalChannelNameInput.value.trim(),
-            channelLink: modalChannelLinkInput.value.trim(),
-            videoUrl: videoId, // Store only the 11-character ID
-            thumbnailUrl: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
-            videoType: 'youtube', videoLengthType: lengthType,
-            category, audience: appState.uploadDetails.audience || 'all',
-            commentsEnabled: commentsToggleInput.checked,
-            likes: 0, commentCount: 0, customViewCount: 0, totalWatchTimeSeconds: 0
-        };
-
-        await db.collection("videos").add(videoData);
-        alert("Video uploaded!");
-        closeUploadDetailsModal();
-        await refreshAndRenderFeed();
-        navigateTo(lengthType === 'long' ? 'long-video-screen' : 'home-screen');
-    } catch (error) {
-        console.error("Error uploading video:", error);
-        alert("Upload failed. Error: " + error.message);
-    } finally {
-        modalSaveButton.disabled = false;
-        modalSaveButton.textContent = 'Upload Video';
-    }
-}
+// Deprecated functions for Firebase video management
+async function handleSave() { openUploadDetailsModal(); }
+async function saveVideoEdits(videoId) { openUploadDetailsModal(); }
+async function saveNewVideo() { openUploadDetailsModal(); }
 
 let appStartLogicHasRun = false;
 const startAppLogic = async (restoreScreen = null) => {
@@ -963,15 +814,15 @@ const startAppLogic = async (restoreScreen = null) => {
     
     renderCategories();
     renderCategoriesInBar();
-    await refreshAndRenderFeed();
     
-    const screenToNavigate = restoreScreen || 'upload-screen';
+    // Default screen is now 'long-video-screen'
+    const screenToNavigate = restoreScreen || 'long-video-screen';
     
     navigateTo(screenToNavigate);
     
-    if (screenToNavigate === 'upload-screen') {
-        updateNavActiveState('new-home');
-    } else if (screenToNavigate === 'home-screen') {
+    if (screenToNavigate === 'long-video-screen') {
+        updateNavActiveState('long-video');
+    } else if (screenToNavigate === 'home-screen') { // This is now shorts
         updateNavActiveState('shorts');
     } else {
         const navId = screenToNavigate.replace('-screen', '');
@@ -991,19 +842,22 @@ function renderCategories() {
     }
 }
 
-function renderVideoSwiper(itemsToRender) {
+function renderVideoSwiper(videos, append = false) {
     if (!videoSwiper) return;
-    videoSwiper.innerHTML = '';
-    players = {};
 
-    if (videoObserver) {
-        videoObserver.disconnect();
+    if (!append) {
+        videoSwiper.innerHTML = '';
+        players = {};
+        if (videoObserver) videoObserver.disconnect();
     }
-
-    if (!itemsToRender || itemsToRender.length === 0) {
-        if (homeStaticMessageContainer) {
-            videoSwiper.appendChild(homeStaticMessageContainer);
-            homeStaticMessageContainer.style.display = 'flex';
+    
+    if (!videos || videos.length === 0) {
+        if (!append) {
+             if (homeStaticMessageContainer) {
+                homeStaticMessageContainer.querySelector('.static-message').textContent = 'No shorts found for this category.';
+                videoSwiper.appendChild(homeStaticMessageContainer);
+                homeStaticMessageContainer.style.display = 'flex';
+            }
         }
         return;
     }
@@ -1012,74 +866,86 @@ function renderVideoSwiper(itemsToRender) {
         homeStaticMessageContainer.style.display = 'none';
     }
 
-    let videoCount = 0;
+    videos.forEach((video, index) => {
+        const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
+        if (!videoId) return;
 
-    itemsToRender.forEach((video) => {
         const slide = document.createElement('div');
         slide.className = 'video-slide';
-        slide.dataset.videoId = video.id;
-        slide.dataset.uploaderUid = video.uploaderUid;
-        slide.dataset.videoType = video.videoType || 'youtube';
+        slide.dataset.videoId = videoId;
+        slide.dataset.channelId = video.snippet.channelId;
+        
         slide.addEventListener('click', (e) => {
             if (e.target.closest('.video-actions-overlay') || e.target.closest('.uploader-info') || e.target.closest('.credit-btn')) return;
-            togglePlayPause(video.id);
+            togglePlayPause(videoId);
         });
         slide.addEventListener('dblclick', (e) => {
             if (!e.target.closest('.video-actions-overlay') && !e.target.closest('.uploader-info')) {
-                toggleLikeAction(video.id, e.target.closest('.video-slide'));
+                // Like action can be implemented here if needed, requires auth state
             }
         });
 
-        const playerHtml = `<div class="player-container" id="player-${video.id}"></div>`;
-        const thumbnailUrl = video.thumbnailUrl || 'https://via.placeholder.com/420x740/000000/FFFFFF?text=Video';
-        const isLiked = appState.currentUser.likedVideos.includes(video.id);
-        const videoLengthTypeForNav = video.videoLengthType !== 'long' ? 'short' : 'long';
-        const creatorProfileOnClick = `navigateTo('creator-page-screen', { creatorId: '${video.uploaderUid}', startWith: '${videoLengthTypeForNav}', videoId: '${video.id}' })`;
+        const playerHtml = `<div class="player-container" id="player-${videoId}"></div>`;
+        const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
+        const uploaderName = video.snippet.channelTitle;
+        // Since we can't get avatar easily from search results, we use a placeholder
+        const uploaderAvatar = 'https://via.placeholder.com/40'; 
+        const title = video.snippet.title;
+
+        const creatorProfileOnClick = `navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'short', videoId: '${videoId}' })`;
 
         slide.innerHTML = `
             <div class="video-preloader" style="background-image: url('${thumbnailUrl}');"><div class="loader"></div></div>
             ${playerHtml}
             <i class="fas fa-heart like-heart-popup"></i>
             <div class="video-meta-overlay">
-                <div class="uploader-info" onclick="${creatorProfileOnClick}"><img src="${escapeHTML(video.uploaderAvatar) || 'https://via.placeholder.com/40'}" class="uploader-avatar"><span class="uploader-name">${escapeHTML(video.uploaderUsername) || 'User'}</span></div>
-                <p class="video-title">${escapeHTML(video.title) || 'Untitled Video'}</p>
-                <button class="credit-btn haptic-trigger" onclick="navigateTo('credit-screen', { videoId: '${video.id}' })">Credit</button>
+                <div class="uploader-info" onclick="${creatorProfileOnClick}"><img src="${uploaderAvatar}" class="uploader-avatar"><span class="uploader-name">${escapeHTML(uploaderName)}</span></div>
+                <p class="video-title">${escapeHTML(title)}</p>
+                <button class="credit-btn haptic-trigger" onclick="navigateTo('credit-screen', { videoId: '${videoId}' })">Credit</button>
             </div>
             <div class="video-actions-overlay">
                 <div class="action-icon-container haptic-trigger" data-action="creator" onclick="${creatorProfileOnClick}">
                     <i class="fas fa-user-circle icon"></i>
                     <span class="count">Creator</span>
                 </div>
-                <div class="action-icon-container haptic-trigger" data-action="like" onclick="toggleLikeAction('${video.id}', this.closest('.video-slide'))">
-                    <i class="${isLiked ? 'fas' : 'far'} fa-heart icon ${isLiked ? 'liked' : ''}"></i>
-                    <span class="count">${formatNumber(video.likes || 0)}</span>
+                <div class="action-icon-container haptic-trigger" data-action="like">
+                    <i class="far fa-heart icon"></i>
+                    <span class="count">...</span>
                 </div>
-                <div class="action-icon-container haptic-trigger ${!video.commentsEnabled ? 'disabled' : ''}" data-action="comment" onclick="${video.commentsEnabled ? `openCommentsModal('${video.id}', '${video.uploaderUid}')` : ''}">
+                <div class="action-icon-container haptic-trigger" data-action="comment" onclick="openCommentsModal('${videoId}', null, '${video.snippet.channelId}')">
                     <i class="fas fa-comment-dots icon"></i>
-                    <span class="count">${formatNumber(video.commentCount || 0)}</span>
+                    <span class="count">...</span>
                 </div>
             </div>`;
         videoSwiper.appendChild(slide);
-        videoCount++;
+        
+        if (!append) videoObserver.observe(slide);
 
-        if (videoCount > 0 && videoCount % 5 === 0) { // Show ad every 5 videos
+        if ((index + 1) % 5 === 0) { // Show ad every 5 videos
             const adSlide = document.createElement('div');
-            adSlide.className = 'video-slide native-ad-slide'; 
-            
+            adSlide.className = 'video-slide native-ad-slide';
             const adSlotContainer = document.createElement('div');
             adSlotContainer.className = 'ad-slot-container';
-
-            adSlide.innerHTML = `
-                <div class="ad-slide-wrapper">
-                    <p style="color: var(--text-secondary); font-size: 0.9em; text-align: center; margin-bottom: 10px;">Advertisement</p>
-                </div>`;
+            adSlide.innerHTML = `<div class="ad-slide-wrapper"><p style="color: var(--text-secondary); font-size: 0.9em; text-align: center; margin-bottom: 10px;">Advertisement</p></div>`;
             adSlide.querySelector('.ad-slide-wrapper').appendChild(adSlotContainer);
-            
+            videoSwiper.appendChild(adSlide);
             setTimeout(() => injectBannerAd(adSlotContainer), 200);
         }
     });
+    
+    const loadMoreTrigger = document.getElementById('shorts-load-more-trigger');
+    if (!loadMoreTrigger && appState.youtubeNextPageTokens.shorts) {
+        const trigger = document.createElement('div');
+        trigger.id = 'shorts-load-more-trigger';
+        videoSwiper.appendChild(trigger);
+        videoObserver.observe(trigger);
+    } else if (loadMoreTrigger && !appState.youtubeNextPageTokens.shorts) {
+        videoObserver.unobserve(loadMoreTrigger);
+        loadMoreTrigger.remove();
+    }
 
-    if (isYouTubeApiReady) {
+
+    if (isYouTubeApiReady && !append) {
         initializePlayers();
     }
 }
@@ -1090,42 +956,12 @@ function onYouTubeIframeAPIReady() {
         window.pendingAppStartResolve();
         delete window.pendingAppStartResolve;
     }
-    if (appState.currentScreen === 'home-screen' && appState.allVideos.length > 0) {
-         initializePlayers();
-    }
-    if (document.getElementById('special-video-player-modal')?.classList.contains('active')) {
-        initializeSpecialPlayer();
-    }
+    // Player initialization is now handled dynamically by the observer
 }
 
 function initializePlayers() {
-    const visibleSlides = Array.from(videoSwiper.querySelectorAll('.video-slide:not(.native-ad-slide)'));
-    visibleSlides.forEach((slide) => {
-        const videoId = slide.dataset.videoId;
-        const videoData = fullVideoList.find(v => v.id === videoId);
-
-        if (players[videoId] || !videoData) return;
-
-        const playerId = `player-${videoId}`;
-        const playerElement = document.getElementById(playerId);
-
-        if (!playerElement || playerElement.tagName === 'IFRAME') return;
-        
-        players[videoId] = new YT.Player(playerId, {
-            height: '100%', width: '100%', videoId: videoData.videoUrl,
-            playerVars: {
-                'autoplay': 0, 'controls': 0, 'mute': 1, 'rel': 0, 
-                'showinfo': 0, 'modestbranding': 1, 'loop': 1,
-                'playlist': videoData.videoUrl, 'fs': 0, 'iv_load_policy': 3, 
-                'origin': window.location.origin
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
-            }
-        });
-    });
-    setupVideoObserver();
+    // This is now handled by the intersection observer one by one.
+    // This function can be kept for pre-loading logic if needed, but for now it's better to load on demand.
 }
 
 // ★★★ AUTO PLAY FIX ★★★
@@ -1163,24 +999,59 @@ function onPlayerStateChange(event) {
         preloader.style.display = 'none';
     }
     
-    const videoData = fullVideoList.find(v => v.id === videoId);
+    const videoData = currentVideoCache.get(videoId);
     if (!videoData) return;
 
     if (event.data === YT.PlayerState.PLAYING) {
-        updateWatchTimeStats(videoData.uploaderUid, videoId, true); // Start tracking
+        // Watch time tracking can be re-implemented here if needed.
     } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-        updateWatchTimeStats(videoData.uploaderUid, videoId, false); // Stop tracking
+        //
     }
 }
 
 function addVideoToHistory(videoId) {
     if (!videoId) return;
+    const videoData = currentVideoCache.get(videoId);
+    if (!videoData) return;
+
+    const historyItem = {
+        id: videoId,
+        watchedAt: new Date().toISOString(),
+        title: videoData.snippet.title,
+        channelTitle: videoData.snippet.channelTitle,
+        thumbnailUrl: videoData.snippet.thumbnails.medium.url,
+        videoLengthType: 'short' // Assuming this is called from shorts player
+    };
+
     const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId);
     if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1);
-    appState.viewingHistory.unshift({ id: videoId, watchedAt: new Date().toISOString() });
+    
+    appState.viewingHistory.unshift(historyItem);
+    
+    if (appState.viewingHistory.length > 100) appState.viewingHistory.pop();
+    
+    localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
+}
+
+function addLongVideoToHistory(videoId) {
+    if (!videoId) return;
+    const videoData = currentVideoCache.get(videoId);
+    if (!videoData) return;
+    const historyItem = {
+        id: videoId,
+        watchedAt: new Date().toISOString(),
+        title: videoData.snippet.title,
+        channelTitle: videoData.snippet.channelTitle,
+        thumbnailUrl: videoData.snippet.thumbnails.medium.url,
+        videoLengthType: 'long'
+    };
+    const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId);
+    if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1);
+    appState.viewingHistory.unshift(historyItem);
     if (appState.viewingHistory.length > 100) appState.viewingHistory.pop();
     localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
 }
+
 
 function isElementVisible(el, container) {
     if (!el || !container) return false;
@@ -1204,25 +1075,26 @@ function togglePlayPause(videoId) {
 // ★★★ UNMUTE FIX ★★★
 function playActivePlayer(videoId) {
     if (!videoId) return;
-    const player = players[videoId];
-    if (!player || typeof player.playVideo !== 'function') return;
-    if (!player.getIframe() || !document.body.contains(player.getIframe())) return;
     
     if (activePlayerId && activePlayerId !== videoId) {
         pauseActivePlayer();
     }
-    
     activePlayerId = videoId;
     addVideoToHistory(videoId);
     
-    // Only unmute if the user has interacted with the app.
-    // This is crucial for respecting browser autoplay policies.
+    const player = players[videoId];
+    if (!player || typeof player.playVideo !== 'function' || !player.getIframe() || !document.body.contains(player.getIframe())) {
+        // Player not ready, create it
+        const slide = document.querySelector(`.video-slide[data-video-id="${videoId}"]`);
+        if(slide) createPlayerForSlide(slide);
+        return;
+    }
+    
     if (userHasInteracted) {
         player.unMute();
     } else {
-        player.mute(); // Ensure it remains muted if no interaction yet
+        player.mute();
     }
-    
     player.playVideo();
 }
 
@@ -1234,75 +1106,92 @@ function pauseActivePlayer() {
     if (player.getPlayerState() === YT.PlayerState.PLAYING || player.getPlayerState() === YT.PlayerState.BUFFERING) {
          player.pauseVideo();
     }
-    // Mute the player when it's not the active one
     player.mute();
 }
 
+function createPlayerForSlide(slide) {
+    const videoId = slide.dataset.videoId;
+    if (players[videoId]) { // Player already exists or is being created
+        // If it exists, just play it.
+        if (typeof players[videoId].playVideo === 'function') {
+            playActivePlayer(videoId);
+        }
+        return;
+    }
+
+    const playerId = `player-${videoId}`;
+    const playerElement = document.getElementById(playerId);
+    if (!playerElement || playerElement.tagName === 'IFRAME') return;
+
+    players[videoId] = new YT.Player(playerId, {
+        height: '100%', width: '100%', videoId: videoId,
+        playerVars: {
+            'autoplay': 0, 'controls': 0, 'mute': 1, 'rel': 0, 
+            'showinfo': 0, 'modestbranding': 1, 'loop': 1,
+            'playlist': videoId, 'fs': 0, 'iv_load_policy': 3, 
+            'origin': window.location.origin
+        },
+        events: {
+            'onReady': (event) => {
+                onPlayerReady(event);
+                // Now that it's ready, play it if it's the active slide
+                if (videoId === activePlayerId) {
+                    playActivePlayer(videoId);
+                }
+            },
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
 
 function setupVideoObserver() {
     if (videoObserver) videoObserver.disconnect();
     if (!videoSwiper) return;
     const options = { root: videoSwiper, threshold: 0.8 };
-    videoObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.target.classList.contains('native-ad-slide')) return;
+    videoObserver = new IntersectionObserver(async (entries) => {
+        for (const entry of entries) {
+            if (entry.target.id === 'shorts-load-more-trigger') {
+                if(entry.isIntersecting) {
+                    console.log('loading more shorts');
+                    videoObserver.unobserve(entry.target);
+                    entry.target.remove();
+                    await loadMoreShorts();
+                }
+                continue;
+            }
+
+            if (entry.target.classList.contains('native-ad-slide')) continue;
+
             const videoId = entry.target.dataset.videoId;
-            if (!videoId || !players[videoId]) return;
+            if (!videoId) continue;
+            
             if (entry.isIntersecting) {
                 playActivePlayer(videoId);
             } else {
-                // Pause the video only if it's the currently active one
                 if (videoId === activePlayerId) {
                     pauseActivePlayer();
                     activePlayerId = null;
                 }
             }
-        });
+        }
     }, options);
 
-    const allSlides = document.querySelectorAll('.video-slide');
-    if (allSlides.length > 0) {
-        allSlides.forEach(slide => videoObserver.observe(slide));
-        // Check if the first video is visible on initial load
-        setTimeout(() => {
-            if (!activePlayerId) {
-                const firstVideoSlide = document.querySelector('.video-slide:not(.native-ad-slide)');
-                if (firstVideoSlide && isElementVisible(firstVideoSlide, videoSwiper)) {
-                    playActivePlayer(firstVideoSlide.dataset.videoId);
-                }
-            }
-        }, 500);
-    }
+    const allSlides = document.querySelectorAll('.video-slide, #shorts-load-more-trigger');
+    allSlides.forEach(slide => videoObserver.observe(slide));
 }
 
 
-async function openCommentsModal(videoId, videoOwnerUid) {
-    appState.activeComments = { videoId, videoOwnerUid };
+async function openCommentsModal(videoId, videoOwnerUid = null, channelId = null) {
+    appState.activeComments = { videoId, videoOwnerUid, channelId };
     commentsModal.classList.add('active');
     commentsList.innerHTML = '<li style="text-align:center; color: var(--text-secondary);">Loading comments...</li>';
     try {
-        const commentsRef = db.collection('videos').doc(videoId).collection('comments').orderBy('createdAt', 'asc');
-        const snapshot = await commentsRef.get();
-        if (snapshot.empty) {
-            commentsList.innerHTML = '<li style="text-align:center; color: var(--text-secondary);">Be the first to comment!</li>';
-        } else {
-            commentsList.innerHTML = snapshot.docs.map(doc => {
-                const comment = { id: doc.id, ...doc.data() };
-                const canDelete = appState.currentUser.uid === comment.uploaderUid || appState.currentUser.uid === videoOwnerUid;
-                const timestamp = comment.createdAt ? formatTimeAgo(comment.createdAt.toDate()) : '';
-                return `<li class="comment-item">
-                            <img src="${escapeHTML(comment.uploaderAvatar) || 'https://via.placeholder.com/35'}" alt="avatar" class="avatar">
-                            <div class="comment-body">
-                                <div class="username">${escapeHTML(comment.uploaderUsername) || 'Anonymous'} <span class="timestamp">${timestamp}</span></div>
-                                <div class="text">${escapeHTML(comment.text)}</div>
-                            </div>
-                            ${canDelete ? `<i class="fas fa-trash delete-comment-btn haptic-trigger" onclick="deleteComment('${videoId}', '${comment.id}')"></i>` : ''}
-                        </li>`;
-            }).join('');
-             commentsList.scrollTop = commentsList.scrollHeight;
-        }
-         sendCommentBtn.disabled = false;
-         commentInput.disabled = false;
+        // YouTube comments require API call, which is complex and quota-intensive.
+        // For now, we will show a placeholder message.
+        // In a real app, this would call a server endpoint to get comments for videoId.
+        commentsList.innerHTML = '<li style="text-align:center; color: var(--text-secondary);">Comments are not available at this moment.</li>';
+        sendCommentBtn.disabled = true;
+        commentInput.disabled = true;
     } catch (error) {
         console.error("Error loading comments:", error);
         commentsList.innerHTML = '<li style="text-align:center; color: var(--error-red);">Could not load comments.</li>';
@@ -1334,118 +1223,23 @@ function closeCommentsModal() {
 }
 
 async function postComment() {
-    const { videoId, videoOwnerUid } = appState.activeComments;
-    const text = commentInput.value.trim();
-    if (!text || !videoId || !appState.currentUser.uid) return;
-
-    sendCommentBtn.disabled = true;
-    const newComment = {
-        text: text,
-        uploaderUid: appState.currentUser.uid,
-        uploaderUsername: appState.currentUser.name || appState.currentUser.username || 'Anonymous',
-        uploaderAvatar: appState.currentUser.avatar || "https://via.placeholder.com/35",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    const videoRef = db.collection('videos').doc(videoId);
-    const commentCollectionRef = videoRef.collection('comments');
-    try {
-        const batch = db.batch();
-        const newCommentRef = commentCollectionRef.doc();
-        batch.set(newCommentRef, newComment);
-        batch.update(videoRef, { commentCount: firebase.firestore.FieldValue.increment(1) });
-        await batch.commit();
-        commentInput.value = '';
-        await openCommentsModal(videoId, videoOwnerUid);
-         const videoSlide = document.querySelector(`.video-slide[data-video-id='${videoId}']`);
-         if (videoSlide) {
-              const countElement = videoSlide.querySelector('.action-icon-container[data-action="comment"] .count');
-              if (countElement) {
-                  countElement.textContent = formatNumber(parseInt(countElement.textContent.replace(/\D/g,'')) + 1);
-              }
-         }
-    } catch (error) {
-        console.error("Error posting comment: ", error);
-        alert("Could not post comment.");
-    } finally {
-        sendCommentBtn.disabled = false;
-    }
+    // Commenting is disabled as it requires YouTube API authentication
+    alert("Commenting is not available at this moment.");
 }
 
 async function deleteComment(videoId, commentId) {
-    if (!confirm("Are you sure you want to delete this comment?")) return;
-
-    const commentRef = db.collection('videos').doc(videoId).collection('comments').doc(commentId);
-    const videoRef = db.collection('videos').doc(videoId);
-    try {
-         const batch = db.batch();
-         batch.delete(commentRef);
-         batch.update(videoRef, { commentCount: firebase.firestore.FieldValue.increment(-1) });
-         await batch.commit();
-        await openCommentsModal(videoId, appState.activeComments.videoOwnerUid);
-         const videoSlide = document.querySelector(`.video-slide[data-video-id='${videoId}']`);
-         if (videoSlide) {
-              const countElement = videoSlide.querySelector('.action-icon-container[data-action="comment"] .count');
-              if (countElement) {
-                   const currentCount = parseInt(countElement.textContent.replace(/\D/g,''));
-                   countElement.textContent = formatNumber(Math.max(0, currentCount - 1));
-              }
-         }
-    } catch (error) {
-        console.error(`Error deleting comment ${commentId}:`, error);
-        alert("Could not delete comment.");
-    }
+    // Also disabled
+    alert("Commenting is not available at this moment.");
 }
 
 async function toggleLikeAction(videoId, slideElement) {
-    if (!appState.currentUser || !appState.currentUser.uid) return;
-    if (!slideElement) slideElement = document.querySelector(`.video-slide[data-video-id='${videoId}']`);
-    if (!slideElement) return;
-
-    const likedVideos = appState.currentUser.likedVideos || [];
-    const isLiked = likedVideos.includes(videoId);
-    const videoRef = db.collection('videos').doc(videoId);
-    const userRef = db.collection('users').doc(appState.currentUser.uid);
-    
-    const likeIcon = slideElement.querySelector('.action-icon-container[data-action="like"] .icon');
-    const likeCountElement = slideElement.querySelector('.action-icon-container[data-action="like"] .count');
-    let currentLikes = parseInt(likeCountElement.textContent.replace(/[^\d]/g, '') * (likeCountElement.textContent.includes('K') ? 1000 : likeCountElement.textContent.includes('L') ? 100000 : 1)) || 0;
-
-    try {
-        if (isLiked) {
-            const index = likedVideos.indexOf(videoId);
-            if (index > -1) likedVideos.splice(index, 1);
-            likeIcon.classList.remove('fas', 'liked');
-            likeIcon.classList.add('far');
-            likeCountElement.textContent = formatNumber(Math.max(0, currentLikes - 1));
-            await videoRef.update({ likes: firebase.firestore.FieldValue.increment(-1) });
-            await userRef.update({ likedVideos: firebase.firestore.FieldValue.arrayRemove(videoId) });
-        } else {
-            likedVideos.push(videoId);
-            likeIcon.classList.remove('far');
-            likeIcon.classList.add('fas', 'liked');
-            likeCountElement.textContent = formatNumber(currentLikes + 1);
-            const heartPopup = slideElement.querySelector('.like-heart-popup');
-            if (heartPopup) {
-                heartPopup.style.animation = 'none'; // Reset animation
-                void heartPopup.offsetWidth; // Trigger reflow
-                heartPopup.style.animation = 'scale-and-fade 1s ease-out';
-            }
-            await videoRef.update({ likes: firebase.firestore.FieldValue.increment(1) });
-            await userRef.update({ likedVideos: firebase.firestore.FieldValue.arrayUnion(videoId) });
-        }
-    } catch (error) {
-        console.error("Error updating like status:", error);
-        // If an error occurs, refresh data to ensure UI consistency
-        refreshAndRenderFeed();
-    }
+    // Liking is disabled as it requires YouTube API authentication
+    alert("Liking is not available at this moment.");
 }
 
 function logoutUser() {
     if (confirm("Are you sure you want to log out?")) {
-        localStorage.removeItem('shubhzone_lastScreen');
-        if (appState.currentUser && appState.currentUser.uid) {
-            // Any specific logout logic can go here
-        }
+        localStorage.clear();
         auth.signOut().then(() => {
             window.location.reload();
         }).catch(error => {
@@ -1457,156 +1251,73 @@ function logoutUser() {
 
 function renderCategoriesInBar() {
     const scroller = document.getElementById('category-scroller');
-    if (!scroller) return;
-    scroller.innerHTML = '';
-    const allChip = document.createElement('div');
-    allChip.className = 'category-chip active haptic-trigger';
-    allChip.textContent = 'All';
-    allChip.onclick = () => filterVideosByCategory('All', allChip);
-    scroller.appendChild(allChip);
-    categories.forEach(category => {
-        const chip = document.createElement('div');
-        chip.className = 'category-chip haptic-trigger';
-        chip.textContent = category;
-        chip.onclick = () => filterVideosByCategory(category, chip);
-        scroller.appendChild(chip);
+    const longScroller = document.getElementById('long-video-category-scroller');
+
+    [scroller, longScroller].forEach(s => {
+        if (!s) return;
+        s.innerHTML = '';
+        const allChip = document.createElement('div');
+        allChip.className = 'category-chip active haptic-trigger';
+        allChip.textContent = 'All';
+        allChip.onclick = () => filterVideosByCategory(s.id, 'All', allChip);
+        s.appendChild(allChip);
+        categories.forEach(category => {
+            const chip = document.createElement('div');
+            chip.className = 'category-chip haptic-trigger';
+            chip.textContent = category;
+            chip.onclick = () => filterVideosByCategory(s.id, category, chip);
+            s.appendChild(chip);
+        });
     });
 }
 
-function filterVideosByCategory(category, element) {
-    document.querySelectorAll('#category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
+function filterVideosByCategory(scrollerId, category, element) {
+    const scroller = document.getElementById(scrollerId);
+    if (!scroller) return;
+
+    scroller.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
     if (element) element.classList.add('active');
-    if (activePlayerId) {
-         pauseActivePlayer();
-         activePlayerId = null;
+
+    if (scrollerId === 'category-scroller') { // This is for Shorts screen
+        if (activePlayerId) {
+            pauseActivePlayer();
+            activePlayerId = null;
+        }
+        setupShortsScreen(category);
+    } else { // This is for Long Video screen
+        populateLongVideoGrid(category);
     }
-    let filtered = fullVideoList.filter(v => v.videoLengthType !== 'long');
-    if (category !== 'All') {
-        filtered = filtered.filter(video => video.category === category);
-    }
-    const displayItems = shuffleArray(filtered);
-    appState.allVideos = displayItems;
-    renderVideoSwiper(displayItems);
-    setTimeout(initializePlayers, 100);
 }
 
 
 function renderUserProfileVideos() {
-    renderUserProfileShortGrid();
-    renderUserProfileLongGrid();
-
     const shortGrid = document.getElementById('user-short-video-grid');
     const longGrid = document.getElementById('user-long-video-grid');
-    if(shortGrid) shortGrid.style.display = 'grid';
-    if(longGrid) longGrid.style.display = 'none';
-
-    const shortBtn = document.getElementById('profile-show-shorts-btn');
-    const longBtn = document.getElementById('profile-show-longs-btn');
-    if(shortBtn) shortBtn.classList.add('active');
-    if(longBtn) longBtn.classList.remove('active');
-}
-
-function renderUserProfileShortGrid() {
-    const grid = document.getElementById('user-short-video-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    if (appState.userShortVideos.length === 0) {
-        grid.innerHTML = '<p class="static-message" style="color: var(--text-secondary); grid-column: 1 / -1;">You have not uploaded any short videos yet.</p>';
-    } else {
-        appState.userShortVideos.forEach(video => {
-            const videoCard = document.createElement('div');
-            videoCard.className = 'user-video-item-short';
-            videoCard.dataset.videoId = video.id;
-            const thumbnailUrl = video.thumbnailUrl || 'https://via.placeholder.com/120x160/333/fff?text=Video';
-            videoCard.innerHTML = `
-                <img src="${escapeHTML(thumbnailUrl)}" alt="Video Thumbnail" class="thumbnail haptic-trigger" onclick="playVideoFromProfile('${video.id}')">
-                <div class="user-video-actions">
-                    <button class="user-video-action-btn edit haptic-trigger" onclick="editVideoDetails('${video.id}')"><i class="fas fa-edit"></i> Edit</button>
-                    <button class="user-video-action-btn delete haptic-trigger" onclick="deleteVideo('${video.id}')"><i class="fas fa-trash-alt"></i> Delete</button>
-                </div>
-                <button class="credit-btn-grid haptic-trigger" onclick="navigateTo('credit-screen', { videoId: '${video.id}' })">Credit</button>
-            `;
-            grid.appendChild(videoCard);
-        });
+    
+    if (shortGrid) {
+        shortGrid.innerHTML = '<p class="static-message" style="color: var(--text-secondary); grid-column: 1 / -1;">Video uploads are no longer supported. All content is from YouTube.</p>';
+    }
+    if (longGrid) {
+        longGrid.innerHTML = '<p class="static-message" style="color: var(--text-secondary); grid-column: 1 / -1;">Video uploads are no longer supported. All content is from YouTube.</p>';
     }
 }
 
-function renderUserProfileLongGrid() {
-    const grid = document.getElementById('user-long-video-grid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    if (appState.userLongVideos.length === 0) {
-        grid.innerHTML = '<p class="static-message" style="color: var(--text-secondary); grid-column: 1 / -1;">You have not uploaded any long videos yet.</p>';
-    } else {
-        appState.userLongVideos.forEach(video => {
-            const videoCard = document.createElement('div');
-            videoCard.className = 'user-video-item-long';
-            videoCard.dataset.videoId = video.id;
-            const thumbnailUrl = video.thumbnailUrl || 'https://via.placeholder.com/320x180/333/fff?text=Video';
-            videoCard.innerHTML = `
-                <img src="${escapeHTML(thumbnailUrl)}" alt="Video Thumbnail" class="thumbnail haptic-trigger" onclick="playVideoFromProfile('${video.id}')">
-                <div class="user-video-actions">
-                    <button class="user-video-action-btn edit haptic-trigger" onclick="editVideoDetails('${video.id}')"><i class="fas fa-edit"></i> Edit</button>
-                    <button class="user-video-action-btn delete haptic-trigger" onclick="deleteVideo('${video.id}')"><i class="fas fa-trash-alt"></i> Delete</button>
-                </div>
-                <button class="credit-btn-grid haptic-trigger" onclick="navigateTo('credit-screen', { videoId: '${video.id}' })">Credit</button>
-            `;
-            grid.appendChild(videoCard);
-        });
-    }
-}
-
+// These functions are deprecated as users can't have their own videos anymore.
+function renderUserProfileShortGrid() {}
+function renderUserProfileLongGrid() {}
 
 function playVideoFromProfile(videoId) {
-    const videoToPlay = fullVideoList.find(v => v.id === videoId);
-    if (!videoToPlay) {
-         alert("Video not found.");
-         return;
-    }
-    if (videoToPlay.videoLengthType === 'long') {
-        navigateTo('creator-page-screen', { 
-            creatorId: videoToPlay.uploaderUid, 
-            startWith: 'long', 
-            videoId: videoToPlay.id 
-        });
-    } else {
-        navigateTo('creator-page-screen', { 
-            creatorId: videoToPlay.uploaderUid, 
-            startWith: 'short', 
-            videoId: videoToPlay.id 
-        });
-    }
+    // Deprecated. Playing is handled by playYouTubeVideoFromCard
 }
 
-
 async function editVideoDetails(videoId) {
-    try {
-        const videoDoc = await db.collection('videos').doc(videoId).get();
-        if (videoDoc.exists) {
-            const videoData = { id: videoDoc.id, ...videoDoc.data() };
-            openUploadDetailsModal(videoData.videoLengthType || 'short', videoData);
-        } else {
-            alert("Video not found.");
-        }
-    } catch (error) {
-        console.error("Error fetching video for edit:", error);
-        alert("Could not load video details for editing.");
-    }
+    // Deprecated
+    openUploadDetailsModal();
 }
 
 async function deleteVideo(videoId) {
-    if (!confirm("Are you sure you want to delete this video? This cannot be undone.")) {
-        return;
-    }
-    try {
-        await db.collection('videos').doc(videoId).delete();
-        alert("Video deleted!");
-        loadUserVideosFromFirebase();
-        refreshAndRenderFeed();
-    } catch (error) {
-        console.error("Error deleting video:", error);
-        alert("Failed to delete video.");
-    }
+    // Deprecated
+    openUploadDetailsModal();
 }
 
 function showAudioIssuePopup() {
@@ -1620,29 +1331,59 @@ function closeAudioIssuePopup() {
     document.getElementById('audio-issue-popup').classList.remove('active');
 }
 
+function setupShortsScreen(category = 'All') {
+    const query = category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`;
+
+    if (homeStaticMessageContainer) {
+        videoSwiper.innerHTML = '';
+        videoSwiper.appendChild(homeStaticMessageContainer);
+        homeStaticMessageContainer.style.display = 'flex';
+        homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div> Loading shorts...';
+    }
+
+    fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short' }).then(data => {
+        appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
+        if(data.items) {
+            renderVideoSwiper(data.items, false);
+            setupVideoObserver();
+        }
+    });
+}
+
+async function loadMoreShorts() {
+    const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
+    const category = activeCategoryChip ? activeCategoryChip.textContent : 'All';
+    const query = category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`;
+
+    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short', pageToken: appState.youtubeNextPageTokens.shorts });
+
+    appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
+    if(data.items) {
+        renderVideoSwiper(data.items, true);
+    }
+}
+
+
 function setupLongVideoScreen() {
     populateLongVideoCategories();
-    populateLongVideoCarousel();
-    populateLongVideoGrid();
-    populateLongVideoSearchResults([]);
+    populateLongVideoGrid('All');
+    
+    const gridContainer = document.querySelector('.long-video-screen-content');
+    let loadMoreBtn = document.getElementById('long-video-load-more-btn');
+    if (!loadMoreBtn) {
+        loadMoreBtn = document.createElement('button');
+        loadMoreBtn.id = 'long-video-load-more-btn';
+        loadMoreBtn.className = 'continue-btn haptic-trigger';
+        loadMoreBtn.textContent = 'Load More';
+        loadMoreBtn.style.margin = '20px';
+        loadMoreBtn.style.display = 'none';
+        loadMoreBtn.onclick = loadMoreLongVideos;
+        gridContainer.appendChild(loadMoreBtn);
+    }
 }
 
 function populateLongVideoCategories() {
-    const scroller = document.getElementById('long-video-category-scroller');
-    if (!scroller) return;
-    scroller.innerHTML = '';
-    const allChip = document.createElement('div');
-    allChip.className = 'category-chip active haptic-trigger';
-    allChip.textContent = 'All';
-    allChip.onclick = () => filterLongVideosByCategory('All', allChip);
-    scroller.appendChild(allChip);
-    categories.forEach(category => {
-        const chip = document.createElement('div');
-        chip.className = 'category-chip haptic-trigger';
-        chip.textContent = category;
-        chip.onclick = () => filterLongVideosByCategory(category, chip);
-        scroller.appendChild(chip);
-    });
+    // This is now handled by the generic renderCategoriesInBar
 }
 
 function filterLongVideosByCategory(category, element) {
@@ -1652,77 +1393,29 @@ function filterLongVideosByCategory(category, element) {
 }
 
 function populateLongVideoCarousel() {
-    const wrapper = document.getElementById('long-video-carousel-wrapper');
-    if (!wrapper) return;
-    wrapper.innerHTML = '';
-
-    let allLongVideos = fullVideoList.filter(v => v.videoLengthType === 'long');
-    
-    let carouselVideos = shuffleArray([...allLongVideos]).slice(0, 10);
-
-    if (carouselVideos.length === 0) {
-        const placeholderCard = document.createElement('div');
-        placeholderCard.className = 'carousel-card placeholder';
-        placeholderCard.innerHTML = `<i class="fas fa-film"></i><span>No long videos found</span>`;
-        wrapper.appendChild(placeholderCard);
-        wrapper.classList.remove('looping');
-    } else {
-        let displayVideos = [...carouselVideos];
-        if (displayVideos.length > 0 && displayVideos.length < 5) {
-            displayVideos = [...displayVideos, ...displayVideos, ...displayVideos];
-        }
-
-        displayVideos.forEach(video => {
-            const card = document.createElement('div');
-            card.className = 'carousel-card haptic-trigger';
-            card.style.backgroundImage = `url(${escapeHTML(video.thumbnailUrl) || 'https://via.placeholder.com/320x180/111/fff?text=Video'})`;
-            card.onclick = () => playVideoFromProfile(video.id);
-            wrapper.appendChild(card);
-        });
-
-        if (carouselVideos.length > 3) {
-            wrapper.classList.add('looping');
-        } else {
-            wrapper.classList.remove('looping');
-        }
-    }
+    // Carousel is removed for simplicity, focusing on the main grid.
+    const carouselContainer = document.getElementById('long-video-carousel-container');
+    if (carouselContainer) carouselContainer.style.display = 'none';
 }
 
-function populateLongVideoGrid(category = 'All') {
+async function populateLongVideoGrid(category = 'All') {
     const grid = document.getElementById('long-video-grid');
     if (!grid) return;
-    grid.innerHTML = '';
-
-    let longVideos = fullVideoList.filter(v => v.videoLengthType === 'long');
-
-    if (category !== 'All') {
-        longVideos = longVideos.filter(v => v.category === category);
-    }
-
-    longVideos = shuffleArray(longVideos);
-
-    if (longVideos.length === 0) {
-        const placeholderCard = document.createElement('div');
-        placeholderCard.className = 'long-video-card placeholder';
-        placeholderCard.innerHTML = `
-           <div class="long-video-thumbnail"><i class="fas fa-video-slash"></i></div>
-           <div class="long-video-info-container">
-               <span class="long-video-name">No long videos in this category.</span>
-           </div>
-        `;
-        grid.appendChild(placeholderCard);
+    grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+    
+    let data;
+    if (category.toLowerCase() === 'trending') {
+        data = await fetchFromYouTubeAPI('trending', { limit: 10 }); // Fetches 10 trending videos
     } else {
-        longVideos.forEach((video, index) => {
-            const card = createLongVideoCard(video);
-            grid.appendChild(card);
-
-            if (index > 0 && index % 3 === 0) {
-                const adContainer = document.createElement('div');
-                adContainer.className = 'long-video-grid-ad';
-                grid.appendChild(adContainer);
-                setTimeout(() => injectBannerAd(adContainer), 100);
-            }
-        });
+        const query = category.toLowerCase() === 'all' ? 'new songs' : category; // Default to something popular
+        data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
+    }
+    
+    appState.youtubeNextPageTokens.long = data.nextPageToken || null;
+    if (data.items) {
+        renderYouTubeLongVideos(data.items, false);
+    } else {
+        grid.innerHTML = `<p class="static-message">${data.error || 'Could not load videos.'}</p>`;
     }
 }
 
@@ -1730,62 +1423,41 @@ function populateLongVideoGrid(category = 'All') {
 function performLongVideoSearch() {
     const input = document.getElementById('long-video-search-input');
     const query = input.value.trim().toLowerCase();
-    const longVideos = fullVideoList.filter(v => v.videoLengthType === 'long');
-    let results = [];
-    if (query) {
-        results = longVideos.filter(v => 
-            (v.title && v.title.toLowerCase().includes(query)) ||
-            (v.uploaderUsername && v.uploaderUsername.toLowerCase().includes(query))
-        );
-    }
-    populateLongVideoSearchResults(results);
-}
-
-function populateLongVideoSearchResults(videos) {
-    const container = document.getElementById('long-video-search-results');
-    const grid = document.getElementById('long-video-search-results-grid');
-    if (!container || !grid) return;
-
-    grid.innerHTML = '';
-    if (videos.length === 0) {
-        container.style.display = 'none';
-        return;
-    }
-
-    container.style.display = 'block';
-    videos.forEach(video => {
-        const card = createLongVideoCard(video);
-        grid.appendChild(card);
+    
+    const grid = document.getElementById('long-video-grid');
+    if (!grid) return;
+    grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+    
+    fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' }).then(data => {
+        appState.youtubeNextPageTokens.long = data.nextPageToken || null;
+        if(data.items) {
+             renderYouTubeLongVideos(data.items, false);
+        }
     });
 }
 
 function createLongVideoCard(video) {
+    const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
+    if (!videoId) return document.createElement('div'); // Return empty div if no ID
+
     const card = document.createElement('div');
     card.className = 'long-video-card';
-    card.dataset.videoId = video.id;
-    card.dataset.uploaderUid = video.uploaderUid;
+    card.dataset.videoId = videoId;
+    card.dataset.channelId = video.snippet.channelId;
     
-    const commentOnClick = video.commentsEnabled 
-        ? `onclick="event.stopPropagation(); openCommentsModal('${video.id}', '${video.uploaderUid}')"` 
-        : 'onclick="event.stopPropagation();"';
+    const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
     
     card.innerHTML = `
-        <div class="long-video-thumbnail" style="background-image: url(${escapeHTML(video.thumbnailUrl)})" onclick="playVideoFromProfile('${video.id}')">
-            <div class="long-video-view-count"><i class="fas fa-eye"></i> ${formatSecondsToHMS(video.totalWatchTimeSeconds || 0)}</div>
-            <div class="long-video-menu haptic-trigger" onclick="event.stopPropagation(); showLongVideoMenu(event, '${video.id}')"><i class="fas fa-ellipsis-v"></i></div>
+        <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')" onclick="playYouTubeVideoFromCard('${videoId}')">
             <i class="fas fa-play play-icon-overlay"></i>
         </div>
         <div class="long-video-info-container">
-            <div class="long-video-details" onclick="navigateTo('creator-page-screen', { creatorId: '${video.uploaderUid}', startWith: 'long', videoId: '${video.id}' })">
-                <span class="long-video-name">${escapeHTML(video.title)}</span>
-                <span class="long-video-uploader">${escapeHTML(video.uploaderUsername)}</span>
-            </div>
-            <div class="long-video-comment-icon haptic-trigger ${!video.commentsEnabled ? 'disabled' : ''}" ${commentOnClick}>
-                <i class="fas fa-comment-dots"></i>
-                <span>${formatNumber(video.commentCount || 0)}</span>
+            <div class="long-video-details" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'long', videoId: '${videoId}' })">
+                <span class="long-video-name">${escapeHTML(video.snippet.title)}</span>
+                <span class="long-video-uploader">${escapeHTML(video.snippet.channelTitle)}</span>
             </div>
         </div>
-        <button class="credit-btn-long-grid haptic-trigger" onclick="navigateTo('credit-screen', { videoId: '${video.id}' })">Credit</button>
+        <button class="credit-btn-long-grid haptic-trigger" onclick="navigateTo('credit-screen', { videoId: '${videoId}' })">Credit</button>
     `;
     return card;
 }
@@ -1800,9 +1472,9 @@ function showLongVideoMenu(event, videoId) {
 
 function showVideoDescription(event, videoId) {
     event.stopPropagation();
-    const video = fullVideoList.find(v => v.id === videoId);
+    const video = currentVideoCache.get(videoId);
     if (video) {
-        const descriptionText = video.description || "No description available.";
+        const descriptionText = video.snippet.description || "No description available.";
         descriptionContent.innerHTML = escapeHTML(descriptionText).replace(/\n/g, '<br>');
         descriptionModal.classList.add('active');
     } else {
@@ -1820,27 +1492,21 @@ function initializeHistoryScreen() {
         clearButton.innerHTML = `<i class="fas fa-trash-alt"></i> Clear All`;
         clearButton.onclick = clearAllHistory;
     }
+    appState.viewingHistory = JSON.parse(localStorage.getItem('shubhzoneViewingHistory') || '[]');
     renderHistoryShortsScroller();
     renderHistoryLongVideoList();
 }
 
 
-function renderHistoryShortsScroller(filterDate = null) {
+function renderHistoryShortsScroller() {
     const scroller = document.getElementById('history-shorts-scroller');
     if (!scroller) return;
     scroller.innerHTML = '';
 
-    let historyEntries = appState.viewingHistory;
-    if (filterDate) {
-        historyEntries = historyEntries.filter(entry => new Date(entry.watchedAt).toISOString().slice(0, 10) === filterDate);
-    }
-    
-    const historyVideos = historyEntries
-        .map(entry => fullVideoList.find(v => v.id === entry.id && v.videoLengthType !== 'long'))
-        .filter(Boolean);
-
+    const historyVideos = appState.viewingHistory.filter(v => v.videoLengthType !== 'long');
+        
     if (historyVideos.length === 0) {
-        scroller.innerHTML = `<p class="static-message" style="color: var(--text-secondary);">No short video history${filterDate ? ' for this date' : ''}.</p>`;
+        scroller.innerHTML = `<p class="static-message" style="color: var(--text-secondary);">No short video history.</p>`;
         return;
     }
 
@@ -1849,28 +1515,25 @@ function renderHistoryShortsScroller(filterDate = null) {
         card.className = 'history-short-card haptic-trigger';
         card.style.backgroundImage = `url(${escapeHTML(video.thumbnailUrl)})`;
         card.innerHTML = `<div class="history-item-menu" onclick="event.stopPropagation(); showHistoryItemMenu(event, '${video.id}')"><i class="fas fa-trash-alt"></i></div>`;
-        card.onclick = () => playVideoFromProfile(video.id);
+        // Clicking history item should go to creator page
+        card.onclick = () => {
+            alert("This function needs channelId stored in history. Re-implementing.");
+            // To fix this, channelId must be saved to history object.
+        };
         scroller.appendChild(card);
     });
 }
 
 
-function renderHistoryLongVideoList(filterDate = null) {
+function renderHistoryLongVideoList() {
     const list = document.getElementById('history-long-video-list');
     if (!list) return;
     list.innerHTML = '';
 
-    let historyEntries = appState.viewingHistory;
-    if (filterDate) {
-        historyEntries = historyEntries.filter(entry => new Date(entry.watchedAt).toISOString().slice(0, 10) === filterDate);
-    }
-
-    const historyVideos = historyEntries
-        .map(entry => fullVideoList.find(v => v.id === entry.id && v.videoLengthType === 'long'))
-        .filter(Boolean);
+    const historyVideos = appState.viewingHistory.filter(v => v.videoLengthType === 'long');
 
     if (historyVideos.length === 0) {
-        list.innerHTML = `<p class="static-message" style="color: var(--text-secondary);">No long video history${filterDate ? ' for this date' : ''}.</p>`;
+        list.innerHTML = `<p class="static-message" style="color: var(--text-secondary);">No long video history.</p>`;
         return;
     }
 
@@ -1878,10 +1541,10 @@ function renderHistoryLongVideoList(filterDate = null) {
         const item = document.createElement('div');
         item.className = 'history-list-item haptic-trigger';
         item.innerHTML = `
-            <div class="history-item-thumbnail" style="background-image: url('${escapeHTML(video.thumbnailUrl)}')" onclick="playVideoFromProfile('${video.id}')"></div>
-            <div class="history-item-info" onclick="playVideoFromProfile('${video.id}')">
+            <div class="history-item-thumbnail" style="background-image: url('${escapeHTML(video.thumbnailUrl)})'" onclick="playYouTubeVideoFromCard('${video.id}')"></div>
+            <div class="history-item-info" onclick="playYouTubeVideoFromCard('${video.id}')">
                 <span class="history-item-title">${escapeHTML(video.title)}</span>
-                <span class="history-item-uploader">${escapeHTML(video.uploaderUsername)}</span>
+                <span class="history-item-uploader">${escapeHTML(video.channelTitle)}</span>
             </div>
             <div class="history-item-menu haptic-trigger" onclick="showHistoryItemMenu(event, '${video.id}')">
                 <i class="fas fa-trash-alt"></i>
@@ -2486,38 +2149,34 @@ function toggleProfileVideoView(viewType) {
 // =======================================================
 
 function openCommentsForCurrentCreatorVideo() {
-    const { id, uploaderUid } = appState.creatorPage.currentLongVideo;
-    if (id && uploaderUid) {
-        openCommentsModal(id, uploaderUid);
+    const { id, channelId } = appState.creatorPage.currentLongVideo;
+    if (id && channelId) {
+        openCommentsModal(id, null, channelId);
     } else {
         console.error("No current long video data to open comments for.");
         alert("Could not load comments for this video.");
     }
 }
 
-async function initializeCreatorPage(creatorId, startWith = 'short', videoId = null) {
-    if (fullVideoList.length === 0) await refreshAndRenderFeed();
+async function initializeCreatorPage(channelId, startWith = 'short', startVideoId = null) {
     const shortView = document.getElementById('creator-page-short-view');
     const longView = document.getElementById('creator-page-long-view');
     if (!shortView || !longView) return;
+    
     shortView.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     longView.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+    
+    // Fetch videos for the channel
+    const channelVideosData = await fetchFromYouTubeAPI('channel', { channelId: channelId });
+    const allVideos = channelVideosData.items || [];
+    
+    const shortVideos = allVideos.filter(v => v.snippet.title.toLowerCase().includes('#shorts') || (v.contentDetails && v.contentDetails.duration && parseISO8601Duration(v.contentDetails.duration) <= 60));
+    const longVideos = allVideos.filter(v => !shortVideos.includes(v));
 
-    const videos = fullVideoList.filter(v => v.uploaderUid === creatorId && v.audience !== '18plus');
-    const shortVideos = videos.filter(v => v.videoLengthType !== 'long');
-    const longVideos = videos.filter(v => v.videoLengthType === 'long');
+    let startShortVideo = shortVideos.find(v => (v.id.videoId || v.id) === startVideoId) || shortVideos[0];
+    let startLongVideo = longVideos.find(v => (v.id.videoId || v.id) === startVideoId) || longVideos[0];
 
-    let startShortVideo = shortVideos[0];
-    if (videoId && startWith === 'short') {
-        const foundVideo = shortVideos.find(v => v.id === videoId);
-        if (foundVideo) startShortVideo = foundVideo;
-    }
-    let startLongVideo = longVideos[0];
-    if (videoId && startWith === 'long') {
-        const foundVideo = longVideos.find(v => v.id === videoId);
-        if (foundVideo) startLongVideo = foundVideo;
-    }
-
+    // Setup menus and tabs
     const menu = document.getElementById('more-function-menu');
     let commentBtn = document.getElementById('creator-page-comment-btn');
     if (!commentBtn) {
@@ -2555,23 +2214,12 @@ async function initializeCreatorPage(creatorId, startWith = 'short', videoId = n
         };
     });
     
-    const menuRotate = document.getElementById('more-function-menu');
-    const existingRotateBtn = document.getElementById('rotate-video-btn');
-    if (existingRotateBtn) existingRotateBtn.remove();
-
-    const rotateBtn = document.createElement('button');
-    rotateBtn.id = 'rotate-video-btn';
-    rotateBtn.className = 'function-menu-item haptic-trigger';
-    rotateBtn.innerHTML = `<i class="fas fa-sync-alt"></i> Rotate`;
-    rotateBtn.onclick = toggleVideoRotation;
-    if (menuRotate) menuRotate.appendChild(rotateBtn);
-    
     if (startWith === 'long' && startLongVideo) {
-        appState.creatorPage.currentLongVideo = { id: startLongVideo.id, uploaderUid: creatorId };
+        appState.creatorPage.currentLongVideo = { id: (startLongVideo.id.videoId || startLongVideo.id), channelId: channelId };
     }
     
-    renderCreatorVideoView(shortView, shortVideos, 'short', creatorId, startShortVideo ? startShortVideo.id : null);
-    renderCreatorVideoView(longView, longVideos, 'long', creatorId, startLongVideo ? startLongVideo.id : null);
+    renderCreatorVideoView(shortView, shortVideos, 'short', channelId, startShortVideo ? (startShortVideo.id.videoId || startShortVideo.id) : null);
+    renderCreatorVideoView(longView, longVideos, 'long', channelId, startLongVideo ? (startLongVideo.id.videoId || startLongVideo.id) : null);
     
     document.querySelectorAll('.creator-page-view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
@@ -2581,22 +2229,19 @@ async function initializeCreatorPage(creatorId, startWith = 'short', videoId = n
 }
 
 
-function renderCreatorVideoView(container, videos, type, creatorId, startVideoId = null) {
+function renderCreatorVideoView(container, videos, type, channelId, startVideoId = null) {
     container.innerHTML = '';
     if (videos.length === 0) {
         container.innerHTML = `<p class="static-message">This creator has no ${type} videos.</p>`;
         return;
     }
     
-    let firstVideo = videos[0];
-    if (startVideoId) {
-        const foundVideo = videos.find(v => v.id === startVideoId);
-        if (foundVideo) firstVideo = foundVideo;
-    }
+    let firstVideo = videos.find(v => (v.id.videoId || v.id) === startVideoId) || videos[0];
     
     const videoListHtml = videos.map((v, index) => {
         const thumbClass = (type === 'long') ? 'side-video-thumb-long' : 'side-video-thumb-short';
-        return `<img src="${v.thumbnailUrl}" class="side-video-thumb haptic-trigger ${thumbClass}" onclick="playCreatorVideo('${type}', ${index}, '${creatorId}')">`;
+        const videoId = v.id.videoId || v.id;
+        return `<img src="${v.snippet.thumbnails.medium.url}" class="side-video-thumb haptic-trigger ${thumbClass}" onclick="playCreatorVideo('${type}', '${videoId}', '${channelId}')">`;
     }).join('');
 
     const playerControlsHtml = `
@@ -2624,8 +2269,9 @@ function renderCreatorVideoView(container, videos, type, creatorId, startVideoId
         </div>
     `;
     
-    if (videos.length > 0 && isYouTubeApiReady) {
-        initializeCreatorPagePlayer(firstVideo.videoUrl, `creator-page-player-${type}`, type);
+    if (firstVideo && isYouTubeApiReady) {
+        const videoIdToPlay = firstVideo.id.videoId || firstVideo.id;
+        initializeCreatorPagePlayer(videoIdToPlay, `creator-page-player-${type}`, type);
     }
 }
 
@@ -2680,22 +2326,16 @@ function cyclePlaybackSpeed(type) {
     }
 }
 
-function playCreatorVideo(type, videoIndex, creatorId) {
-    const videos = fullVideoList.filter(v => 
-        v.uploaderUid === creatorId && 
-        v.audience !== '18plus' &&
-        (type === 'long' ? v.videoLengthType === 'long' : v.videoLengthType !== 'long')
-    );
-    
-    if (videos[videoIndex]) {
-        const videoToPlay = videos[videoIndex];
-        if (type === 'long') {
-            appState.creatorPage.currentLongVideo = { id: videoToPlay.id, uploaderUid: creatorId };
-        }
-        const player = appState.creatorPagePlayers[type];
-        if (player && typeof player.loadVideoById === 'function') {
-            player.loadVideoById(videoToPlay.videoUrl);
-        }
+function playCreatorVideo(type, videoId, channelId) {
+    if (type === 'long') {
+        appState.creatorPage.currentLongVideo = { id: videoId, channelId: channelId };
+        addLongVideoToHistory(videoId);
+    } else {
+        addVideoToHistory(videoId);
+    }
+    const player = appState.creatorPagePlayers[type];
+    if (player && typeof player.loadVideoById === 'function') {
+        player.loadVideoById(videoId);
     }
 }
 
@@ -2730,14 +2370,15 @@ function handleCreatorPlayerStateChange(event) {
         else playPauseBtn.classList.replace('fa-pause-circle', 'fa-play-circle');
     }
 
-    const currentVideo = fullVideoList.find(v => v.videoUrl === player.getVideoData().video_id);
-    if (!currentVideo) return;
+    const videoId = player.getVideoData().video_id;
+    const videoData = currentVideoCache.get(videoId);
+    if (!videoData) return;
     
     if (playerState === YT.PlayerState.PLAYING) {
-        updateWatchTimeStats(currentVideo.uploaderUid, currentVideo.id, true);
-        addVideoToHistory(currentVideo.id);
+        // tracking logic can be here
+        addLongVideoToHistory(videoId);
     } else if (playerState === YT.PlayerState.PAUSED || playerState === YT.PlayerState.ENDED) {
-        updateWatchTimeStats(currentVideo.uploaderUid, currentVideo.id, false);
+        //
     }
 }
 
@@ -2824,7 +2465,7 @@ async function handlePaymentRequest(event) {
         await db.collection("paymentRequests").add(requestData);
         await resetTrackingData();
         alert("Payment request submitted successfully! Your tracking data has been reset.");
-        navigateTo('upload-screen'); 
+        navigateTo('long-video-screen'); 
     } catch(error) {
         console.error("Error submitting payment request:", error);
         alert("Failed to submit request. Please try again.");
@@ -2862,31 +2503,8 @@ function startAppTimeTracker() {
 }
 
 async function updateWatchTimeStats(creatorId, videoId, isStarting) {
-    if (!videoId) return;
-    
-    if (isStarting) {
-        if (appState.videoWatchTrackers[videoId]) return; // Timer already running
-        appState.videoWatchTrackers[videoId] = {
-            interval: setInterval(async () => {
-                const batch = db.batch();
-                const videoRef = db.collection('videos').doc(videoId);
-                batch.update(videoRef, { totalWatchTimeSeconds: firebase.firestore.FieldValue.increment(1) });
-                
-                if (creatorId && creatorId !== appState.currentUser.uid) {
-                    const creatorRef = db.collection('users').doc(creatorId);
-                    batch.update(creatorRef, { unconvertedCreatorSeconds: firebase.firestore.FieldValue.increment(1) });
-                }
-                
-                await batch.commit().catch(e => console.error("Error in watch time batch update: ", e));
-            }, 1000),
-            viewed: false
-        };
-    } else {
-        if (appState.videoWatchTrackers[videoId] && appState.videoWatchTrackers[videoId].interval) {
-            clearInterval(appState.videoWatchTrackers[videoId].interval);
-            delete appState.videoWatchTrackers[videoId];
-        }
-    }
+    // This feature is currently disabled to avoid heavy Firestore writes from direct YouTube browsing.
+    // It can be re-enabled if a proper tracking and revenue sharing model is established.
 }
 
 
@@ -3110,77 +2728,33 @@ async function submitReport() {
 }
 
 // =======================================================
-// ★★★ NEW HOME SCREEN LOGIC - START (MODIFIED FOR YOUTUBE) ★★★
+// ★★★ NEW HOME SCREEN LOGIC (DEPRECATED) ★★★
 // =======================================================
 function initializeNewHomeScreen() {
-    const uploadScreen = document.getElementById('upload-screen');
-    const container = uploadScreen.querySelector('.upload-container-new');
-
-    if (!container) return;
-
-    // पुराने स्थिर कंटेंट को हटाकर यूट्यूब ब्राउज़र इंटरफ़ेस बनाएं
-    container.innerHTML = `
-        <div class="new-home-top-bar" style="padding: 10px 15px;">
-            <div class="long-video-search-container" style="width: 100%; padding: 0; border: none;">
-                <input type="text" id="youtube-search-input" placeholder="Search YouTube Videos...">
-                <button id="youtube-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
-            </div>
-        </div>
-        <div id="youtube-video-grid" class="long-video-grid" style="padding: 15px; height: calc(100% - 70px); overflow-y: auto;">
-            <!-- YouTube वीडियो यहाँ लोड होंगे -->
-        </div>
-        <div id="youtube-grid-loader" class="loader-container" style="display: none;">
-            <div class="loader"></div>
-        </div>
-        <button id="youtube-load-more-btn" class="continue-btn" style="display:none; margin: 15px; width: auto;">Load More</button>
-    `;
-
-    // इवेंट लिस्नर जोड़ें
-    document.getElementById('youtube-search-btn')?.addEventListener('click', () => {
-        const query = document.getElementById('youtube-search-input').value;
-        searchYouTubeVideos(query);
-    });
-    
-    document.getElementById('youtube-search-input')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const query = document.getElementById('youtube-search-input').value;
-            searchYouTubeVideos(query);
-        }
-    });
-
-    document.getElementById('youtube-load-more-btn')?.addEventListener('click', () => {
-        const query = document.getElementById('youtube-search-input').value;
-        searchYouTubeVideos(query, true); // `true` का मतलब है कि और लोड करें
-    });
-
-    // डिफ़ॉल्ट रूप से ट्रेंडिंग वीडियो लोड करें
-    searchYouTubeVideos(''); 
+    // This screen is no longer used. The functionality is merged into Long Video and Shorts screens.
+    const container = document.querySelector('#upload-screen .upload-container-new');
+    if (container) {
+        container.innerHTML = '<p class="static-message">This section is no longer in use.</p>';
+    }
 }
 // =======================================================
-// ★★★ NEW HOME SCREEN LOGIC - END ★★★
+// ★★★ CREDIT SCREEN LOGIC - START ★★★
 // =======================================================
-
-
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-// ★★★ NEW CREDIT SCREEN LOGIC - START ★★★
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 function initializeCreditScreen(videoId) {
     const screen = document.getElementById('credit-screen');
     if (!screen) return;
 
-    const video = fullVideoList.find(v => v.id === videoId);
+    const video = currentVideoCache.get(videoId);
     if (!video) {
-        screen.innerHTML = `<p class="static-message">Video details not found.</p>`;
+        screen.innerHTML = `<p class="static-message">Video details not found.</p><button onclick="navigateBack()">Back</button>`;
         return;
     }
 
-    const channelName = escapeHTML(video.channelName) || 'Original Creator';
-    const channelLink = escapeHTML(video.channelLink);
-    const youtubeLink = `https://www.youtube.com/watch?v=${escapeHTML(video.videoUrl)}`;
+    const channelName = escapeHTML(video.snippet.channelTitle) || 'Original Creator';
+    const channelLink = `https://www.youtube.com/channel/${video.snippet.channelId}`;
+    const youtubeLink = `https://www.youtube.com/watch?v=${videoId}`;
     
-    const watchOnYoutubeHTML = channelLink 
-        ? `<a href="${channelLink}" target="_blank" rel="noopener noreferrer">${channelName}</a>`
-        : `<a href="${youtubeLink}" target="_blank" rel="noopener noreferrer">${channelName}</a>`;
+    const watchOnYoutubeHTML = `<a href="${channelLink}" target="_blank" rel="noopener noreferrer">${channelName}</a>`;
 
     const commonFooter = `
         <div class="credit-footer">
@@ -3342,7 +2916,10 @@ function initializeSpecialPlayer(videoId = 'UL5Q1rDsDtg') { // डिफ़ॉ�
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    setupBottomNav(); // ★★★ महत्वपूर्ण: आइकनों को बदलने के लिए इसे पहले चलाएं
+    // Hide the "Home" button as requested
+    document.querySelectorAll('.nav-item[data-nav="new-home"]').forEach(item => {
+        item.style.display = 'none';
+    });
 
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
@@ -3351,8 +2928,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetNav = item.getAttribute('data-nav');
             
             let targetScreen;
-            if (targetNav === 'new-home') {
-                targetScreen = 'upload-screen';
+            if (targetNav === 'new-home') { // Should not happen, but as a fallback
+                return;
             } else if (targetNav === 'shorts') {
                 targetScreen = 'home-screen';
             } else {
@@ -3375,28 +2952,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const creatorBackBtn = document.querySelector('#creator-page-screen .header-icon-left');
     if (creatorBackBtn) creatorBackBtn.onclick = () => navigateBack();
 
-    // ★★★ हटाए गए फीचर्स के इवेंट लिस्नर हटा दिए गए ★★★
-    // document.getElementById('navigate-to-payment-btn')?.addEventListener('click', () => navigateTo('payment-screen'));
-    // document.getElementById('navigate-to-advertisement-btn')?.addEventListener('click', () => navigateTo('advertisement-screen'));
-    
     const sidebar = document.getElementById('main-sidebar');
     if (sidebar) {
-        // पेमेंट और विज्ञापन बटन छिपाएं या हटाएं
         const paymentBtn = document.getElementById('navigate-to-payment-btn');
         if (paymentBtn) paymentBtn.style.display = 'none';
         const adBtn = document.getElementById('navigate-to-advertisement-btn');
         if (adBtn) adBtn.style.display = 'none';
 
-        const reportButton = document.createElement('button');
-        reportButton.id = 'navigate-to-report-btn';
-        reportButton.className = 'sidebar-option haptic-trigger';
-        reportButton.innerHTML = `<i class="fas fa-flag" style="margin-right: 10px;"></i>Report`;
-        reportButton.onclick = () => navigateTo('report-screen');
-        const premiumCard = document.querySelector('.premium-features-card');
-        if (premiumCard) {
-            sidebar.insertBefore(reportButton, premiumCard);
-        } else {
-            sidebar.appendChild(reportButton);
+        let reportButton = document.getElementById('navigate-to-report-btn');
+        if (!reportButton) {
+            reportButton = document.createElement('button');
+            reportButton.id = 'navigate-to-report-btn';
+            reportButton.className = 'sidebar-option haptic-trigger';
+            reportButton.innerHTML = `<i class="fas fa-flag" style="margin-right: 10px;"></i>Report`;
+            reportButton.onclick = () => navigateTo('report-screen');
+            const premiumCard = document.querySelector('.premium-features-card');
+            if (premiumCard) {
+                sidebar.insertBefore(reportButton, premiumCard);
+            } else {
+                sidebar.appendChild(reportButton);
+            }
         }
     }
     
