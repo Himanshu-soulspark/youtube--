@@ -27,7 +27,12 @@
         <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
     </div>
     
-    <!-- Payment and Advertisement buttons removed as per request -->
+    <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
+    <!-- New sidebar option for Subscriptions -->
+    <button class="sidebar-option haptic-trigger" onclick="navigateTo('subscriptions-screen')">
+        <i class="fas fa-youtube" style="margin-right: 10px; color: var(--error-red);"></i> Subscriptions
+    </button>
+    <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     
     <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer" class="premium-features-card haptic-trigger">
         <div class="premium-image-wrapper">
@@ -268,12 +273,16 @@
                 <p class="static-message">Sorry, no video is available at the moment. <br> Please upload one!</p>
             </div>
         </div>
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
+        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
     
     <!-- === LONG VIDEO SCREEN === -->
@@ -299,12 +308,16 @@
             </div>
             <div id="long-video-grid"></div>
         </div>
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
+        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
 
     <!-- === HISTORY SCREEN === -->
@@ -322,12 +335,16 @@
             <div class="history-section-title">Watched Videos</div>
             <div id="history-long-video-list"></div>
         </div>
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
+        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
 
     <!-- === NEW HOME SCREEN (Previously Upload) - This screen is now unused. === -->
@@ -370,12 +387,16 @@
             </div>
         </div>
 
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
+        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
             <div class="nav-item active" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
 
     <!-- === PROFILE SCREEN === -->
@@ -395,12 +416,16 @@
             <div id="user-long-video-grid" style="display: none;"></div>
         </div>
 
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
+        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item active" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
+        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
     
     <!-- === DESCRIPTION MODAL (used across screens) === -->
@@ -521,30 +546,20 @@
     </div>
     
     <!-- === CREATOR PAGE SCREEN === -->
+    <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
+    <!-- The structure of this screen is completely replaced to support the new channel page layout. -->
+    <!-- The JavaScript will dynamically build the content inside #creator-page-content. -->
     <div id="creator-page-screen" class="screen">
-        <div class="screen-header transparent">
-             <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-             <div id="creator-page-tabs">
-                <button class="creator-page-tab-btn active haptic-trigger" data-type="short">Short Video</button>
-                <button class="creator-page-tab-btn haptic-trigger" data-type="long">Long Video</button>
-             </div>
+        <div class="screen-header">
+             <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+             <span class="header-title">Channel</span>
              <div class="header-icon-right"></div>
         </div>
-        <div id="creator-page-functions" class="more-function-container">
-            <div id="more-function-menu" class="more-function-menu">
-                <button id="more-videos-btn" class="function-menu-item haptic-trigger">
-                    <i class="fas fa-list-ul"></i> More Videos
-                </button>
-            </div>
-            <button id="more-function-btn" class="more-function-btn haptic-trigger">
-                <i class="fas fa-cog"></i>
-            </button>
-        </div>
         <div id="creator-page-content" class="content-area">
-            <div id="creator-page-short-view" class="creator-page-view active"></div>
-            <div id="creator-page-long-view" class="creator-page-view"></div>
+            <!-- Content is dynamically generated by initializeCreatorPage() -->
         </div>
     </div>
+    <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
 
     <!-- === TRACK PAYMENT SCREEN === -->
     <div id="track-payment-screen" class="screen">
@@ -560,6 +575,17 @@
     
     <!-- === CREDIT SCREEN === -->
     <div id="credit-screen" class="screen"></div>
+
+    <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
+    <!-- New screen containers for the added features -->
+    <div id="subscriptions-screen" class="screen">
+        <!-- JS will populate this -->
+    </div>
+
+    <div id="playlist-view-screen" class="screen">
+        <!-- JS will populate this -->
+    </div>
+    <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
 
 </div>
 
