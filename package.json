@@ -7,6 +7,66 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.7" 
   }
+}
+```*(ध्यान दें: हमने `node-fetch` को `dependencies` में जोड़ा है।)*
+
+### स्टेप 4: `script.js` (फ्रंटएंड) को अपडेट करें
+
+अब हमें अपने फ्रंटएंड (`script.js`) को बताना होगा कि वह YouTube से सीधे बात न करे, बल्कि हमारे बनाए हुए सर्वर (`/api/youtube`) से बात करे।
+
+`script.js` में `searchYouTubeVideos` फंक्शन को ढूंढें और उसे इस नए कोड से बदल दें:
+
+```javascript
+async function searchYouTubeVideos(query, loadMore = false) {
+    const resultsContainer = document.getElementById('youtube-video-grid');
+    const loader = document.getElementById('youtube-grid-loader');
+    const loadMoreBtn = document.getElementById('youtube-load-more-btn');
+
+    if (!loadMore) {
+        resultsContainer.innerHTML = '';
+        nextPageToken = null;
+    }
+
+    loader.style.display = 'block';
+    if(loadMoreBtn) loadMoreBtn.style.display = 'none';
+
+    // अब हम अपने सर्वर के API रूट को कॉल कर रहे हैं
+    let url = `/api/youtube?q=${encodeURIComponent(query)}`;
+    
+    if (loadMore && nextPageToken) {
+        url += `&pageToken=${nextPageToken}`;
+    }
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        nextPageToken = data.nextPageToken || null;
+        
+        const videos = data.items.map(item => ({
+            id: typeof item.id === 'string' ? item.id : item.id.videoId,
+            title: item.snippet.title,
+            thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url,
+            channelTitle: item.snippet.channelTitle,
+        }));
+        
+        renderYouTubeResults(videos, loadMore);
+
+        if (nextPageToken) {
+            if(loadMoreBtn) loadMoreBtn.style.display = 'block';
+        }
+
+    } catch (error) {
+        console.error("Error fetching from server API:", error);
+        resultsContainer.innerHTML += `<p class="static-message" style="color:var(--error-red);">Error: ${error.message}</p>`;
+    } finally {
+        loader.style.display = 'none';
+    }
 }
