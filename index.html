@@ -2,103 +2,265 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RakhSutra - Digital Rakhi Connection</title>
-    <style>
-        :root {
-            --primary-color: #8e44ad; --secondary-color: #d2b4de; --text-color: #4a235a;
-            --bg-color: #fdf2e9; --light-bg: #ffffff; --golden-color: #f39c12;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); }
-        .container { max-width: 480px; margin: 0 auto; background-color: var(--light-bg); box-shadow: 0 0 20px rgba(0,0,0,0.1); min-height: 100vh; position: relative; overflow: hidden; }
-        .header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 25px 20px; text-align: center; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; }
-        .header h1 { margin: 0; font-size: 2.2em; font-family: 'Georgia', serif; }
-        .header p { margin: 5px 0 0; font-size: 1em; opacity: 0.9; }
-        .main-content { padding: 25px; }
-        .welcome-message { text-align: center; margin-bottom: 25px; }
-        .welcome-message h2 { margin: 0; color: var(--primary-color); }
-        .cta-button { display: block; width: 100%; padding: 18px; background: linear-gradient(135deg, var(--golden-color), #f1c40f); color: white; border: none; border-radius: 12px; font-size: 1.2em; font-weight: bold; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(243, 156, 18, 0.4); transition: transform 0.2s; }
-        .cta-button:active { transform: scale(0.98); }
-        .feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
-        .feature-card { background-color: #f8f9fa; border: 1px solid #e8daef; border-radius: 15px; padding: 20px 15px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-        .feature-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(142, 68, 173, 0.2); }
-        .feature-card .icon { font-size: 2.5em; }
-        .feature-card h3 { margin: 10px 0 5px; font-size: 1em; }
-        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; animation: slide-up 0.4s ease-out; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
-        .modal-header h2 { margin: 0; color: var(--primary-color); }
-        .modal-close-btn { font-size: 1.8em; color: #aaa; cursor: pointer; background: none; border: none; }
-        .status-message { margin-top: 15px; text-align: center; color: #27ae60; font-weight: bold; }
-        .flower { position: absolute; top: -50px; font-size: 20px; opacity: 0.8; animation: fall linear forwards; }
-        @keyframes slide-up { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Shubhzone</title>
+
+    <!-- External Fonts and Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Main App Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    <!-- Font for Advertiser Dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+
+    <!-- CSS फ़ाइल को यहाँ लिंक किया गया है -->
+    <link rel="stylesheet" href="style.css"> <!-- Replace with your CSS file name -->
 </head>
 <body>
-    <div class="container" id="app-container">
-        <header class="header"><h1>RakhSutra</h1><p>जो दूरियों को मिटा दे...</p></header>
-        <main class="main-content">
-            <div class="welcome-message"><h2>नमस्ते बहन!</h2><p>इस रक्षा बंधन, अपना प्यार भेजें!</p></div>
-            <button class="cta-button" data-modal-target="rakhiModal">✨ लाइव राखी सेरेमनी शुरू करें ✨</button>
-            <div class="feature-grid">
-                <div class="feature-card" data-modal-target="thaliModal"><div class="icon">🕉️</div><h3>वर्चुअल पूजा थाली</h3></div>
-                <div class="feature-card" data-modal-target="giftModal"><div class="icon">🎁</div><h3>दिल से गिफ्ट</h3></div>
-                <div class="feature-card" data-modal-target="aiModal"><div class="icon">🎤</div><h3>AI वॉयस नोट</h3></div>
-                <div class="feature-card" data-modal-target="memoryModal"><div class="icon">💌</div><h3>यादों का पिटारा</h3></div>
-            </div>
-        </main>
-    </div>
-    <div id="rakhiModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>लाइव राखी सेरेमनी</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><p style="text-align: center;">कैमरे में भाई की कलाई पर फोकस करें।</p><div style="background:#eee; height:150px; border-radius:10px; display:flex; justify-content:center; align-items:center; color:#999;">[यहां भाई का लाइव वीडियो दिखेगा]</div><button id="tieRakhiBtn" style="width:100%; padding:12px; margin-top:10px; background-color:var(--primary-color); color:white; border:none; border-radius:8px;">AR राखी बांधें</button></div></div></div>
-    <div id="thaliModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>वर्चुअल पूजा थाली</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><p id="thali-status" class="status-message"></p></div></div></div>
-    <div id="giftModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>दिल से गिफ्ट भेजें</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><textarea placeholder="भाई के लिए एक प्यारा सा मैसेज लिखें..." style="width: calc(100% - 20px); height: 80px;"></textarea><button id="sendGiftBtn" style="width:100%; padding:12px; margin-top:10px; background-color:var(--primary-color); color:white; border:none; border-radius:8px;">प्यार भेजें</button></div></div></div>
-    <div id="aiModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>AI इमोशनल वॉयस नोट</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body" style="text-align:center;"><p>अपनी आवाज रिकॉर्ड करें, और AI उसे एक खूबसूरत कविता में बदल देगा।</p><button id="recordBtn" style="padding:10px 20px;">🎤 रिकॉर्ड करें</button><p id="aiStatus" class="status-message"></p><div id="aiPoem" style="background:#f0e6f6; padding:15px; border-radius:10px; margin-top:15px; display:none;"></div></div></div></div>
-    <div id="memoryModal" class="modal-backdrop"><div class="modal-content"><div class="modal-header"><h2>यादों का पिटारा</h2><button class="modal-close-btn">&times;</button></div><div class="modal-body"><p>इस साल की राखी की यादें यहां सुरक्षित रहेंगी।</p></div></div></div>
-    
-    <script type="module">
-        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
+
+    <!-- === SIDEBAR START === -->
+    <!-- साइडबार को सरल बनाया गया है - पेमेंट और प्रीमियम हटा दिया गया है -->
+    <div id="main-sidebar" class="main-sidebar">
+        <div class="sidebar-header">
+            <h3>Menu</h3>
+            <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
+        </div>
         
-        document.addEventListener('DOMContentLoaded', function() {
-            const modalTriggers = document.querySelectorAll('[data-modal-target]');
-            const closeButtons = document.querySelectorAll('.modal-close-btn');
-            const modalBackdrops = document.querySelectorAll('.modal-backdrop');
-            const openModal = (modal) => modal.style.display = 'flex';
-            const closeModal = (modal) => modal.style.display = 'none';
-            modalTriggers.forEach(trigger => trigger.addEventListener('click', () => openModal(document.getElementById(trigger.dataset.modalTarget))));
-            closeButtons.forEach(button => button.addEventListener('click', () => closeModal(button.closest('.modal-backdrop'))));
-            modalBackdrops.forEach(backdrop => backdrop.addEventListener('click', e => e.target === backdrop && closeModal(backdrop)));
+        <!-- Payment और Advertisement बटन हटा दिए गए हैं क्योंकि इनकी अब आवश्यकता नहीं है -->
+        
+        <!-- Premium Features कार्ड हटा दिया गया है -->
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    <!-- === SIDEBAR END === -->
 
-            document.getElementById('tieRakhiBtn').addEventListener('click', () => {
-                for (let i = 0; i < 30; i++) {
-                    const flower = document.createElement('div');
-                    flower.classList.add('flower');
-                    flower.innerHTML = '🌸';
-                    flower.style.left = Math.random() * 100 + 'vw';
-                    flower.style.animationDuration = Math.random() * 2 + 3 + 's';
-                    document.getElementById('app-container').appendChild(flower);
-                    setTimeout(() => flower.remove(), 5000);
-                }
-            });
-            
-            const recordBtn = document.getElementById('recordBtn');
-            const aiStatus = document.getElementById('aiStatus');
-            const aiPoem = document.getElementById('aiPoem');
-            let generator;
 
-            recordBtn.addEventListener('click', async () => {
-                aiStatus.textContent = "AI को तैयार किया जा रहा है... कृपया प्रतीक्षा करें।";
-                recordBtn.disabled = true;
-                if (!generator) {
-                    generator = await pipeline('text-generation', 'Xenova/distilgpt2');
-                }
-                aiStatus.textContent = "AI कविता बना रहा है...";
-                const result = await generator("My dear brother, this thread of rakhi", { max_new_tokens: 30 });
-                aiPoem.innerHTML = result[0].generated_text.replace(/\n/g, '<br>');
-                aiPoem.style.display = 'block';
-                aiStatus.textContent = "आपकी कविता तैयार है!";
-                recordBtn.disabled = false;
-            });
-        });
+    <!-- === ALL MODALS START === -->
+    <!-- अपलोड मॉडल को छिपा दिया गया है क्योंकि यह सुविधा अब मौजूद नहीं है -->
+    <div id="upload-details-modal" class="modal-overlay" style="display: none !important;">
+        <div class="modal-content">
+            <span class="close-button haptic-trigger" onclick="closeUploadDetailsModal()">×</span>
+            <h3 id="modal-title">Upload Details</h3>
+            <input type="hidden" id="editing-video-id">
+            <div class="input-group">
+                <label for="modal-video-title">Title</label>
+                <input type="text" id="modal-video-title" placeholder="Enter video title">
+            </div>
+            <div class="input-group">
+                <label for="modal-video-description">Description</label>
+                <textarea id="modal-video-description" rows="3" placeholder="Add a description" maxlength="300"></textarea>
+            </div>
+            <div class="input-group">
+                <label for="modal-video-hashtags">Hashtags</label>
+                <input type="text" id="modal-video-hashtags" placeholder="Add hashtags like #trending #viral" maxlength="60">
+            </div>
+            <div class="input-group">
+                <label for="modal-video-url">YouTube Video ID</label>
+                <input type="text" id="modal-video-url" placeholder="Enter YouTube video ID (e.g., dQw4w9WgXcQ)">
+            </div>
+            <div class="input-group">
+                <label for="modal-channel-name">YouTube Channel Name</label>
+                <input type="text" id="modal-channel-name" placeholder="Enter original creator's channel name">
+            </div>
+            <div class="input-group">
+                <label for="modal-channel-link">YouTube Channel Link (Optional)</label>
+                <input type="url" id="modal-channel-link" placeholder="Enter channel URL">
+            </div>
+            <div class="category-selector-wrapper">
+                <label>Category</label>
+                <div class="category-selector">
+                    <div class="category-selector-display haptic-trigger" onclick="toggleCategoryOptions()">
+                        <span id="selected-category-text">Select Category</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="category-options" id="category-options"></div>
+                </div>
+            </div>
+            <div class="audience-selector">
+                <label>Audience</label>
+                <div class="audience-options">
+                    <div class="audience-option haptic-trigger" data-audience="all" onclick="selectAudience('all')">
+                        <i class="fas fa-users"></i> All Audiences
+                    </div>
+                    <div class="audience-option haptic-trigger" data-audience="18plus" onclick="selectAudience('18plus')">
+                        <i class="fas fa-user-shield"></i> 18+ Only
+                    </div>
+                </div>
+            </div>
+            <div class="comments-toggle">
+                <label>Allow Comments</label>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="comments-toggle-input" checked class="haptic-trigger">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <button id="modal-save-button" class="save-button haptic-trigger" onclick="handleSave()">Upload Video</button>
+        </div>
+    </div>
+
+    <!-- अन्य मॉडल रखे गए हैं, यदि भविष्य में उनकी आवश्यकता हो -->
+    <div id="comments-modal" class="comments-modal-overlay">
+        <div class="comments-modal-content">
+            <div class="comments-header">
+                <h4>Comments</h4>
+                <span class="close-comments-btn haptic-trigger" onclick="closeCommentsModal()">×</span>
+            </div>
+            <ul id="comments-list"></ul>
+            <div class="comment-input-container">
+                <input type="text" id="comment-input" placeholder="Add a comment...">
+                <button id="send-comment-btn" class="haptic-trigger"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+    <div id="audio-issue-popup" class="modal-overlay">
+        <div class="popup-content">
+            <i class="fas fa-heart heart-icon"></i>
+            <p>Due to a technical issue, if you are unable to hear the audio, please scroll down the video.</p>
+            <button id="audio-issue-ok-btn" class="haptic-trigger">OK</button>
+        </div>
+    </div>
+    <div id="image-enlarge-modal" class="modal-overlay">
+        <div class="enlarged-image-content">
+            <img id="enlarged-image-src" src="" alt="Enlarged View">
+        </div>
+    </div>
+    <!-- === ALL MODALS END === -->
+
+
+    <div class="app-container" id="app-container">
+
+        <!-- === SPLASH SCREEN (छिपा हुआ) === -->
+        <div id="splash-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === INFORMATION SCREEN (छिपा हुआ) === -->
+        <div id="information-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === SHORTS SCREEN (छिपा हुआ) === -->
+        <div id="home-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+        
+        <!-- === LONG VIDEO SCREEN (यह अब हमारा मुख्य पेज है) === -->
+        <!-- इसे सक्रिय (active) रखा गया है ताकि यह हमेशा दिखे -->
+        <div id="long-video-screen" class="screen active">
+             <div id="long-video-top-bar">
+                <div id="long-video-menu-icon" class="home-menu-icon haptic-trigger">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <!-- श्रेणी स्क्रोलर छिपा दिया गया है क्योंकि हम केवल सर्च का उपयोग करेंगे -->
+                <div id="long-video-category-scroller" class="category-scroller" style="display: none;"></div>
+            </div>
+            <div class="long-video-screen-content">
+                <!-- इस भाग को वीडियो सर्च के लिए संशोधित किया गया है -->
+                <div class="long-video-search-container">
+                    <input type="text" id="long-video-search-input" placeholder="यूट्यूब पर वीडियो खोजें...">
+                    <button id="long-video-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
+                    <!-- इतिहास बटन छिपा दिया गया है -->
+                    <button id="long-video-history-btn" class="haptic-trigger" style="display: none;"><i class="fas fa-history"></i></button>
+                </div>
+                <!-- खोज परिणाम यहां दिखाए जाएंगे -->
+                <div id="long-video-grid">
+                     <!-- यह Div अब YouTube वीडियो परिणामों से भरा जाएगा -->
+                     <div style="text-align: center; color: #888; margin-top: 50px;">
+                        <h2>Welcome!</h2>
+                        <p>Start by searching for any video on YouTube.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- निचला नेविगेशन बार हटा दिया गया है क्योंकि अन्य स्क्रीन छिपी हुई हैं -->
+        </div>
+
+        <!-- === HISTORY SCREEN (छिपा हुआ) === -->
+        <div id="history-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === NEW HOME SCREEN (छिपा हुआ) === -->
+        <div id="upload-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === FRIENDS SCREEN (छिपा हुआ) === -->
+        <div id="friends-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === PROFILE SCREEN (छिपा हुआ) === -->
+        <div id="profile-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+        
+        <!-- === DESCRIPTION MODAL (रखा गया है) === -->
+        <div id="description-modal" class="modal-overlay">
+            <div class="description-modal-content">
+                <span id="close-description-btn" class="close-button haptic-trigger">×</span>
+                <div id="description-content" class="description-text"></div>
+            </div>
+        </div>
+    
+        <!-- === PAYMENT SCREEN (छिपा हुआ) === -->
+        <div id="payment-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === YOUR ZONE SCREEN (छिपा हुआ) === -->
+        <div id="your-zone-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+        
+        <!-- === EARNSURE SCREEN (छिपा हुआ) === -->
+        <div id="earnsure-screen" class="screen" style="display: none !important;">
+             <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === ADVERTISEMENT SCREEN (छिपा हुआ) === -->
+        <div id="advertisement-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+        
+        <!-- === CREATOR PAGE SCREEN (छिपा हुआ) === -->
+        <div id="creator-page-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === TRACK PAYMENT SCREEN (छिपा हुआ) === -->
+        <div id="track-payment-screen" class="screen" style="display: none !important;">
+            <!-- सामग्री अपरिवर्तित है -->
+        </div>
+
+        <!-- === REPORT SCREEN (छिपा हुआ) === -->
+        <div id="report-screen" class="screen" style="display: none !important;"></div>
+        
+        <!-- === CREDIT SCREEN (छिपा हुआ) === -->
+        <div id="credit-screen" class="screen" style="display: none !important;"></div>
+
+    </div>
+
+    <!-- === ADMIN PRIORITY AD OVERLAY (छिपा हुआ) === -->
+    <div id="admin-priority-ad-overlay" style="display: none !important;">
+        <!-- सामग्री अपरिवर्तित है -->
+    </div>
+
+    <!-- === SCRIPTS (MUST BE AT THE END) === -->
+    <!-- Firebase की स्क्रिप्ट हटा दी गई हैं क्योंकि अब लॉगिन या डेटाबेस की ज़रूरत नहीं है -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+
+    <!-- JavaScript फ़ाइल को यहाँ लिंक किया गया है -->
+    <script src="script.js"></script> <!-- Replace with your JS file name -->
+
+    <script>
+        const setAppHeight = () => {
+            const doc = document.documentElement;
+            doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+        };
+        window.addEventListener('resize', setAppHeight);
+        setAppHeight();
     </script>
+    
 </body>
 </html>
