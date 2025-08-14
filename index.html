@@ -5,18 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Shubhzone</title>
 
-<!-- External Fonts and Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Main App Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&family=Orbitron:wght@500&display=swap" rel="stylesheet">
-<!-- Font for Advertiser Dashboard -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-
-<!-- CSS फ़ाइल को यहाँ लिंक किया गया है -->
-<link rel="stylesheet" href="style.css"> <!-- Replace with your CSS file name -->
+    <!-- External Fonts and Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Main App Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&display=swap" rel="stylesheet">
+    
+    <!-- CSS फ़ाइल को यहाँ लिंक किया गया है -->
+    <link rel="stylesheet" href="style.css"> <!-- Replace with your CSS file name -->
 </head>
 <body>
 
@@ -27,7 +24,7 @@
         <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
     </div>
     
-    <!-- Payment and Advertisement buttons removed as per request -->
+    <!-- ★ बदलाव: पेमेंट और विज्ञापन से संबंधित बटन हटा दिए गए हैं -->
     
     <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer" class="premium-features-card haptic-trigger">
         <div class="premium-image-wrapper">
@@ -41,66 +38,8 @@
 
 
 <!-- === ALL MODALS START === -->
-<div id="upload-details-modal" class="modal-overlay">
-    <div class="modal-content">
-        <span class="close-button haptic-trigger" onclick="closeUploadDetailsModal()">×</span>
-        <h3 id="modal-title">Upload Details</h3>
-        <input type="hidden" id="editing-video-id">
-        <div class="input-group">
-            <label for="modal-video-title">Title</label>
-            <input type="text" id="modal-video-title" placeholder="Enter video title">
-        </div>
-        <div class="input-group">
-            <label for="modal-video-description">Description</label>
-            <textarea id="modal-video-description" rows="3" placeholder="Add a description" maxlength="300"></textarea>
-        </div>
-        <div class="input-group">
-            <label for="modal-video-hashtags">Hashtags</label>
-            <input type="text" id="modal-video-hashtags" placeholder="Add hashtags like #trending #viral" maxlength="60">
-        </div>
-        <div class="input-group">
-            <label for="modal-video-url">YouTube Video ID</label>
-            <input type="text" id="modal-video-url" placeholder="Enter YouTube video ID (e.g., dQw4w9WgXcQ)">
-        </div>
-        <div class="input-group">
-            <label for="modal-channel-name">YouTube Channel Name</label>
-            <input type="text" id="modal-channel-name" placeholder="Enter original creator's channel name">
-        </div>
-        <div class="input-group">
-            <label for="modal-channel-link">YouTube Channel Link (Optional)</label>
-            <input type="url" id="modal-channel-link" placeholder="Enter channel URL">
-        </div>
-        <div class="category-selector-wrapper">
-            <label>Category</label>
-            <div class="category-selector">
-                <div class="category-selector-display haptic-trigger" onclick="toggleCategoryOptions()">
-                    <span id="selected-category-text">Select Category</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                <div class="category-options" id="category-options"></div>
-            </div>
-        </div>
-        <div class="audience-selector">
-            <label>Audience</label>
-            <div class="audience-options">
-                <div class="audience-option haptic-trigger" data-audience="all" onclick="selectAudience('all')">
-                    <i class="fas fa-users"></i> All Audiences
-                </div>
-                <div class="audience-option haptic-trigger" data-audience="18plus" onclick="selectAudience('18plus')">
-                    <i class="fas fa-user-shield"></i> 18+ Only
-                </div>
-            </div>
-        </div>
-        <div class="comments-toggle">
-            <label>Allow Comments</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="comments-toggle-input" checked class="haptic-trigger">
-                <span class="slider"></span>
-            </label>
-        </div>
-        <button id="modal-save-button" class="save-button haptic-trigger" onclick="handleSave()">Upload Video</button>
-    </div>
-</div>
+<!-- यह मोडल अब उपयोग में नहीं है, लेकिन स्क्रिप्ट में इसके संदर्भों के कारण इसे हटाया नहीं गया है -->
+<div id="upload-details-modal" class="modal-overlay"></div>
 
 <div id="comments-modal" class="comments-modal-overlay">
     <div class="comments-modal-content">
@@ -110,17 +49,16 @@
         </div>
         <ul id="comments-list"></ul>
         <div class="comment-input-container">
-            <input type="text" id="comment-input" placeholder="Add a comment...">
-            <button id="send-comment-btn" class="haptic-trigger"><i class="fas fa-paper-plane"></i></button>
+            <input type="text" id="comment-input" placeholder="Add a comment..." disabled>
+            <button id="send-comment-btn" class="haptic-trigger" disabled><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 </div>
 
-<div id="audio-issue-popup" class="modal-overlay">
-    <div class="popup-content">
-        <i class="fas fa-heart heart-icon"></i>
-        <p>Due to a technical issue, if you are unable to hear the audio, please scroll down the video.</p>
-        <button id="audio-issue-ok-btn" class="haptic-trigger">OK</button>
+<div id="description-modal" class="modal-overlay">
+    <div class="description-modal-content">
+        <span id="close-description-btn" class="close-button haptic-trigger">×</span>
+        <div id="description-content" class="description-text"></div>
     </div>
 </div>
 
@@ -144,12 +82,6 @@
                 <div class="logo-ring"></div>
                 <div class="logo-icon-combo">
                     <i class="fas fa-play"></i>
-                </div>
-                <div class="orbiting-icons">
-                    <i class="fas fa-microphone orb-icon"></i>
-                    <i class="fas fa-camera orb-icon"></i>
-                    <i class="fas fa-book-open orb-icon"></i>
-                    <i class="fas fa-paint-brush orb-icon"></i>
                 </div>
             </div>
             <h2 class="app-name">Shubhzone</h2>
@@ -264,8 +196,8 @@
             <div id="category-scroller" class="category-scroller"></div>
         </div>
         <div id="video-swiper">
-            <div id="home-static-message-container" style="display: none;">
-                <p class="static-message">Sorry, no video is available at the moment. <br> Please upload one!</p>
+            <div id="home-static-message-container" style="display: flex;">
+                <p class="static-message">Loading shorts...</p>
             </div>
         </div>
         <div class="bottom-nav">
@@ -278,13 +210,13 @@
     
     <!-- === LONG VIDEO SCREEN === -->
     <div id="long-video-screen" class="screen">
-         <div id="long-video-top-bar">
-            <div id="long-video-menu-icon" class="home-menu-icon haptic-trigger">
-                <i class="fas fa-bars"></i>
-            </div>
-            <div id="long-video-category-scroller" class="category-scroller"></div>
-        </div>
         <div class="long-video-screen-content">
+            <div id="long-video-top-bar">
+                <div id="long-video-menu-icon" class="home-menu-icon haptic-trigger">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <div id="long-video-category-scroller" class="category-scroller"></div>
+            </div>
             <div id="long-video-carousel-container">
                 <div id="long-video-carousel-wrapper"></div>
             </div>
@@ -292,10 +224,6 @@
                 <input type="text" id="long-video-search-input" placeholder="Search for videos...">
                 <button id="long-video-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
                 <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
-            </div>
-            <div class="long-video-search-results-container" id="long-video-search-results" style="display: none;">
-                <h4>Search Results</h4>
-                <div id="long-video-search-results-grid"></div>
             </div>
             <div id="long-video-grid"></div>
         </div>
@@ -309,14 +237,14 @@
 
     <!-- === HISTORY SCREEN === -->
     <div id="history-screen" class="screen">
-        <div id="history-top-bar">
-            <div id="back-from-history-btn" class="home-menu-icon haptic-trigger">
-                <i class="fas fa-arrow-left"></i>
-            </div>
-            <span class="header-title">Watch History</span>
-            <button id="history-date-button" class="haptic-trigger">Today <i class="fas fa-calendar-alt"></i></button>
-        </div>
         <div class="history-content">
+            <div id="history-top-bar">
+                <div id="back-from-history-btn" class="home-menu-icon haptic-trigger">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <span class="header-title">Watch History</span>
+                <button id="history-date-button" class="haptic-trigger">Clear All</button>
+            </div>
             <div class="history-section-title">Recently Watched Shorts</div>
             <div id="history-shorts-scroller"></div>
             <div class="history-section-title">Watched Videos</div>
@@ -330,23 +258,27 @@
         </div>
     </div>
 
-    <!-- === NEW HOME SCREEN (Previously Upload) - This screen is now unused. === -->
+    <!-- === UPLOAD SCREEN (Deprecated) === -->
     <div id="upload-screen" class="screen">
-        <!-- This screen is no longer in use as per user request to remove the Home button. -->
+        <!-- This screen is no longer in use. -->
     </div>
 
     <!-- === FRIENDS SCREEN === -->
     <div id="friends-screen" class="screen">
         <div class="friends-top-bar">
+            <!-- ★ बदलाव: "My Channels" टैब जोड़ा गया -->
             <div class="tab-bar">
-                <button class="tab-button active" data-tab="add">Add</button>
+                <button class="tab-button active" data-tab="my-channels">My Channels</button>
+                <button class="tab-button" data-tab="add">Add Friends</button>
                 <button class="tab-button" data-tab="requests">Requests</button>
                 <button class="tab-button" data-tab="members">Members</button>
             </div>
         </div>
 
         <main class="content-area">
-            <div class="tab-content" id="add-content">
+            <!-- ★ बदलाव: "My Channels" कंटेंट कंटेनर जोड़ा गया -->
+            <div class="tab-content" id="my-channels-content"></div>
+            <div class="tab-content hidden" id="add-content">
                 <div class="add-friend-search-container">
                     <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID">
                     <button id="add-friend-search-btn" class="haptic-trigger">Search</button>
@@ -402,172 +334,32 @@
             <div class="nav-item active" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
     </div>
-    
-    <!-- === DESCRIPTION MODAL (used across screens) === -->
-    <div id="description-modal" class="modal-overlay">
-        <div class="description-modal-content">
-            <span id="close-description-btn" class="close-button haptic-trigger">×</span>
-            <div id="description-content" class="description-text"></div>
-        </div>
-    </div>
 
-    <!-- === PAYMENT SCREEN === -->
-    <div id="payment-screen" class="screen">
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Payment Request</span>
-        </div>
-        <div id="payment-content" style="width: 100%; padding: 80px 20px 20px;"></div>
-    </div>
-
-    <!-- === YOUR ZONE SCREEN === -->
-    <div id="your-zone-screen" class="screen">
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Your Zone</span>
-        </div>
-        <div id="your-zone-content"></div>
-    </div>
-    
-    <!-- === EARNSURE SCREEN === -->
-    <div id="earnsure-screen" class="screen">
-         <div class="earnsure-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <h4 class="header-title">Earnsure</h4>
-            <div class="earnsure-language-toggle" id="earnsure-language-toggle"></div>
-        </div>
-        <div class="earnsure-content-area"></div>
-    </div>
-
-    <!-- === ADVERTISEMENT SCREEN === -->
-    <div id="advertisement-screen" class="screen">
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Advertiser Panel</span>
-        </div>
-        <div class="container" style="margin-top: 60px; padding-top: 20px;">
-            <div id="uniqueCodeSection" class="section">
-                <div class="card">
-                    <h2>View Your Campaigns</h2>
-                    <h3>Enter the Unique ID provided by the admin to access your dashboard.</h3>
-                    <div class="form-group">
-                        <label for="uniqueCodeInput">Your Unique ID</label>
-                        <input type="text" id="uniqueCodeInput" placeholder="Enter your ID here">
-                    </div>
-                    <button class="btn" onclick="advertiserFunctions.applyCode()">Apply</button>
-                    <div style="text-align: center; margin-top: 20px;">
-                        <a href="#" class="logout-btn" onclick="advertiserFunctions.showSection('registrationSection')">New Advertiser? Register here.</a>
-                    </div>
-                </div>
-            </div>
-            <div id="registrationSection" class="section">
-                <div class="card">
-                    <h2>Welcome, Advertiser!</h2><h3>Let's get you set up in a minute.</h3>
-                    <form>
-                        <div class="form-group"><label for="adv-name">Your Name</label><input type="text" id="adv-name" placeholder="e.g., John Doe" required></div>
-                        <div class="form-group"><label for="adv-businessName">Business Name (Optional)</label><input type="text" id="adv-businessName" placeholder="e.g., John's Cafe"></div>
-                        <div class="form-group"><label for="adv-whatsapp">WhatsApp Number</label><input type="tel" id="adv-whatsapp" placeholder="Include country code, e.g., 919876543210" required></div>
-                        <button type="button" class="btn" onclick="advertiserFunctions.processRegistration()">Continue →</button>
-                    </form>
-                </div>
-            </div>
-            <div id="planSection" class="section">
-                <div class="card" style="background-color: transparent; border: none; box-shadow: none;">
-                    <h2 style="color: #fde047;">Our Golden Plans</h2>
-                    <h3>Each plan is crafted to deliver maximum value.</h3>
-                    <div id="planContainer" class="plan-container"></div>
-                    <input type="hidden" id="selectedPlanData" required>
-                    <button type="button" class="btn" onclick="advertiserFunctions.goToForm()" style="margin-top: 30px;">Next Step →</button>
-                </div>
-            </div>
-            <div id="adFormSection" class="section">
-                 <div class="card">
-                    <h2>Campaign Details</h2><h3>Describe the ad you want to run.</h3>
-                     <form id="adSubmissionForm">
-                        <div class="form-group"><label for="adv-adTitle">Ad Title</label><input type="text" id="adv-adTitle" placeholder="e.g., Diwali Special Sale" required></div>
-                        <div class="form-group"><label for="adv-adDesc">Ad Description (Short Message)</label><textarea id="adv-adDesc" placeholder="Your main message for the ad (100-200 characters)" maxlength="200" required></textarea></div>
-                        <div class="form-group"><label for="adv-cta">Call to Action (Button Text)</label><select id="adv-cta" required><option value="Call Now">Call Now</option><option value="Order Now">Order Now</option><option value="WhatsApp Us">WhatsApp Us</option><option value="Learn More">Learn More</option></select></div>
-                        <div class="form-group"><label for="adv-adLink">Destination Link</label><input type="url" id="adv-adLink" placeholder="https://yourwebsite.com or https://wa.me/..." required></div>
-                        <div class="form-group">
-                            <label for="adv-adType">Ad Type</label>
-                            <select id="adv-adType" required onchange="advertiserFunctions.updateImpressionDisclaimer()">
-                                <option value="banner">Banner Ad</option>
-                                <option value="image_5s">5-Second Image Ad</option>
-                                <option value="video">Video Ad</option>
-                            </select>
-                            <p id="impressionDisclaimer"></p>
-                        </div>
-                        <div class="form-group"><label for="adv-contactWhatsapp">Confirm Contact WhatsApp Number</label><input type="tel" id="adv-contactWhatsapp" placeholder="Enter campaign contact number" required></div>
-                        <button type="button" class="btn" onclick="advertiserFunctions.submitAdRequest()">Submit Ad Request</button>
-                    </form>
-                </div>
-            </div>
-            <div id="dashboardSection" class="section">
-                <div class="dashboard-header"><h2 id="welcomeMessage">Your Campaigns</h2><p>Select a campaign to view its performance.</p></div>
-                <button class="btn" onclick="advertiserFunctions.createNewAd()">+ Add New Plan</button>
-                <div class="card"><div id="campaignListContainer"></div></div>
-                <div style="text-align:center;"><button class="logout-btn" onclick="advertiserFunctions.resetUser()">This isn't me, reset.</button></div>
-            </div>
-            <div id="campaignDetailSection" class="section">
-                <div class="dashboard-header"><h2 id="detailCampaignTitle">Campaign Performance</h2><p id="detailCampaignPlan">Plan details will load here.</p></div>
-                 <div class="stats-grid">
-                    <div class="stat-card"><div class="label" id="detailAdType">Ad Type</div><div class="value" id="detailFinalImpressions">...</div></div>
-                     <div class="stat-card"><div class="label">Clicks (CTR)</div><div class="value" id="detailClickCount">...</div></div>
-                </div>
-                <div class="card"><h3 style="text-align:left; font-weight: 600; margin-bottom: 15px;">Viewer Locations (Sample)</h3><div class="stat-card geo-card"><div class="value" id="detailGeoData">Loading...</div></div></div>
-                <button class="btn btn-secondary" onclick="advertiserFunctions.goBackToDashboard()" style="margin-top: 30px;">← Back to All Campaigns</button>
-            </div>
-        </div>
-    </div>
-    
     <!-- === CREATOR PAGE SCREEN === -->
     <div id="creator-page-screen" class="screen">
-        <div class="screen-header transparent">
-             <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-             <div id="creator-page-tabs">
+        <div class="screen-header">
+            <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+            <div id="creator-page-tabs">
                 <button class="creator-page-tab-btn active haptic-trigger" data-type="short">Short Video</button>
                 <button class="creator-page-tab-btn haptic-trigger" data-type="long">Long Video</button>
-             </div>
-             <div class="header-icon-right"></div>
-        </div>
-        <div id="creator-page-functions" class="more-function-container">
-            <div id="more-function-menu" class="more-function-menu">
-                <button id="more-videos-btn" class="function-menu-item haptic-trigger">
-                    <i class="fas fa-list-ul"></i> More Videos
-                </button>
             </div>
-            <button id="more-function-btn" class="more-function-btn haptic-trigger">
-                <i class="fas fa-cog"></i>
-            </button>
         </div>
+        <!-- ★ बदलाव: अधिक फंक्शन मेनू हटा दिया गया है क्योंकि नियंत्रण अब सीधे प्लेयर पर हैं -->
         <div id="creator-page-content" class="content-area">
             <div id="creator-page-short-view" class="creator-page-view active"></div>
             <div id="creator-page-long-view" class="creator-page-view"></div>
         </div>
     </div>
 
-    <!-- === TRACK PAYMENT SCREEN === -->
-    <div id="track-payment-screen" class="screen">
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Track Payment</span>
-        </div>
-        <div id="track-payment-content" class="content-area" style="padding-top: 75px; padding-left: 15px; padding-right: 15px;"></div>
-    </div>
-
-    <!-- === REPORT SCREEN === -->
+    <!-- === DEPRECATED SCREENS (kept for script compatibility) === -->
+    <div id="payment-screen" class="screen"></div>
+    <div id="your-zone-screen" class="screen"></div>
+    <div id="earnsure-screen" class="screen"></div>
+    <div id="advertisement-screen" class="screen"></div>
+    <div id="track-payment-screen" class="screen"></div>
     <div id="report-screen" class="screen"></div>
-    
-    <!-- === CREDIT SCREEN === -->
     <div id="credit-screen" class="screen"></div>
 
-</div>
-
-<!-- === ADMIN PRIORITY AD OVERLAY === -->
-<div id="admin-priority-ad-overlay">
-    <div id="ad-timer"></div>
-    <button id="ad-close-btn">×</button>
-    <div id="ad-content-container"></div>
 </div>
 
 <!-- === SCRIPTS (MUST BE AT THE END) === -->
