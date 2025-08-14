@@ -1,8 +1,8 @@
 
 /* ================================================= */
-/* === Shubhzone App Script (Code 2) - FINAL v5.20 === */
+/* === Shubhzone App Script (Code 2) - FINAL v5.15 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
-/* === SOLVED: Player, Load More, Subscription & UI === */
+/* === SOLVED: Player, Load More & UI Bugs Fixed === */
 /* ================================================= */
 
 // Firebase कॉन्फ़िगरेशन
@@ -239,11 +239,12 @@ function escapeHTML(str) {
 
 function formatNumber(num) {
     if (num === null || num === undefined) return 0;
-    if (num >= 10000000) return (num / 10000000).toFixed(1).replace(/\.0$/, '') + 'Cr';
-    if (num >= 100000) return (num / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+    if (num >= 1000000000) return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
+    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
     return num;
 }
+
 
 /**
  * Extracts the 11-character YouTube video ID from various URL formats.
@@ -273,7 +274,7 @@ let appState = {
         email: "", name: "", mobile: "", address: "", hobby: "", state: "", country: "",
         referralCode: null, likedVideos: [], 
         friends: [],
-        subscriptions: [], // ★ नया: सब्सक्रिप्शन स्टोर करने के लिए
+        subscriptions: [], // ★ नया: सब्सक्रिप्शन के लिए
         creatorCoins: 0,
         unconvertedCreatorSeconds: 0,
     },
@@ -286,15 +287,16 @@ let appState = {
         shorts: null,
         search: null,
         trending: null,
-        channel: null,
-        subscriptions: null // ★ नया: सब्सक्रिप्शन फ़ीड के लिए
+        channel: null
     },
     uploadDetails: { category: null, audience: 'all', lengthType: 'short' },
     activeComments: { videoId: null, videoOwnerUid: null, channelId: null },
     activeChat: { chatId: null, friendId: null, friendName: null, friendAvatar: null },
-    creatorPagePlayers: { short: null, long: null },
-    watchPagePlayer: null, // ★ नया: वॉच पेज प्लेयर के लिए
-    creatorPage: { currentLongVideo: { id: null, uploaderUid: null, channelId: null } },
+    creatorPagePlayers: { short: null, long: null, progressInterval: null }, // ★ नया: प्रोग्रेस इंटरवल
+    creatorPage: { 
+        currentLongVideo: { id: null, uploaderUid: null, channelId: null },
+        channelDetails: null // ★ नया: चैनल विवरण स्टोर करने के लिए
+    },
     adState: {
         timers: { fullscreenAdLoop: null },
         fullscreenAd: { 
@@ -327,15 +329,15 @@ let hapticFeedbackEnabled = true;
 // =============================================================================
 
 let currentVideoCache = new Map();
+let currentChannelCache = new Map(); // ★ नया: चैनल डेटा कैश करने के लिए
 
 /**
  * YouTube API से वीडियो लाने के लिए जेनेरिक फ़ंक्शन।
- * @param {string} type 'search', 'trending', 'channel', or 'videoDetails' में से एक।
+ * @param {string} type 'search', 'trending', 'channel', 'videoDetails', or 'channels' में से एक।
  * @param {object} params API के लिए पैरामीटर।
  * @returns {Promise<object>} API से प्रतिक्रिया।
  */
 async function fetchFromYouTubeAPI(type, params) {
-    // ★ नया: सब्सक्रिप्शन के लिए नया API टाइप
     let url = `/api/youtube?type=${type}`;
     for (const key in params) {
         if (params[key]) {
@@ -351,10 +353,15 @@ async function fetchFromYouTubeAPI(type, params) {
         }
         const data = await response.json();
         
+        // वीडियो और चैनल को कैश करें
         if (data.items) {
-            data.items.forEach(video => {
-                const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
-                if(videoId) currentVideoCache.set(videoId, video);
+            data.items.forEach(item => {
+                if (item.kind === 'youtube#channel') {
+                    currentChannelCache.set(item.id, item);
+                } else {
+                    const videoId = typeof item.id === 'object' ? item.id.videoId : item.id;
+                    if(videoId) currentVideoCache.set(videoId, item);
+                }
             });
         }
 
@@ -385,6 +392,7 @@ function renderYouTubeLongVideos(videos, append = false) {
 
     if (videos.length === 0 && !append) {
         grid.innerHTML = '<p class="static-message">No videos found. Try a different search or category.</p>';
+        loadMoreBtn.style.display = 'none';
         return;
     }
     
@@ -402,6 +410,7 @@ function renderYouTubeLongVideos(videos, append = false) {
     if (loadMoreBtn) {
         loadMoreBtn.style.display = appState.youtubeNextPageTokens.long ? 'block' : 'none';
         loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = 'Load More';
     }
 }
 
@@ -409,7 +418,7 @@ async function loadMoreLongVideos() {
     const loadMoreBtn = document.getElementById('long-video-load-more-btn');
     if (loadMoreBtn) {
         loadMoreBtn.disabled = true;
-        loadMoreBtn.textContent = "Loading...";
+        loadMoreBtn.innerHTML = '<div class="loader"></div>';
     }
 
     const activeCategoryChip = document.querySelector('#long-video-category-scroller .category-chip.active');
@@ -433,20 +442,25 @@ async function loadMoreLongVideos() {
     }
 }
 
-// ★ बदला हुआ: अब playYouTubeVideoFromCard की जगह navigateToWatchPage का उपयोग होगा
-function navigateToWatchPage(videoId) {
-    const video = currentVideoCache.get(videoId);
+async function playYouTubeVideoFromCard(videoId) {
+    let video = currentVideoCache.get(videoId);
     if (!video) {
-        alert("Video details not found. Please try again.");
-        return;
+        const data = await fetchFromYouTubeAPI('videoDetails', { id: videoId });
+        if (data.items && data.items.length > 0) {
+            video = data.items[0];
+            currentVideoCache.set(videoId, video);
+        } else {
+            alert("Video details not found. Please try again.");
+            return;
+        }
     }
     
     const channelId = video.snippet.channelId;
     
-    // Watch Page पर नेविगेट करें और वीडियो आईडी पास करें
-    navigateTo('watch-screen', { 
-        videoId: videoId,
-        channelId: channelId
+    navigateTo('creator-page-screen', { 
+        creatorId: channelId, 
+        startWith: 'long', 
+        videoId: videoId
     });
 }
 
@@ -524,27 +538,20 @@ function navigateTo(nextScreenId, payload = null) {
         appState.navigationStack.push(nextScreenId);
     }
     
-    // प्लेयर्स को नष्ट करने का लॉजिक
     if (appState.currentScreen === 'home-screen' && activePlayerId && players[activePlayerId]) {
         pauseActivePlayer();
     }
     if (appState.currentScreen === 'creator-page-screen') {
         if (appState.creatorPagePlayers.short) appState.creatorPagePlayers.short.destroy();
         if (appState.creatorPagePlayers.long) appState.creatorPagePlayers.long.destroy();
-        appState.creatorPagePlayers = { short: null, long: null };
+        if (appState.creatorPagePlayers.progressInterval) clearInterval(appState.creatorPagePlayers.progressInterval);
+        appState.creatorPagePlayers = { short: null, long: null, progressInterval: null };
     }
-    // ★ नया: वॉच पेज प्लेयर को नष्ट करें
-    if (appState.currentScreen === 'watch-screen' && appState.watchPagePlayer) {
-        appState.watchPagePlayer.destroy();
-        appState.watchPagePlayer = null;
-    }
-
     activePlayerId = null;
     
     activateScreen(nextScreenId);
     appState.currentScreenPayload = payload;
 
-    // स्क्रीन इनिशियलाइज़ेशन
     if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase(); 
     if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
     if (nextScreenId === 'history-screen') initializeHistoryScreen();
@@ -557,17 +564,11 @@ function navigateTo(nextScreenId, payload = null) {
     if (nextScreenId === 'payment-screen') initializePaymentScreen();
     if (nextScreenId === 'track-payment-screen') initializeTrackPaymentScreen();
     if (nextScreenId === 'report-screen') initializeReportScreen();
+    if (nextScreenId === 'subscriptions-screen') initializeSubscriptionsScreen(); // ★ नया
     if (nextScreenId === 'friends-screen') {
         populateAddFriendsList();
         populateFriendRequestsList();
         populateMembersList(); 
-    }
-    // ★ नया: नए स्क्रीन्स का इनिशियलाइज़ेशन
-    if (nextScreenId === 'watch-screen' && payload && payload.videoId) {
-        initializeWatchPage(payload.videoId);
-    }
-    if (nextScreenId === 'subscriptions-screen') {
-        initializeSubscriptionsScreen();
     }
 }
 
@@ -580,16 +581,12 @@ function navigateBack() {
     if (appState.currentScreen === 'creator-page-screen') {
         if (appState.creatorPagePlayers.short) appState.creatorPagePlayers.short.destroy();
         if (appState.creatorPagePlayers.long) appState.creatorPagePlayers.long.destroy();
-        appState.creatorPagePlayers = { short: null, long: null };
+        if (appState.creatorPagePlayers.progressInterval) clearInterval(appState.creatorPagePlayers.progressInterval);
+        appState.creatorPagePlayers = { short: null, long: null, progressInterval: null };
         const videoWrapper = document.querySelector('#creator-page-long-view .main-video-card-wrapper');
         if (videoWrapper && videoWrapper.classList.contains('rotated')) {
             videoWrapper.classList.remove('rotated');
         }
-    }
-     // ★ नया: वॉच पेज प्लेयर को नष्ट करें
-    if (appState.currentScreen === 'watch-screen' && appState.watchPagePlayer) {
-        appState.watchPagePlayer.destroy();
-        appState.watchPagePlayer = null;
     }
     
     navigateTo(previousScreenId);
@@ -609,7 +606,7 @@ async function checkUserProfileAndProceed(user, lastScreenToRestore = null) {
         }
         userData.likedVideos = userData.likedVideos || [];
         userData.friends = userData.friends || [];
-        userData.subscriptions = userData.subscriptions || []; // ★ नया: सब्सक्रिप्शन लोड करें
+        userData.subscriptions = userData.subscriptions || []; // ★ नया
         userData.creatorCoins = userData.creatorCoins || 0;
         userData.unconvertedCreatorSeconds = userData.unconvertedCreatorSeconds || 0;
         
@@ -634,7 +631,8 @@ async function checkUserProfileAndProceed(user, lastScreenToRestore = null) {
             uid: user.uid, name: '', email: user.email || '',
             avatar: user.photoURL || 'https://via.placeholder.com/120/222/FFFFFF?text=+',
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            likedVideos: [], friends: [], subscriptions: [], // ★ नया: सब्सक्रिप्शन इनिशियलाइज़ करें
+            likedVideos: [], friends: [],
+            subscriptions: [], // ★ नया
             creatorCoins: 0, unconvertedCreatorSeconds: 0,
             referralCode: await generateAndSaveReferralCode(user.uid, user.displayName || 'user')
         };
@@ -649,22 +647,6 @@ let appInitializationComplete = false;
 function initializeApp() {
     if (appInitializationComplete) return;
     appInitializationComplete = true;
-
-    // ★ नया: सब्सक्रिप्शन स्क्रीन के लिए HTML इंजेक्ट करें
-    if (!document.getElementById('subscriptions-screen')) {
-        const subscriptionsScreen = document.createElement('div');
-        subscriptionsScreen.id = 'subscriptions-screen';
-        subscriptionsScreen.className = 'screen';
-        document.getElementById('app-container').appendChild(subscriptionsScreen);
-    }
-    // ★ नया: वॉच स्क्रीन के लिए HTML इंजेक्ट करें
-    if (!document.getElementById('watch-screen')) {
-        const watchScreen = document.createElement('div');
-        watchScreen.id = 'watch-screen';
-        watchScreen.className = 'screen';
-        document.getElementById('app-container').appendChild(watchScreen);
-    }
-
 
     const lastScreenToRestore = localStorage.getItem('shubhzone_lastScreen');
 
@@ -840,16 +822,17 @@ const startAppLogic = async (restoreScreen = null) => {
     
     navigateTo(screenToNavigate);
     
-    // नेविगेशन बार की स्थिति को सही ढंग से अपडेट करें
-    const navId = screenToNavigate.replace('-screen', '');
-    if (screenToNavigate === 'home-screen') {
-        updateNavActiveState('shorts');
-    } else if (screenToNavigate === 'long-video-screen') {
+    // Set the correct active nav item based on the screen we are navigating to
+    if (screenToNavigate === 'long-video-screen') {
         updateNavActiveState('long-video');
+    } else if (screenToNavigate === 'home-screen') {
+        updateNavActiveState('shorts');
+    } else if (screenToNavigate === 'subscriptions-screen') { // ★ नया
+        updateNavActiveState('subscriptions');
     } else {
+        const navId = screenToNavigate.replace('-screen', '');
         updateNavActiveState(navId);
     }
-
 
     if (restoreScreen) {
         localStorage.removeItem('shubhzone_lastScreen');
@@ -979,12 +962,6 @@ function onPlayerStateChange(event) {
     const iframe = event.target.getIframe();
     if (!iframe) return;
     
-    // ★ बदला हुआ: वॉच पेज और क्रिएटर पेज प्लेयर स्टेट्स को अलग-अलग हैंडल करें
-    if (iframe.closest('#watch-page-player-container')) {
-        handleWatchPagePlayerStateChange(event);
-        return;
-    }
-
     const creatorPlayerView = iframe.closest('.creator-page-view');
     if (creatorPlayerView) {
         handleCreatorPlayerStateChange(event);
@@ -1271,7 +1248,13 @@ function closeAudioIssuePopup() {
 }
 
 async function setupShortsScreen(category = 'All') {
-    const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`);
+    let query;
+    if (category.toLowerCase() === 'all' || category.toLowerCase() === 'trending') {
+        const popularShortsQueries = ['viral shorts', 'trending shorts india', 'comedy shorts', 'dance challenge', 'amazing skills'];
+        query = popularShortsQueries[Math.floor(Math.random() * popularShortsQueries.length)];
+    } else {
+        query = `${category} shorts`;
+    }
 
     if (homeStaticMessageContainer) {
         videoSwiper.innerHTML = '';
@@ -1332,9 +1315,15 @@ async function populateLongVideoGrid(category = 'All') {
     
     let data;
     if (category.toLowerCase() === 'trending') {
-        data = await fetchFromYouTubeAPI('trending', { limit: 20 }); // ★ बदला हुआ: अधिक वीडियो लोड करें
+        data = await fetchFromYouTubeAPI('trending', { limit: 12 });
     } else {
-        const query = category.toLowerCase() === 'all' ? 'latest music videos' : category; 
+        let query;
+        if (category.toLowerCase() === 'all') {
+            const generalQueries = ['latest music videos', 'new movie trailers', 'popular vlogs', 'top tech reviews', 'documentary films'];
+            query = generalQueries[Math.floor(Math.random() * generalQueries.length)];
+        } else {
+            query = category;
+        }
         data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
     }
     
@@ -1358,7 +1347,7 @@ async function performLongVideoSearch() {
     const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
     appState.youtubeNextPageTokens.long = data.nextPageToken || null;
     if(data.items) {
-            renderYouTubeLongVideos(data.items, false);
+        renderYouTubeLongVideos(data.items, false);
     }
 }
 
@@ -1373,9 +1362,8 @@ function createLongVideoCard(video) {
     
     const thumbnailUrl = video.snippet.high?.url || video.snippet.thumbnails.medium?.url;
     
-    // ★ बदला हुआ: अब कार्ड पर क्लिक करने से navigateToWatchPage कॉल होगा
     card.innerHTML = `
-        <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')" onclick="navigateToWatchPage('${videoId}')">
+        <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')" onclick="playYouTubeVideoFromCard('${videoId}')">
             <i class="fas fa-play play-icon-overlay"></i>
         </div>
         <div class="long-video-info-container">
@@ -1456,8 +1444,8 @@ function renderHistoryLongVideoList() {
         const item = document.createElement('div');
         item.className = 'history-list-item haptic-trigger';
         item.innerHTML = `
-            <div class="history-item-thumbnail" style="background-image: url('${escapeHTML(video.thumbnailUrl)})'" onclick="navigateToWatchPage('${video.id}')"></div>
-            <div class="history-item-info" onclick="navigateToWatchPage('${video.id}')">
+            <div class="history-item-thumbnail" style="background-image: url('${escapeHTML(video.thumbnailUrl)})'" onclick="playYouTubeVideoFromCard('${video.id}')"></div>
+            <div class="history-item-info" onclick="playYouTubeVideoFromCard('${video.id}')">
                 <span class="history-item-title">${escapeHTML(video.title)}</span>
                 <span class="history-item-uploader">${escapeHTML(video.channelTitle)}</span>
             </div>
@@ -2045,111 +2033,15 @@ function toggleProfileVideoView(viewType) {
 }
 
 // =======================================================
-// ★★★ CREATOR PAGE LOGIC (UPDATED) - START ★★★
-// =======================================================
-
-async function initializeCreatorPage(channelId, startWith = 'short', startVideoId = null) {
-    const creatorScreen = document.getElementById('creator-page-screen');
-    creatorScreen.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-
-    const channelDetailsData = await fetchFromYouTubeAPI('channelDetails', { id: channelId });
-    const channelVideosData = await fetchFromYouTubeAPI('channel', { channelId: channelId });
-    
-    const channel = channelDetailsData.items?.[0];
-    const allVideos = channelVideosData.items || [];
-    
-    const shortVideos = allVideos.filter(v => v.snippet.title.toLowerCase().includes('#shorts') || v.id.kind === 'youtube#short');
-    const longVideos = allVideos.filter(v => !shortVideos.some(short => (short.id.videoId || short.id) === (v.id.videoId || v.id)));
-
-    if (!channel) {
-        creatorScreen.innerHTML = '<p class="static-message">Could not load creator details.</p>';
-        return;
-    }
-
-    const { title, customUrl, thumbnails, statistics } = channel.snippet;
-    const subscriberCount = statistics ? formatNumber(statistics.subscriberCount) : 'N/A';
-    const isSubscribed = appState.currentUser.subscriptions.includes(channelId);
-
-    creatorScreen.innerHTML = `
-        <div class="screen-header">
-             <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-             <span class="header-title">${escapeHTML(title)}</span>
-             <div class="header-icon-right"></div>
-        </div>
-        <div id="creator-page-content-wrapper" style="height: calc(100% - 60px); margin-top: 60px; overflow-y: auto;">
-            <div class="creator-profile-header">
-                <img src="${thumbnails.high.url}" alt="${title}" class="creator-profile-avatar">
-                <h2 class="creator-profile-name">${escapeHTML(title)}</h2>
-                <p class="creator-profile-handle">${escapeHTML(customUrl)} • ${subscriberCount} subscribers</p>
-                <button id="creator-page-subscribe-btn" class="subscribe-btn haptic-trigger ${isSubscribed ? 'subscribed' : ''}" onclick="toggleSubscription('${channelId}', this)">
-                    ${isSubscribed ? 'Subscribed' : 'Subscribe'}
-                </button>
-            </div>
-            <div class="creator-content-tabs">
-                <button class="creator-content-tab active" data-tab="creator-longs">Videos</button>
-                <button class="creator-content-tab" data-tab="creator-shorts">Shorts</button>
-            </div>
-            <div id="creator-content-container">
-                <div id="creator-longs" class="creator-tab-pane active"></div>
-                <div id="creator-shorts" class="creator-tab-pane"></div>
-            </div>
-        </div>
-    `;
-
-    renderCreatorContentGrid(document.getElementById('creator-longs'), longVideos, 'long');
-    renderCreatorContentGrid(document.getElementById('creator-shorts'), shortVideos, 'short');
-    
-    creatorScreen.querySelectorAll('.creator-content-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            creatorScreen.querySelectorAll('.creator-content-tab').forEach(t => t.classList.remove('active'));
-            creatorScreen.querySelectorAll('.creator-tab-pane').forEach(p => p.classList.remove('active'));
-            
-            tab.classList.add('active');
-            document.getElementById(tab.dataset.tab).classList.add('active');
-        });
-    });
-}
-
-function renderCreatorContentGrid(container, videos, type) {
-    if (!videos || videos.length === 0) {
-        container.innerHTML = `<p class="static-message">No ${type} videos found.</p>`;
-        return;
-    }
-    
-    const grid = document.createElement('div');
-    grid.className = type === 'long' ? 'creator-long-grid' : 'creator-short-grid';
-    
-    videos.forEach(video => {
-        const videoId = video.id.videoId || video.id;
-        const card = document.createElement('div');
-        card.className = 'creator-video-card';
-        card.innerHTML = `
-            <img src="${video.snippet.thumbnails.medium.url}" class="creator-video-thumbnail" alt="${video.snippet.title}">
-            <p class="creator-video-title">${escapeHTML(video.snippet.title)}</p>
-        `;
-        card.onclick = () => {
-            if (type === 'long') navigateToWatchPage(videoId);
-            else navigateTo('creator-page-screen', { creatorId: video.snippet.channelId, startWith: 'short', videoId: videoId }); // Shorts can still use the old player
-        };
-        grid.appendChild(card);
-    });
-    container.innerHTML = '';
-    container.appendChild(grid);
-}
-
-// =======================================================
-// ★★★ SUBSCRIPTION LOGIC - START ★★★
+// ★★★ SUBSCRIPTION LOGIC (NEW) - START ★★★
 // =======================================================
 
 async function toggleSubscription(channelId, buttonElement) {
-    if (!appState.currentUser.uid) {
-        alert("Please log in to subscribe.");
-        return;
-    }
+    if (!appState.currentUser.uid) return;
     
-    buttonElement.disabled = true;
     const isSubscribed = appState.currentUser.subscriptions.includes(channelId);
     const userRef = db.collection('users').doc(appState.currentUser.uid);
+    buttonElement.disabled = true;
 
     try {
         if (isSubscribed) {
@@ -2157,7 +2049,8 @@ async function toggleSubscription(channelId, buttonElement) {
             await userRef.update({
                 subscriptions: firebase.firestore.FieldValue.arrayRemove(channelId)
             });
-            appState.currentUser.subscriptions = appState.currentUser.subscriptions.filter(id => id !== channelId);
+            const index = appState.currentUser.subscriptions.indexOf(channelId);
+            if (index > -1) appState.currentUser.subscriptions.splice(index, 1);
             buttonElement.textContent = 'Subscribe';
             buttonElement.classList.remove('subscribed');
         } else {
@@ -2170,11 +2063,8 @@ async function toggleSubscription(channelId, buttonElement) {
             buttonElement.classList.add('subscribed');
         }
     } catch (error) {
-        console.error("Subscription error:", error);
+        console.error("Error toggling subscription:", error);
         alert("Could not update subscription. Please try again.");
-        // Revert UI on error
-        buttonElement.textContent = isSubscribed ? 'Subscribed' : 'Subscribe';
-        buttonElement.classList.toggle('subscribed', isSubscribed);
     } finally {
         buttonElement.disabled = false;
     }
@@ -2183,169 +2073,424 @@ async function toggleSubscription(channelId, buttonElement) {
 async function initializeSubscriptionsScreen() {
     const screen = document.getElementById('subscriptions-screen');
     if (!screen) return;
-    screen.innerHTML = `
-        <div class="screen-header">
-            <span class="header-title">Subscriptions</span>
-        </div>
-        <div id="subscriptions-content" class="content-area" style="padding-top: 70px;">
-            <div class="loader-container"><div class="loader"></div></div>
-        </div>
-         <div class="bottom-nav">
-            <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-            <div class.nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item active" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
-            <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
-        </div>
-    `;
+    screen.innerHTML = '<div class="screen-header"><span class="header-title">Subscriptions</span></div><div class="content-area loader-container"><div class="loader"></div></div>';
+    
+    const contentArea = screen.querySelector('.content-area');
+    const subscribedChannelIds = appState.currentUser.subscriptions || [];
 
-    const contentContainer = document.getElementById('subscriptions-content');
-    const subscribedChannels = appState.currentUser.subscriptions;
-
-    if (!subscribedChannels || subscribedChannels.length === 0) {
-        contentContainer.innerHTML = '<p class="static-message">You are not subscribed to any channels yet.</p>';
+    if (subscribedChannelIds.length === 0) {
+        contentArea.innerHTML = '<p class="static-message">You haven\'t subscribed to any channels yet.</p>';
         return;
     }
 
     try {
-        // We can fetch latest videos from a few subscribed channels as an example.
-        // Fetching from all can be API intensive. Let's fetch the latest from the first 5.
-        const channelIdsString = subscribedChannels.slice(0, 5).join(',');
-        const data = await fetchFromYouTubeAPI('search', { channelId: channelIdsString, order: 'date', maxResults: 20 });
+        // Fetch details for all subscribed channels
+        const channelDetailsData = await fetchFromYouTubeAPI('channels', { id: subscribedChannelIds.join(',') });
+        const channels = channelDetailsData.items || [];
+        
+        // Fetch latest videos from all subscribed channels
+        const videoPromises = subscribedChannelIds.map(id => fetchFromYouTubeAPI('search', { channelId: id, order: 'date', maxResults: 5 }));
+        const videoResults = await Promise.all(videoPromises);
+        const allVideos = videoResults.flatMap(res => res.items).sort(() => Math.random() - 0.5); // Mix them up
 
-        if (data.items && data.items.length > 0) {
-             const videoGrid = data.items.map(video => createLongVideoCard(video).outerHTML).join('');
-             contentContainer.innerHTML = `<div class="long-video-grid" style="padding: 10px">${videoGrid}</div>`;
-        } else {
-            contentContainer.innerHTML = '<p class="static-message">No new videos from your subscriptions.</p>';
-        }
-    } catch (error) {
-        console.error("Error fetching subscription feed:", error);
-        contentContainer.innerHTML = '<p class="static-message" style="color: var(--error-red);">Could not load subscription feed.</p>';
+        let channelsHtml = '<div class="subscribed-channels-scroller">';
+        channels.forEach(channel => {
+            channelsHtml += `
+                <div class="subscribed-channel-item haptic-trigger" onclick="navigateTo('creator-page-screen', { creatorId: '${channel.id}'})">
+                    <img src="${channel.snippet.thumbnails.default.url}" alt="${channel.snippet.title}">
+                    <span>${escapeHTML(channel.snippet.title)}</span>
+                </div>
+            `;
+        });
+        channelsHtml += '</div>';
+
+        let videosHtml = '<div class="long-video-grid" style="padding-top: 0;">';
+        allVideos.forEach(video => {
+            videosHtml += createLongVideoCard(video).outerHTML;
+        });
+        videosHtml += '</div>';
+
+        contentArea.innerHTML = `
+            <h3 class="subscriptions-section-title">Channels</h3>
+            ${channelsHtml}
+            <h3 class="subscriptions-section-title">Latest Videos</h3>
+            ${videosHtml}
+        `;
+    } catch(error) {
+        console.error("Error fetching subscriptions feed:", error);
+        contentArea.innerHTML = '<p class="static-message error">Could not load your subscriptions feed.</p>';
     }
 }
 
-// =======================================================
-// ★★★ WATCH PAGE LOGIC (NEW) - START ★★★
-// =======================================================
-async function initializeWatchPage(videoId) {
-    const screen = document.getElementById('watch-screen');
-    if (!screen) return;
-    screen.innerHTML = '<div class="loader-container" style="height: 100%;"><div class="loader"></div></div>';
-    
-    const videoData = await fetchFromYouTubeAPI('videoDetails', { id: videoId });
-    const video = videoData.items?.[0];
 
-    if (!video) {
-        screen.innerHTML = `<p class="static-message">Could not load video.</p><button onclick="navigateBack()">Go Back</button>`;
+// =======================================================
+// ★★★ CREATOR PAGE LOGIC - START ★★★
+// =======================================================
+
+function openCommentsForCurrentCreatorVideo() {
+    const { id, channelId } = appState.creatorPage.currentLongVideo;
+    if (id && channelId) {
+        openCommentsModal(id, null, channelId);
+    } else {
+        console.error("No current long video data to open comments for.");
+        alert("Could not load comments for this video.");
+    }
+}
+
+async function initializeCreatorPage(channelId, startWith = 'short', startVideoId = null) {
+    const screen = document.getElementById('creator-page-screen');
+    screen.innerHTML = '<div class="loader-container full-page"><div class="loader"></div></div>';
+
+    try {
+        // Fetch channel details and videos in parallel
+        const [channelDetailsData, channelVideosData] = await Promise.all([
+            fetchFromYouTubeAPI('channels', { id: channelId }),
+            fetchFromYouTubeAPI('search', { channelId: channelId, order: 'date', maxResults: 50 })
+        ]);
+        
+        appState.creatorPage.channelDetails = (channelDetailsData.items && channelDetailsData.items.length > 0) ? channelDetailsData.items[0] : null;
+        const allVideos = channelVideosData.items || [];
+        
+        const shortVideos = allVideos.filter(v => v.snippet.title.toLowerCase().includes('#shorts') || (v.id.videoId && currentVideoCache.get(v.id.videoId)?.contentDetails?.duration?.includes('S') && !currentVideoCache.get(v.id.videoId)?.contentDetails?.duration?.includes('M')));
+        const longVideos = allVideos.filter(v => !shortVideos.some(short => (short.id.videoId || short.id) === (v.id.videoId || v.id)));
+
+        renderCreatorPageLayout(channelId, longVideos, shortVideos, startWith, startVideoId);
+
+    } catch (error) {
+        console.error("Error initializing creator page:", error);
+        screen.innerHTML = `<p class="static-message error">Could not load creator page.</p><button class="continue-btn" onclick="navigateBack()">Go Back</button>`;
+    }
+}
+
+function renderCreatorPageLayout(channelId, longVideos, shortVideos, startWith, startVideoId) {
+    const screen = document.getElementById('creator-page-screen');
+    const channel = appState.creatorPage.channelDetails;
+    if (!channel) {
+        screen.innerHTML = `<p class="static-message">Channel not found.</p>`;
         return;
     }
 
-    const { channelId, channelTitle, title, description } = video.snippet;
-    const viewCount = video.statistics ? formatNumber(video.statistics.viewCount) : '...';
-    const likeCount = video.statistics ? formatNumber(video.statistics.likeCount) : '...';
-    
-    addLongVideoToHistory(videoId);
     const isSubscribed = appState.currentUser.subscriptions.includes(channelId);
-    
+    const subscribeButtonHtml = `<button id="creator-page-subscribe-btn" class="subscribe-btn ${isSubscribed ? 'subscribed' : ''}" onclick="toggleSubscription('${channelId}', this)">${isSubscribed ? 'Subscribed' : 'Subscribe'}</button>`;
+
     screen.innerHTML = `
-        <div id="watch-page-content">
-            <div id="watch-page-player-container">
-                <div id="watch-page-player"></div>
+        <div class="creator-page-header" style="background-image: url('${channel.brandingSettings.image?.bannerExternalUrl || ''}');">
+            <div class="header-overlay">
+                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
             </div>
-            <div id="watch-page-meta">
-                <h3 class="watch-video-title">${escapeHTML(title)}</h3>
-                <div class="watch-video-stats">
-                    <span>${viewCount} views</span> • <span>${formatTimeAgo(new Date(video.snippet.publishedAt))}</span>
-                </div>
-                <div class="watch-channel-info">
-                    <img src="https://via.placeholder.com/40" id="watch-channel-avatar" class="watch-channel-avatar" onclick="navigateTo('creator-page-screen', { creatorId: '${channelId}' })">
-                    <div class="watch-channel-name-container">
-                        <span class="watch-channel-name" onclick="navigateTo('creator-page-screen', { creatorId: '${channelId}' })">${escapeHTML(channelTitle)}</span>
-                        <span class="watch-channel-subs">... subscribers</span>
-                    </div>
-                    <button id="watch-page-subscribe-btn" class="subscribe-btn haptic-trigger ${isSubscribed ? 'subscribed' : ''}" onclick="toggleSubscription('${channelId}', this)">
-                         ${isSubscribed ? 'Subscribed' : 'Subscribe'}
-                    </button>
-                </div>
-                 <div class="watch-video-actions">
-                    <button class="action-btn haptic-trigger"><i class="fas fa-thumbs-up"></i> ${likeCount}</button>
-                    <button class="action-btn haptic-trigger" onclick="openCommentsModal('${videoId}', null, '${channelId}')"><i class="fas fa-comment-dots"></i> Comments</button>
-                    <button class="action-btn haptic-trigger" onclick="navigateTo('credit-screen', { videoId: '${videoId}' })"><i class="fas fa-info-circle"></i> Credit</button>
-                </div>
-                <div class="watch-description-box">
-                    <p>${escapeHTML(description).substring(0, 150)}...</p>
-                </div>
+        </div>
+        <div class="creator-page-info-bar">
+            <img src="${channel.snippet.thumbnails.high.url}" class="creator-page-avatar" alt="Avatar">
+            <div class="creator-page-details">
+                <h2 class="creator-page-name">${escapeHTML(channel.snippet.title)}</h2>
+                <span class="creator-page-stats">${escapeHTML(channel.snippet.customUrl)} • ${formatNumber(channel.statistics.subscriberCount)} subscribers</span>
             </div>
-            <div id="related-videos-container">
-                 <h4 class="related-videos-title">Up next</h4>
-            </div>
+            ${subscribeButtonHtml}
+        </div>
+        <div id="creator-page-tabs-container">
+            <div class="creator-page-tab-btn active" data-tab="home">Home</div>
+            <div class="creator-page-tab-btn" data-tab="videos">Videos</div>
+            <div class="creator-page-tab-btn" data-tab="shorts">Shorts</div>
+            <div class="creator-page-tab-btn disabled" data-tab="playlists">Playlists</div>
+        </div>
+        <div class="creator-page-content-area">
+            <div id="creator-page-home-view" class="creator-page-view active"></div>
+            <div id="creator-page-videos-view" class="creator-page-view"></div>
+            <div id="creator-page-shorts-view" class="creator-page-view"></div>
         </div>
     `;
 
-    // Fetch and populate channel details (avatar, subs)
-    fetchFromYouTubeAPI('channelDetails', { id: channelId }).then(data => {
-        const channel = data.items?.[0];
-        if (channel) {
-            document.getElementById('watch-channel-avatar').src = channel.snippet.thumbnails.default.url;
-            document.querySelector('.watch-channel-subs').textContent = `${formatNumber(channel.statistics.subscriberCount)} subscribers`;
-        }
-    });
+    renderCreatorHomePage(longVideos, shortVideos);
+    renderCreatorVideosPage(longVideos);
+    renderCreatorShortsPage(shortVideos);
     
-    // Fetch and populate related videos
-    fetchFromYouTubeAPI('search', { relatedToVideoId: videoId, type: 'video', maxResults: 15 }).then(data => {
-        const relatedVideosContainer = document.getElementById('related-videos-container');
-        if (data.items) {
-            data.items.forEach(item => {
-                relatedVideosContainer.appendChild(createRelatedVideoCard(item));
-            });
+    // If a specific video needs to be played, navigate to that tab and play it.
+    if (startVideoId) {
+        let videoType = 'long';
+        if(shortVideos.some(v => v.id.videoId === startVideoId)) {
+            videoType = 'short';
+        }
+        
+        if (videoType === 'long') {
+             // NEW: This is the new YouTube-like player page.
+             renderLongVideoPlayerPage(startVideoId, longVideos);
+        } else {
+            // This part can be enhanced later if needed. For now, it shows the shorts grid.
+            switchCreatorPageTab('shorts');
+        }
+    } else {
+        switchCreatorPageTab('home');
+    }
+    
+    screen.querySelectorAll('.creator-page-tab-btn').forEach(tab => {
+        tab.onclick = () => {
+            if (tab.classList.contains('disabled')) return;
+            const tabName = tab.dataset.tab;
+            if(tabName === 'videos') {
+                renderLongVideoPlayerPage(longVideos[0]?.id.videoId, longVideos);
+            } else {
+                switchCreatorPageTab(tabName);
+            }
+        };
+    });
+}
+
+function switchCreatorPageTab(tabName) {
+    document.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.creator-page-tab-btn[data-tab="${tabName}"]`).classList.add('active');
+    
+    document.querySelectorAll('.creator-page-view').forEach(v => v.style.display = 'none');
+    const viewToShow = document.getElementById(`creator-page-${tabName}-view`);
+    if(viewToShow) viewToShow.style.display = 'block';
+
+    // If there is a video player page, remove it
+    const playerPage = document.getElementById('creator-page-player-view');
+    if(playerPage) playerPage.remove();
+}
+
+function renderCreatorHomePage(longVideos, shortVideos) {
+    const container = document.getElementById('creator-page-home-view');
+    if (!container) return;
+    
+    const latestLongVideo = longVideos.length > 0 ? createLongVideoCard(longVideos[0]).outerHTML : '<p class="static-message">No videos available.</p>';
+    
+    let shortsHtml = '';
+    if (shortVideos.length > 0) {
+        shortsHtml = '<div class="home-shorts-grid">';
+        shortVideos.slice(0, 6).forEach(video => {
+            const videoId = video.id.videoId;
+            const thumbUrl = video.snippet.thumbnails.medium.url;
+            shortsHtml += `
+              <div class="home-short-card haptic-trigger" onclick="playYouTubeVideoFromCard('${videoId}')">
+                  <img src="${thumbUrl}" class="thumbnail" alt="Short video thumbnail">
+              </div>`;
+        });
+        shortsHtml += '</div>';
+    } else {
+        shortsHtml = '<p class="static-message">No shorts available.</p>';
+    }
+
+    container.innerHTML = `
+        <h3 class="creator-section-title">Latest Video</h3>
+        <div class="long-video-grid" style="padding: 0; grid-template-columns: 1fr;">${latestLongVideo}</div>
+        <h3 class="creator-section-title">Shorts</h3>
+        ${shortsHtml}
+    `;
+}
+
+function renderCreatorVideosPage(longVideos) {
+    const container = document.getElementById('creator-page-videos-view');
+    if (!container) return;
+    if (longVideos.length === 0) {
+        container.innerHTML = '<p class="static-message">No videos found.</p>';
+        return;
+    }
+    let gridHtml = '<div class="long-video-grid">';
+    longVideos.forEach(video => {
+        gridHtml += createLongVideoCard(video).outerHTML;
+    });
+    gridHtml += '</div>';
+    container.innerHTML = gridHtml;
+}
+
+function renderCreatorShortsPage(shortVideos) {
+    const container = document.getElementById('creator-page-shorts-view');
+    if (!container) return;
+    if (shortVideos.length === 0) {
+        container.innerHTML = '<p class="static-message">No shorts found.</p>';
+        return;
+    }
+    let gridHtml = '<div class="profile-video-grid shorts-grid">';
+    shortVideos.forEach(video => {
+         gridHtml += `
+            <div class="user-video-item-short haptic-trigger" onclick="playYouTubeVideoFromCard('${video.id.videoId}')">
+                <img src="${video.snippet.thumbnails.medium.url}" class="thumbnail" alt="thumbnail">
+            </div>
+        `;
+    });
+    gridHtml += '</div>';
+    container.innerHTML = gridHtml;
+}
+
+
+async function renderLongVideoPlayerPage(videoId, videoPlaylist) {
+    const contentArea = document.querySelector('.creator-page-content-area');
+    if (!contentArea) return;
+
+    // Remove existing player page if any
+    const oldPlayerPage = document.getElementById('creator-page-player-view');
+    if (oldPlayerPage) oldPlayerPage.remove();
+
+    // Hide other views
+    document.querySelectorAll('.creator-page-view').forEach(v => v.style.display = 'none');
+    
+    const playerPage = document.createElement('div');
+    playerPage.id = 'creator-page-player-view';
+    playerPage.className = 'creator-page-view active';
+    playerPage.style.display = 'block';
+
+    contentArea.appendChild(playerPage);
+    playerPage.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+    
+    // Fetch video details
+    let videoData = currentVideoCache.get(videoId);
+    if (!videoData || !videoData.statistics) { // Check for stats which come from videoDetails endpoint
+        const data = await fetchFromYouTubeAPI('videoDetails', { id: videoId });
+        if(data.items && data.items.length > 0) {
+            videoData = data.items[0];
+            currentVideoCache.set(videoId, videoData);
+        } else {
+            playerPage.innerHTML = '<p class="static-message error">Could not load video.</p>';
+            return;
+        }
+    }
+    
+    appState.creatorPage.currentLongVideo = { id: videoId, channelId: videoData.snippet.channelId };
+
+    let upNextHtml = '';
+    videoPlaylist.forEach(video => {
+        if (video.id.videoId !== videoId) {
+            upNextHtml += createUpNextVideoCard(video);
         }
     });
 
-    // Initialize the player
-    if (isYouTubeApiReady) {
-        appState.watchPagePlayer = new YT.Player('watch-page-player', {
-            height: '100%',
-            width: '100%',
-            videoId: videoId,
-            playerVars: {
-                'autoplay': 1,
-                'controls': 0, // Hide default controls
-                'rel': 0,
-                'showinfo': 0,
-                'modestbranding': 1,
-                'fs': 0,
-                'iv_load_policy': 3
+    const channel = appState.creatorPage.channelDetails;
+    const isSubscribed = appState.currentUser.subscriptions.includes(channel.id);
+    const subscribeButtonHtml = `<button id="video-player-subscribe-btn" class="subscribe-btn small ${isSubscribed ? 'subscribed' : ''}" onclick="toggleSubscription('${channel.id}', this)">${isSubscribed ? 'Subscribed' : 'Subscribe'}</button>`;
+    
+    playerPage.innerHTML = `
+        <div class="video-player-container">
+            <div id="creator-page-player-long"></div>
+             <div class="custom-player-controls-overlay">
+                <div class="progress-bar-container">
+                    <progress id="video-progress-bar" value="0" max="100"></progress>
+                </div>
+                <div class="controls-center">
+                    <i class="fas fa-play-circle control-btn-main" onclick="toggleCreatorPlayer('long')"></i>
+                </div>
+            </div>
+        </div>
+        <div class="video-player-details-container">
+            <h3 class="video-player-title">${escapeHTML(videoData.snippet.title)}</h3>
+            <div class="video-player-channel-info">
+                <img src="${channel.snippet.thumbnails.default.url}" class="channel-avatar-small" onclick="navigateTo('creator-page-screen', { creatorId: '${channel.id}'})">
+                <div class="channel-name-subs">
+                    <span class="channel-name" onclick="navigateTo('creator-page-screen', { creatorId: '${channel.id}'})">${escapeHTML(channel.snippet.title)}</span>
+                    <span class="channel-subs">${formatNumber(channel.statistics.subscriberCount)} subscribers</span>
+                </div>
+                ${subscribeButtonHtml}
+            </div>
+            <div class="video-actions-bar">
+                 <button class="action-btn haptic-trigger"><i class="fas fa-thumbs-up"></i> ${formatNumber(videoData.statistics.likeCount)}</button>
+                 <button class="action-btn haptic-trigger" onclick="openCommentsModal('${videoId}', null, '${channel.id}')"><i class="fas fa-comment-dots"></i> Comments</button>
+                 <button class="action-btn haptic-trigger"><i class="fas fa-share"></i> Share</button>
+            </div>
+        </div>
+        <div class="up-next-container">
+            <h4>Up next</h4>
+            ${upNextHtml}
+        </div>
+    `;
+
+    initializeCreatorPagePlayer(videoId, 'creator-page-player-long', 'long');
+    
+    // Setup progress bar interaction
+    const progressBarContainer = playerPage.querySelector('.progress-bar-container');
+    progressBarContainer.addEventListener('click', (e) => {
+        const player = appState.creatorPagePlayers.long;
+        if (player) {
+            const rect = progressBarContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const clickedValue = (x * 100) / rect.width;
+            const duration = player.getDuration();
+            player.seekTo((duration * clickedValue) / 100, true);
+        }
+    });
+}
+
+function createUpNextVideoCard(video) {
+    const videoId = video.id.videoId;
+    return `
+        <div class="up-next-video-card haptic-trigger" onclick="renderLongVideoPlayerPage('${videoId}', appState.creatorPage.allLongVideos)">
+            <img src="${video.snippet.thumbnails.medium.url}" class="up-next-thumbnail">
+            <div class="up-next-details">
+                <span class="up-next-title">${escapeHTML(video.snippet.title)}</span>
+                <span class="up-next-channel">${escapeHTML(video.snippet.channelTitle)}</span>
+            </div>
+        </div>
+    `;
+}
+
+
+function initializeCreatorPagePlayer(videoId, containerId, type) {
+    if (appState.creatorPagePlayers[type]) {
+        appState.creatorPagePlayers[type].destroy();
+    }
+    if (appState.creatorPagePlayers.progressInterval) {
+        clearInterval(appState.creatorPagePlayers.progressInterval);
+    }
+    
+    appState.creatorPagePlayers[type] = new YT.Player(containerId, {
+        height: '100%',
+        width: '100%',
+        videoId: videoId,
+        playerVars: {
+            'autoplay': 1, 'controls': 0, // ★ बदलाव: कस्टम कंट्रोल के लिए डिफॉल्ट कंट्रोल बंद
+            'rel': 0, 'showinfo': 0, 'mute': 0, 'modestbranding': 1,
+            'fs': 1, 'origin': window.location.origin
+        },
+        events: {
+            'onReady': (event) => {
+                event.target.playVideo();
+                addLongVideoToHistory(videoId);
             },
-            events: {
-                'onReady': (e) => e.target.playVideo(),
-                'onStateChange': handleWatchPagePlayerStateChange
-            }
-        });
+            'onStateChange': handleCreatorPlayerStateChange
+        }
+    });
+}
+
+function toggleCreatorPlayer(type) {
+    const player = appState.creatorPagePlayers[type];
+    if (player && typeof player.getPlayerState === 'function') {
+        const state = player.getPlayerState();
+        if (state === YT.PlayerState.PLAYING) player.pauseVideo();
+        else player.playVideo();
     }
 }
 
-function createRelatedVideoCard(video) {
-    const videoId = video.id.videoId;
-    const { title, channelTitle, thumbnails } = video.snippet;
+function handleCreatorPlayerStateChange(event) {
+    const player = event.target;
+    const playerState = event.data;
+    const iframe = player.getIframe();
+    if (!iframe) return;
 
-    const card = document.createElement('div');
-    card.className = 'related-video-card haptic-trigger';
-    card.onclick = () => initializeWatchPage(videoId); // Navigate to new video on the same page
+    const playPauseBtn = iframe.closest('.video-player-container')?.querySelector('.control-btn-main');
+    const progressBar = document.getElementById('video-progress-bar');
+    
+    if (appState.creatorPagePlayers.progressInterval) {
+        clearInterval(appState.creatorPagePlayers.progressInterval);
+    }
 
-    card.innerHTML = `
-        <img src="${thumbnails.medium.url}" class="related-video-thumbnail">
-        <div class="related-video-info">
-            <p class="related-video-title">${escapeHTML(title)}</p>
-            <p class="related-video-channel">${escapeHTML(channelTitle)}</p>
-        </div>
-    `;
-    return card;
-}
+    if (playPauseBtn) {
+        if (playerState === YT.PlayerState.PLAYING) {
+            playPauseBtn.classList.replace('fa-play-circle', 'fa-pause-circle');
+            // Start progress bar interval
+            appState.creatorPagePlayers.progressInterval = setInterval(() => {
+                const currentTime = player.getCurrentTime();
+                const duration = player.getDuration();
+                if (progressBar && duration > 0) {
+                    progressBar.value = (currentTime / duration) * 100;
+                }
+            }, 250);
 
-function handleWatchPagePlayerStateChange(event) {
-    // This can be expanded to show custom controls based on player state
-    // For now, it's a placeholder.
+        } else {
+            playPauseBtn.classList.replace('fa-pause-circle', 'fa-play-circle');
+            // Clear interval when paused or ended
+            if(appState.creatorPagePlayers.progressInterval) {
+                clearInterval(appState.creatorPagePlayers.progressInterval);
+            }
+        }
+    }
 }
 
 // =======================================================
@@ -2808,24 +2953,20 @@ function showEnlargedImage(imageUrl) {
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // नया 'Subscriptions' बटन जोड़ना
-    document.querySelectorAll('.bottom-nav').forEach(nav => {
-        if (!nav.querySelector('.nav-item[data-nav="subscriptions"]')) {
-            const subscriptionsItem = document.createElement('div');
-            subscriptionsItem.className = 'nav-item';
-            subscriptionsItem.setAttribute('data-nav', 'subscriptions');
-            subscriptionsItem.innerHTML = `<i class="fas fa-rss"></i>Subscriptions`;
-
-            const friendsItem = nav.querySelector('.nav-item[data-nav="friends"]');
-            if(friendsItem) {
-                 friendsItem.insertAdjacentElement('beforebegin', subscriptionsItem);
-                 // 5 आइटम फिट करने के लिए पुराने आइटम हटाएं या समायोजित करें
-                 // उदाहरण के लिए, फ्रेंड्स टैब को हटाना
-                 friendsItem.style.display = 'none'; // या .remove()
-            }
+    // ★ नया: सब्सक्रिप्शन टैब जोड़ना
+    document.querySelectorAll('.bottom-nav').forEach(navBar => {
+        const subscriptionsNavItem = document.createElement('div');
+        subscriptionsNavItem.className = 'nav-item haptic-trigger';
+        subscriptionsNavItem.setAttribute('data-nav', 'subscriptions');
+        subscriptionsNavItem.innerHTML = '<i class="fas fa-layer-group"></i><span>Subscriptions</span>';
+        
+        const profileNavItem = navBar.querySelector('.nav-item[data-nav="profile"]');
+        if (profileNavItem) {
+            navBar.insertBefore(subscriptionsNavItem, profileNavItem);
+        } else {
+            navBar.appendChild(subscriptionsNavItem);
         }
     });
-
 
     const navItems = document.querySelectorAll('.nav-item');
     navItems.forEach(item => {
@@ -2848,13 +2989,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     document.querySelectorAll('.header-icon-left').forEach(btn => {
-        if (!btn.closest('#history-top-bar') && !btn.closest('#creator-page-screen .screen-header')) {
+        if (!btn.closest('#history-top-bar') && !btn.closest('#creator-page-screen .creator-page-header')) {
             btn.onclick = () => navigateBack();
         }
     });
-    const creatorBackBtn = document.querySelector('#creator-page-screen .header-icon-left');
-    if (creatorBackBtn) creatorBackBtn.onclick = () => navigateBack();
-
+    
     const sidebar = document.getElementById('main-sidebar');
     if (sidebar) {
         let reportButton = document.getElementById('navigate-to-report-btn');
@@ -2927,10 +3066,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('profile-show-shorts-btn')?.addEventListener('click', () => toggleProfileVideoView('short'));
     document.getElementById('profile-show-longs-btn')?.addEventListener('click', () => toggleProfileVideoView('long'));
     
+    // Obsolete buttons, keep handlers for safety or remove if HTML is confirmed clean
     document.getElementById('more-function-btn')?.addEventListener('click', () => {
         document.getElementById('more-function-menu').classList.toggle('open');
     });
-    document.getElementById('more-videos-btn')?.addEventListener('click', toggleCreatorVideoList);
+    document.getElementById('more-videos-btn')?.addEventListener('click', () => {});
+
 
     loadHapticPreference();
     renderCategories();
