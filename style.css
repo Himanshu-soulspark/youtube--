@@ -1,6 +1,7 @@
 /* ================================================= */
-/* === Shubhzone App Styles (Code 2) - FINAL v5.15 === */
+/* === Shubhzone App Styles (Code 2) - FINAL v5.16 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
+/* === SOLVED: CSS for Reworked Creator Page      === */
 /* ================================================= */
 
 /* Design Style Guide */
@@ -380,7 +381,7 @@ display: flex;
 flex-direction: column;
 gap: 15px;
 }
-#information-screen .continue-btn {
+#information-screen .continue-btn, #long-video-load-more-btn {
 background-color: var(--primary-neon);
 color: var(--background);
 font-weight: 700;
@@ -392,7 +393,7 @@ border: none;
 border-radius: 8px;
 font-size: 1.1em;
 }
-#information-screen .continue-btn:disabled {
+#information-screen .continue-btn:disabled, #long-video-load-more-btn:disabled {
 background-color: var(--text-disabled);
 cursor: not-allowed;
 }
@@ -526,11 +527,6 @@ background-clip: text;
 .nav-item i {
 font-size: 1.5em;
 margin-bottom: 5px;
-}
-
-/* ★ हटा दिया गया: होम आइकन (अब उपयोग में नहीं है) */
-.nav-item[data-nav="new-home"] {
-    display: none;
 }
 
 #profile-screen {
@@ -1118,6 +1114,7 @@ overflow-y: auto;
 -webkit-overflow-scrolling: touch;
 display: flex;
 flex-direction: column;
+padding-bottom: 60px; /* Make space for nav bar */
 }
 
 #long-video-top-bar, #history-top-bar {
@@ -1129,10 +1126,7 @@ align-items: center;
 padding: 0 10px;
 flex-shrink: 0;
 border-bottom: 1px solid var(--secondary-background);
-position: absolute;
-top: 0;
-left: 0;
-z-index: 55;
+/* This part is removed as it's not part of a fixed header in the new scrollable layout */
 }
 
 #long-video-menu-icon, #history-menu-icon {
@@ -1246,6 +1240,7 @@ border-radius: 12px;
 overflow: hidden;
 background-color: var(--secondary-background);
 box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+cursor: pointer;
 }
 
 .long-video-thumbnail {
@@ -1258,7 +1253,6 @@ display: flex;
 align-items: center;
 justify-content: center;
 transition: transform 0.3s ease;
-cursor: pointer;
 }
 
 .long-video-card:hover .long-video-thumbnail {
@@ -1298,7 +1292,6 @@ display: flex;
 flex-direction: column;
 gap: 3px;
 overflow: hidden;
-cursor: pointer;
 }
 
 .long-video-name {
@@ -1398,6 +1391,7 @@ background-color: var(--secondary-background);
 border-radius: 8px;
 padding: 8px;
 gap: 12px;
+cursor: pointer;
 }
 .history-item-thumbnail {
 width: 120px;
@@ -1406,7 +1400,6 @@ border-radius: 6px;
 background-size: cover;
 background-position: center;
 flex-shrink: 0;
-cursor: pointer;
 }
 .history-item-info {
 flex-grow: 1;
@@ -1414,7 +1407,6 @@ overflow: hidden;
 display: flex;
 flex-direction: column;
 justify-content: center;
-cursor: pointer;
 }
 .history-item-title {
 font-weight: 500;
@@ -1797,25 +1789,20 @@ align-items: center;
 padding: 40px 0;
 }
 
+/* ======================================================= */
+/* ★★★ CREATOR PAGE STYLES (REWORKED) - START ★★★ */
+/* ======================================================= */
+
 #creator-page-screen .content-area {
 overflow: hidden;
-height: calc(100% - 60px);
-padding: 0;
-padding-top: 60px;
+height: calc(100% - 60px); /* Adjust for header */
+padding: 60px 0 0 0; /* Make space for header, remove other padding */
+width: 100%;
 }
 
 #creator-page-screen .screen-header {
-justify-content: center; /* हेडर को केंद्र में करें */
+justify-content: center; 
 position: relative;
-}
-#creator-page-screen .header-icon-left {
-position: absolute; /* बैक बटन को बाईं ओर रखें */
-left: 15px;
-top: 50%;
-transform: translateY(-50%);
-}
-#creator-page-screen .header-icon-right {
-display: none; /* दाएं आइकन की जरूरत नहीं है */
 }
 
 #creator-page-tabs {
@@ -1846,397 +1833,72 @@ color: var(--background);
 font-weight: 700;
 }
 
-.creator-page-view {
-display: none;
-height: 100%;
-}
-.creator-page-view.active {
-display: flex;
-flex-direction: column;
-}
-
-.creator-video-viewer {
-display: flex;
-height: 100%;
-width: 100%;
-position: relative;
+/* ★ नया: क्रिएटर पेज पर वीडियो और प्लेलिस्ट ग्रिड के लिए स्टाइल */
+.creator-video-grid, .creator-playlist-list {
+    height: 100%;
+    overflow-y: auto;
+    padding: 15px;
+    padding-bottom: 75px; /* नेव बार के लिए जगह */
 }
 
-.main-video-card-wrapper {
-flex-grow: 1;
-display: flex;
-flex-direction: column;
-justify-content: center;
-align-items: center;
-padding: 0;
-transition: all 0.3s ease;
-height: 100%;
-min-width: 0;
-background: #000;
+.creator-video-grid {
+    display: grid;
+    gap: 15px;
 }
 
-.main-video-card {
-width: 100%;
-background-color: var(--background);
-position: relative;
-overflow: hidden;
+/* लंबे वीडियो के लिए एक कॉलम ग्रिड */
+.creator-video-grid.long-video-list {
+    grid-template-columns: 1fr;
+}
+.creator-video-grid.long-video-list .long-video-card {
+    margin-bottom: 0;
 }
 
-#creator-page-short-view .main-video-card {
-height: 100%;
-border-radius: 0;
+
+/* शॉर्ट्स के लिए मल्टी-कॉलम ग्रिड */
+.creator-video-grid.short-video-list {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px;
 }
 
-#creator-page-long-view .main-video-card-wrapper {
-padding: 0; /* कोई पैडिंग नहीं */
-}
-#creator-page-long-view .main-video-card {
-aspect-ratio: 16 / 9;
-border-radius: 0; /* कोई बॉर्डर-रेडियस नहीं */
-max-height: 100%;
-}
+/* JS द्वारा अप्रचलित शैलियों को हटाना या टिप्पणी करना */
+/*
+#creator-page-short-view, #creator-page-long-view { ... }
+.creator-video-viewer { ... }
+.main-video-card-wrapper { ... }
+.main-video-card { ... }
+.side-video-list-scroller { ... }
+.more-function-container { ... }
+*/
 
-#creator-page-player-short,
-#creator-page-player-long {
-width: 100%;
-height: 100%;
-position: absolute;
-top: 0;
-left: 0;
-}
-
-.side-video-list-scroller {
-width: 120px;
-flex-shrink: 0;
-background-color: rgba(var(--background-rgb), 0.9);
-backdrop-filter: blur(5px);
-overflow-y: auto;
-padding: 10px;
-display: flex;
-flex-direction: column;
-gap: 10px;
-align-items: center;
-position: absolute;
-right: 0;
-top: 0;
-height: 100%;
-transform: translateX(100%);
-transition: transform 0.3s ease;
-z-index: 100;
-}
-
-.creator-video-viewer.show-side-list .side-video-list-scroller {
-transform: translateX(0);
-}
-
-.side-video-thumb {
-width: 100px;
-object-fit: cover;
-border-radius: 8px;
-cursor: pointer;
-border: 2px solid var(--text-secondary);
-transition: border-color 0.2s ease;
-}
-.side-video-thumb:hover, .side-video-thumb.active {
-border-color: var(--primary-neon);
-}
-
-.side-video-thumb-short {
-aspect-ratio: 9 / 16;
-}
-.side-video-thumb-long {
-aspect-ratio: 16 / 9;
-}
-
-.more-function-container {
-position: absolute;
-top: 70px; /* हेडर के नीचे */
-right: 15px;
-z-index: 2001;
-display: flex;
-align-items: center;
-gap: 10px;
-}
-
-.more-function-btn {
-width: 44px;
-height: 44px;
-background-color: rgba(var(--secondary-background-rgb), 0.7);
-color: var(--text-primary);
-border-radius: 50%;
-border: 1px solid var(--text-secondary);
-font-size: 1.5em;
-cursor: pointer;
-display: flex;
-justify-content: center;
-align-items: center;
-transition: all 0.2s ease;
-}
-.more-function-btn:hover {
-background-color: var(--primary-neon);
-color: var(--background);
-}
-.more-function-menu {
-position: absolute;
-right: 55px;
-top: 0;
-display: flex;
-gap: 10px;
-transform: scaleX(0);
-transform-origin: right;
-opacity: 0;
-visibility: hidden;
-transition: all 0.3s ease;
-}
-.more-function-menu.open {
-transform: scaleX(1);
-opacity: 1;
-visibility: visible;
-}
-.function-menu-item {
-padding: 10px 15px;
-background-color: rgba(var(--secondary-background-rgb), 0.7);
-color: var(--text-primary);
-border: 1px solid var(--text-secondary);
-border-radius: 20px;
-cursor: pointer;
-white-space: nowrap;
-display: flex;
-align-items: center;
-gap: 8px;
-transition: all 0.2s ease;
-}
-.function-menu-item:hover {
-background-color: var(--primary-neon);
-color: var(--background);
-}
-
-/* ★ नया: लॉन्ग वीडियो प्लेयर के लिए कस्टम कंट्रोल्स */
-.custom-player-controls-overlay {
-position: absolute;
-bottom: 0;
-left: 0;
-width: 100%;
-height: 100%;
-z-index: 21;
-display: flex;
-flex-direction: column;
-justify-content: center;
-align-items: center;
-background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%);
-opacity: 0;
-transition: opacity 0.3s ease;
-pointer-events: none;
-}
-
-.main-video-card:hover .custom-player-controls-overlay {
-opacity: 1;
-pointer-events: auto;
-}
-
-.custom-player-controls-overlay .controls-center {
-pointer-events: auto;
-}
-.control-btn-main {
-font-size: 4em;
-color: white;
-cursor: pointer;
-text-shadow: 0 0 8px black;
-transition: transform 0.2s ease;
-}
-.control-btn-main:hover {
-    transform: scale(1.1);
-}
-
-.custom-player-controls-overlay .controls-bottom {
-position: absolute;
-bottom: 15px;
-right: 15px;
-pointer-events: auto;
-}
-.rotate-btn-player {
-    font-size: 1.8em;
-    color: white;
-    cursor: pointer;
-    text-shadow: 0 0 5px black;
-    background: rgba(0,0,0,0.5);
-    padding: 10px;
-    border-radius: 50%;
-}
-
-#your-zone-screen {
-background: var(--background);
-}
-#your-zone-content {
-padding: 80px 20px 20px !important;
-display: flex;
-flex-direction: column;
-gap: 20px;
-width: 100%;
-overflow-y: auto;
-}
-.your-zone-header {
-text-align: center;
-padding-bottom: 20px;
-border-bottom: 1px solid rgba(var(--text-primary-rgb), 0.1);
-}
-.your-zone-avatar {
-width: 100px;
-height: 100px;
-border-radius: 50%;
-object-fit: cover;
-border: 3px solid var(--primary-neon);
-margin-bottom: 10px;
-}
-.your-zone-name {
-font-size: 1.6em;
-font-weight: 700;
-color: var(--text-primary);
-margin: 0;
-}
-.your-zone-email {
-font-size: 1em;
-color: var(--text-secondary);
-margin-top: 5px;
-}
-.your-zone-card {
-background-color: var(--secondary-background);
-padding: 15px;
-border-radius: 12px;
-border: 1px solid rgba(var(--text-primary-rgb), 0.1);
-}
-.your-zone-card label {
-font-size: 0.9em;
-color: var(--text-secondary);
-margin-bottom: 8px;
-display: block;
-}
-.input-with-button {
-display: flex;
-gap: 10px;
-}
-.input-with-button input {
-flex-grow: 1;
-background-color: var(--background);
-border: 1px solid var(--text-secondary);
-padding: 10px 15px;
-border-radius: 8px;
-font-family: monospace;
-font-size: 1.1em;
-color: var(--text-primary);
-}
-.copy-btn {
-flex-shrink: 0;
-background-color: var(--primary-neon);
-color: var(--background);
-border: none;
-width: 45px;
-height: 45px;
-border-radius: 8px;
-font-size: 1.2em;
-cursor: pointer;
-transition: background-color 0.2s;
-}
-.copy-btn:hover {
-background-color: rgba(var(--primary-neon-rgb), 0.8);
-}
-.your-zone-action-btn {
-width: 100%;
-padding: 15px;
-border-radius: 10px;
-font-size: 1.1em;
-font-weight: 700;
-cursor: pointer;
-border: none;
-display: flex;
-justify-content: center;
-align-items: center;
-gap: 10px;
-}
-.your-zone-action-btn.edit {
-background-color: var(--secondary-background);
-color: var(--text-primary);
-border: 1px solid var(--text-secondary);
-}
-.your-zone-action-btn.logout {
-background-color: var(--error-red);
-color: var(--text-primary);
-}
-
-#report-screen {
-justify-content: flex-start;
-padding: 0;
-background-color: var(--background);
-}
-#report-content {
-padding: 80px 20px 20px;
-width: 100%;
-height: 100%;
-overflow-y: auto;
-}
-#report-content .form-group {
-width: 100%;
-margin-bottom: 20px;
-}
-#report-content label {
-display: block;
-margin-bottom: 8px;
-color: var(--text-secondary);
-font-size: 1em;
-}
-#report-content textarea {
-width: 100%;
-padding: 12px 15px;
-border: 1px solid var(--text-secondary);
-border-radius: 8px;
-background-color: var(--secondary-background);
-color: var(--text-primary);
-font-size: 1.1em;
-box-sizing: border-box;
-resize: vertical;
-min-height: 150px;
-}
-#report-content .continue-btn {
-background-color: var(--error-red);
-color: var(--text-primary);
-font-weight: 700;
-cursor: pointer;
-transition: background-color 0.3s ease;
-width: 100%;
-padding: 12px 15px;
-border: none;
-border-radius: 8px;
-font-size: 1.1em;
-margin-top: 10px;
-}
-#report-content .continue-btn:disabled {
-background-color: var(--text-disabled);
-cursor: not-allowed;
-}
-
-/* ★ नया: वीडियो रोटेशन के लिए स्टाइल */
-#creator-page-long-view .main-video-card-wrapper.rotated {
-    position: fixed; /* फ़ुलस्क्रीन व्यवहार के लिए फिक्स्ड का उपयोग करें */
+/* ★ बदलाव: Player Rotation के लिए स्टाइल अब सीधे JS से नियंत्रित होती हैं */
+/* यह सुनिश्चित करने के लिए कि यह केवल तभी लागू होता है जब आवश्यक हो */
+#creator-page-player-long .main-video-card-wrapper.rotated {
+    position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
     padding: 0;
     background: #000;
-    z-index: 5001; /* ऐप कंटेनर के ऊपर */
+    z-index: 5001;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-#creator-page-long-view .main-video-card-wrapper.rotated .main-video-card {
+#creator-page-player-long .main-video-card-wrapper.rotated .main-video-card {
     transform: rotate(90deg);
     width: 100vh;
     height: 100vw;
-    max-width: 100vh;
-    max-height: 100vw;
+    max-width: none;
+    max-height: none;
     border-radius: 0;
 }
+/* ======================================================= */
+/* ★★★ CREATOR PAGE STYLES (REWORKED) - END ★★★ */
+/* ======================================================= */
+
 
 .long-video-grid-ad,
 .friend-list-ad,
