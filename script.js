@@ -1,5 +1,3 @@
-
-
 /* ================================================= */
 /* === Shubhzone App Script (Code 2) - FINAL v5.20 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
@@ -1814,7 +1812,7 @@ function renderCreatorVideoList(container, videos, type) {
         grid.classList.add('long-video-list'); // Single column list
         grid.innerHTML = videos.map(video => {
             // ★★★ FIX ★★★ सुनिश्चित करें कि केवल वीडियो आइटम ही रेंडर हों
-            if (video.id.kind !== 'youtube#video') return '';
+            if (video.id.kind !== 'youtube#video' && video.kind !== 'youtube#playlistItem') return '';
             const videoDetails = video.snippet;
             const videoId = video.id?.videoId || videoDetails.resourceId?.videoId;
             const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
