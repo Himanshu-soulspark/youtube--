@@ -1724,7 +1724,7 @@ async function initializeCreatorPage(payload) {
     // चैनल व्यू को रेंडर करें
     appState.creatorPage.currentView = 'channel';
     const creatorPageHeader = document.getElementById('creator-page-screen').querySelector('.screen-header');
-    const creatorPageTabs = document.getElementById('creator-page-tabs');
+    const creatorPageTabsContainer = document.getElementById('creator-page-tabs');
     const creatorPageContent = document.getElementById('creator-page-content');
     
     // हेडर को दृश्यमान बनाएं और कंटेंट एरिया को रीसेट करें
@@ -1732,25 +1732,27 @@ async function initializeCreatorPage(payload) {
     creatorPageContent.innerHTML = '';
 
     // नए टैब बनाएं: Home, Videos, Shorts, Playlists
-    creatorPageTabs.innerHTML = `
+    creatorPageTabsContainer.innerHTML = `
         <button class="creator-page-tab-btn haptic-trigger" data-type="home">Home</button>
         <button class="creator-page-tab-btn haptic-trigger" data-type="videos">Videos</button>
         <button class="creator-page-tab-btn haptic-trigger" data-type="shorts">Shorts</button>
         <button class="creator-page-tab-btn haptic-trigger" data-type="playlists">Playlists</button>
     `;
     
-    creatorPageTabs.querySelectorAll('.creator-page-tab-btn').forEach(tab => {
+    creatorPageTabsContainer.querySelectorAll('.creator-page-tab-btn').forEach(tab => {
         tab.addEventListener('click', () => {
-             creatorPageTabs.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
+             creatorPageTabsContainer.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
              tab.classList.add('active');
              loadCreatorPageContent({ ...payload, startWith: tab.dataset.type, videoId: null });
         });
     });
 
-    const initialTab = creatorPageTabs.querySelector(`.creator-page-tab-btn[data-type="${startWith}"]`);
+    // 'home' और 'videos' को एक ही मानें
+    const effectiveStartWith = (startWith === 'videos') ? 'home' : startWith;
+    const initialTab = creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="${effectiveStartWith}"]`) || creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="home"]`);
     if(initialTab) initialTab.classList.add('active');
     
-    await loadCreatorPageContent({ ...payload, startWith });
+    await loadCreatorPageContent({ ...payload, startWith: effectiveStartWith });
 }
 
 async function loadCreatorPageContent(payload) {
@@ -1762,11 +1764,11 @@ async function loadCreatorPageContent(payload) {
     switch(startWith) {
         case 'home':
         case 'videos':
-            data = await fetchFromYouTubeAPI('channelVideos', { channelId: creatorId });
+            data = await fetchFromYouTubeAPI('channelVideos', { channelId: creatorId, videoDuration: 'long' });
             renderCreatorVideoList(contentArea, data.items || [], 'long');
             break;
         case 'shorts':
-            data = await fetchFromYouTubeAPI('channelShorts', { channelId: creatorId });
+            data = await fetchFromYouTubeAPI('search', { channelId: creatorId, videoDuration: 'short', order: 'date' });
             renderCreatorVideoList(contentArea, data.items || [], 'short');
             break;
         case 'playlists':
@@ -1775,7 +1777,7 @@ async function loadCreatorPageContent(payload) {
              break;
         case 'playlistItems':
              data = await fetchFromYouTubeAPI('playlistItems', { playlistId: playlistId });
-             renderCreatorVideoList(contentArea, data.items || [], 'long');
+             renderCreatorVideoList(contentArea, data.items || [], 'long'); // Playlist items are typically long videos
             break;
     }
 }
@@ -1790,13 +1792,14 @@ function renderCreatorVideoList(container, videos, type) {
     grid.className = 'creator-video-grid';
     
     if (type === 'long') {
-        grid.classList.add('long-video-list');
+        grid.classList.add('long-video-list'); // Single column list
         grid.innerHTML = videos.map(video => {
             const videoDetails = video.snippet;
-            const videoId = videoDetails.resourceId?.videoId || video.id?.videoId || video.id;
+            const videoId = video.id?.videoId || videoDetails.resourceId?.videoId;
             const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
             if (!videoId || !thumbnailUrl) return '';
 
+            // Using the existing long-video-card structure
             return `
                 <div class="long-video-card" onclick="showCreatorPlayerView('${videoId}')">
                     <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')">
@@ -1805,26 +1808,24 @@ function renderCreatorVideoList(container, videos, type) {
                     <div class="long-video-info-container">
                         <div class="long-video-details">
                             <span class="long-video-name">${escapeHTML(videoDetails.title)}</span>
-                            <span class="long-video-uploader">${escapeHTML(videoDetails.videoOwnerChannelTitle || videoDetails.channelTitle)}</span>
+                            <span class="long-video-uploader">${escapeHTML(videoDetails.channelTitle)}</span>
                         </div>
                     </div>
                 </div>
             `;
         }).join('');
     } else { // 'short'
-         grid.classList.add('short-video-list');
-         // ★ बदलाव: 3-कॉलम ग्रिड के लिए स्टाइल लागू करें
-         grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+         grid.classList.add('short-video-list'); // 3-column grid
          grid.innerHTML = videos.map(video => {
              const videoDetails = video.snippet;
              const videoId = video.id?.videoId;
              const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
              if (!videoId || !thumbnailUrl) return '';
-
+             
+             // Using history-short-card for 9:16 aspect ratio
              return `
                 <div class="history-short-card" style="background-image: url('${escapeHTML(thumbnailUrl)}'); cursor: pointer;"
-                     onclick="navigateTo('home-screen')">
-                     <!-- शॉर्ट्स को होम स्क्रीन प्लेयर में चलाने के लिए नेविगेट करें -->
+                     onclick="playYouTubeVideoFromCard('${videoId}')">
                 </div>
              `;
          }).join('');
@@ -1846,14 +1847,16 @@ function renderCreatorPlaylistList(container, playlists, payload) {
     list.innerHTML = playlists.map(playlist => {
         const p = playlist.snippet;
         const plId = playlist.id;
-        if (!plId) return '';
+        const itemCount = playlist.contentDetails?.itemCount;
+        if (!plId || !p.thumbnails?.medium?.url) return '';
+        
         return `
             <div class="history-list-item haptic-trigger" 
                  onclick="loadCreatorPageContent({ creatorId: '${payload.creatorId}', startWith: 'playlistItems', playlistId: '${plId}' })">
                 <div class="history-item-thumbnail" style="background-image: url('${escapeHTML(p.thumbnails.medium.url)}')"></div>
                 <div class="history-item-info">
                     <span class="history-item-title">${escapeHTML(p.title)}</span>
-                    <span class="history-item-uploader">${playlist.contentDetails.itemCount} videos</span>
+                    <span class="history-item-uploader">${itemCount !== undefined ? itemCount + ' videos' : 'Playlist'}</span>
                 </div>
             </div>
         `;
@@ -1863,16 +1866,18 @@ function renderCreatorPlaylistList(container, playlists, payload) {
     container.appendChild(list);
 }
 
-// ★ बदलाव: वीडियो प्लेयर व्यू दिखाने के लिए नया फ़ंक्शन
+
 function showCreatorPlayerView(videoId) {
     appState.creatorPage.currentView = 'player';
     const creatorPageScreen = document.getElementById('creator-page-screen');
     const contentArea = document.getElementById('creator-page-content');
     
-    // हेडर छिपाएं
+    // Hide header and tabs
     creatorPageScreen.querySelector('.screen-header').style.display = 'none';
+    creatorPageScreen.querySelector('#creator-page-tabs').style.display = 'none';
+    contentArea.classList.add('player-active');
 
-    // सामग्री क्षेत्र को साफ करें और प्लेयर कंटेनर जोड़ें
+
     contentArea.innerHTML = `
         <div id="creator-page-player-container">
             <div class="player-wrapper">
@@ -1884,7 +1889,7 @@ function showCreatorPlayerView(videoId) {
     
     initializeCreatorPagePlayer(videoId, 'creator-page-player-long', 'long');
 
-    // रोटेट बटन के लिए इवेंट लिस्नर
+    // Event listener for the rotate button
     document.getElementById('player-rotate-btn').addEventListener('click', () => {
         const appContainer = document.getElementById('app-container');
         appContainer.classList.toggle('fullscreen-active');
@@ -1909,7 +1914,7 @@ function initializeCreatorPagePlayer(videoId, containerId, type) {
             'showinfo': 0, // जानकारी छिपाएं
             'mute': 0, 
             'modestbranding': 1, // YouTube लोगो कम करें
-            'fs': 1, // फुलस्क्रीन बटन सक्षम करें (यदि controls=1 हो)
+            'fs': 0, // फुलस्क्रीन बटन अक्षम करें क्योंकि हमारा अपना बटन है
             'origin': window.location.origin,
             'iv_load_policy': 3 // एनोटेशन अक्षम करें
         },
