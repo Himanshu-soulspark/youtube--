@@ -1,7 +1,7 @@
 /* ================================================= */
-/* === Shubhzone App Script (Code 2) - FINAL v5.17 === */
+/* === Shubhzone App Script (Code 2) - FINAL v5.18 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
-/* === SOLVED: API Call Failure (const vs let bug) === */
+/* === SOLVED: Creator Page, Caching, UI/UX Revamp === */
 /* ================================================= */
 
 // Firebase कॉन्फ़िगरेशन
@@ -320,9 +320,10 @@ let appState = {
     creatorPagePlayers: { short: null, long: null },
     creatorPage: { 
         currentLongVideo: { id: null, uploaderUid: null, channelId: null },
-        channelCache: new Map(), // ★ नया: चैनल डेटा को कैश करने के लिए
-        currentView: 'list', // ★ बदलाव: क्रिएटर पेज का व्यू ट्रैक करने के लिए (list या player)
-        currentChannelId: null, // ★ बदलाव: वर्तमान में देखे जा रहे चैनल की आईडी
+        channelCache: new Map(),
+        // ★ बदलाव: क्रिएटर पेज का व्यू ट्रैक करने के लिए (list, player, या channel)
+        currentView: 'channel', 
+        currentChannelId: null, 
     },
     adState: {
         timers: { fullscreenAdLoop: null },
@@ -352,21 +353,18 @@ let hasShownAudioPopup = false;
 let hapticFeedbackEnabled = true;
 
 // =============================================================================
-// ★★★ YOUTUBE API INTEGRATION (REFACTORED & FIXED) - START ★★★
+// ★★★ YOUTUBE API INTEGRATION (REFACTORED & WITH FIREBASE CACHING) - START ★★★
 // =============================================================================
 
 let currentVideoCache = new Map();
 
 /**
- * YouTube API से डेटा लाने के लिए जेनेरिक फ़ंक्शन।
+ * ★ बदलाव: YouTube API से डेटा लाने के लिए जेनेरिक फ़ंक्शन, अब Firebase में कैश करता है।
  * @param {string} type 'search', 'trending', 'channelVideos', 'videoDetails', 'channelDetails', 'playlists', 'playlistItems' में से एक।
  * @param {object} params API के लिए पैरामीटर।
  * @returns {Promise<object>} API से प्रतिक्रिया।
  */
 async function fetchFromYouTubeAPI(type, params) {
-    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-    // ★ BUG FIX: `const` को `let` से बदला गया ★
-    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
     let url = `/api/youtube?type=${type}&cb=${new Date().getTime()}`;
     for (const key in params) {
         if (params[key] !== undefined && params[key] !== null) {
@@ -383,19 +381,31 @@ async function fetchFromYouTubeAPI(type, params) {
         }
         const data = await response.json();
         
-        if (data.items) {
+        // ★ नया: Firebase में API परिणामों को कैश करें
+        if (data.items && data.items.length > 0) {
+            const batch = db.batch();
             data.items.forEach(item => {
                 const videoId = item.id?.videoId || item.id?.resourceId?.videoId || item.id;
                 if(videoId && item.snippet) {
-                    currentVideoCache.set(videoId, item);
+                    // स्थानीय कैश में जोड़ें
+                    currentVideoCache.set(videoId, item); 
+                    
+                    // Firebase में कैश करने के लिए बैच में जोड़ें
+                    const cacheRef = db.collection('youtube_cache').doc(videoId);
+                    const cacheData = {
+                        data: item,
+                        retrievedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    batch.set(cacheRef, cacheData, { merge: true });
                 }
             });
+            // बैच को एसिंक्रोनस रूप से कमिट करें
+            batch.commit().catch(err => console.error("Error caching YouTube data to Firebase:", err));
         }
 
         return data;
     } catch (error) {
         console.error(`Critical Error Fetching from YouTube API (${type}):`, error);
-        // उपयोगकर्ता को एक उपयोगी संदेश दिखाने के लिए एक खाली परिणाम लौटाएं
         return { error: error.message, items: [], nextPageToken: null };
     }
 }
@@ -492,15 +502,16 @@ async function playYouTubeVideoFromCard(videoId) {
     
     const channelId = video.snippet.channelId;
     
+    // ★ बदलाव: सीधे क्रिएटर पेज पर वीडियो चलाने के लिए नेविगेट करें
     navigateTo('creator-page-screen', { 
         creatorId: channelId, 
-        startWith: 'videos', 
+        startWith: 'play', // ★ नया: 'play' व्यू सीधे प्लेयर को ट्रिगर करेगा
         videoId: videoId
     });
 }
 
 // =============================================================================
-// ★★★ YOUTUBE API INTEGRATION (REFACTORED & FIXED) - END ★★★
+// ★★★ YOUTUBE API INTEGRATION (REFACTORED & WITH FIREBASE CACHING) - END ★★★
 // =============================================================================
 
 
@@ -520,8 +531,25 @@ const videoSwiper = document.getElementById('video-swiper');
 const homeStaticMessageContainer = document.getElementById('home-static-message-container');
 const saveContinueBtn = document.getElementById('save-continue-btn');
 
-const categories = ["Trending", "Entertainment", "Comedy", "Music", "Dance", "Education", "Travel", "Food", "DIY", "Sports", "Gaming", "News", "Lifestyle"];
-const diverseTopics = ["latest movie trailers", "viral internet moments", "new tech gadgets", "stand up comedy", "amazing science experiments", "top music hits 2025", "travel vlogs Europe", "street food tour", "DIY home decor", "cricket highlights"];
+// ★ बदलाव: 30+ नई श्रेणियां जोड़ी गईं
+const categories = [
+    "Trending", "Music", "Gaming", "Movies", "News", "Live", "Sports", 
+    "Learning", "Fashion & Beauty", "Comedy", "Entertainment", "Technology", 
+    "Cooking", "Travel", "Vlogs", "Podcasts", "Dance", "Animation", 
+    "Automotive", "Pets & Animals", "Science", "History", "Documentary",
+    "DIY", "Health & Fitness", "Finance", "Real Estate", "Astrology", 
+    "Spirituality", "Motivation", "Bhakti", "Bollywood News", "Tollywood", 
+    "Kollywood", "Sandalwood", "Art & Craft", "Booktubers"
+];
+const diverseTopics = [
+    "latest movie trailers", "viral internet moments", "new tech gadgets 2025", 
+    "stand up comedy india", "amazing science experiments", "top music hits 2025", 
+    "travel vlogs Europe", "indian street food tour", "DIY home decor low cost", 
+    "cricket highlights today", "BGMI gameplay", "political debate india",
+    "easy dinner recipes", "stock market analysis", "yoga for beginners",
+    "hindi web series review", "celebrity interviews", "unboxing new phone",
+    "ghost stories in hindi", "motivational speech sandeep maheshwari"
+];
 
 function getRandomTopic() {
     return diverseTopics[Math.floor(Math.random() * diverseTopics.length)];
@@ -586,6 +614,8 @@ function navigateTo(nextScreenId, payload = null) {
             appState.creatorPagePlayers.long = null;
         }
         document.getElementById('creator-page-content').innerHTML = '';
+        // ★ बदलाव: फुलस्क्रीन रोटेशन क्लास हटाएं
+        document.getElementById('app-container').classList.remove('fullscreen-active');
     }
     activePlayerId = null;
     
@@ -616,20 +646,24 @@ function navigateTo(nextScreenId, payload = null) {
 
 
 function navigateBack() {
-    if (appState.navigationStack.length <= 1) return;
-    
+    // ★ बदलाव: क्रिएटर पेज के प्लेयर व्यू से वापस जाने का लॉजिक
     if (appState.currentScreen === 'creator-page-screen' && appState.creatorPage.currentView === 'player') {
-        loadCreatorPageContent({ creatorId: appState.creatorPage.currentChannelId, startWith: 'videos' });
+        // प्लेयर को नष्ट करें और चैनल व्यू पर वापस जाएं
+        if (appState.creatorPagePlayers.long) {
+            appState.creatorPagePlayers.long.destroy();
+            appState.creatorPagePlayers.long = null;
+        }
+        document.getElementById('app-container').classList.remove('fullscreen-active'); // रोटेशन क्लास हटाएं
+        
+        // चैनल के मुख्य पृष्ठ को फिर से लोड करें
+        initializeCreatorPage({ creatorId: appState.creatorPage.currentChannelId, startWith: 'home' });
         return;
     }
     
+    if (appState.navigationStack.length <= 1) return;
+    
     appState.navigationStack.pop();
     const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'long-video-screen';
-
-    if (appState.currentScreen === 'creator-page-screen') {
-        if (appState.creatorPagePlayers.long) appState.creatorPagePlayers.long.destroy();
-        appState.creatorPagePlayers.long = null;
-    }
     
     navigateTo(previousScreenId, null);
 }
@@ -689,6 +723,12 @@ let appInitializationComplete = false;
 function initializeApp() {
     if (appInitializationComplete) return;
     appInitializationComplete = true;
+
+    // ★ बदलाव: बॉटम नेविगेशन से प्रोफ़ाइल आइकन छिपाएं
+    const profileNavItem = document.querySelector('.nav-item[data-nav="profile"]');
+    if (profileNavItem) {
+        profileNavItem.style.display = 'none';
+    }
 
     auth.onAuthStateChanged(user => {
         if (user) {
@@ -877,7 +917,7 @@ function renderVideoSwiper(videos, append = false) {
         const uploaderAvatar = 'https://via.placeholder.com/40'; 
         const title = video.snippet.title;
 
-        const creatorProfileOnClick = `navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'short', videoId: '${videoId}' })`;
+        const creatorProfileOnClick = `navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })`;
         const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
 
         slide.innerHTML = `
@@ -1088,6 +1128,7 @@ function setupVideoObserver() {
         for (const entry of entries) {
             if (entry.target.id === 'shorts-load-more-trigger') {
                 if(entry.isIntersecting) {
+                    // ★ बदलाव: अब कोई 'load more' बटन नहीं है, यह ऑटोमेटिकली ट्रिगर होता है
                     videoObserver.unobserve(entry.target);
                     await loadMoreShorts();
                 }
@@ -1219,6 +1260,7 @@ async function setupShortsScreen(category = 'All') {
 }
 
 async function loadMoreShorts() {
+    // ★ बदलाव: अब कोई 'load more' बटन नहीं है, यह अनंत स्क्रॉल के लिए है
     const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
     const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
     const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
@@ -1332,7 +1374,7 @@ function createLongVideoCard(video) {
             <i class="fas fa-play play-icon-overlay"></i>
         </div>
         <div class="long-video-info-container">
-            <div class="long-video-details" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}' })">
+            <div class="long-video-details" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })">
                 <span class="long-video-name">${escapeHTML(video.snippet.title)}</span>
                 <span class="long-video-uploader">${escapeHTML(video.snippet.channelTitle)}</span>
             </div>
@@ -1367,7 +1409,7 @@ function renderHistoryShortsScroller() {
     scroller.innerHTML = historyVideos.map(video => `
         <div class="history-short-card haptic-trigger" 
              style="background-image: url(${escapeHTML(video.thumbnailUrl)})"
-             onclick="navigateTo('creator-page-screen', { creatorId: '${video.channelId}', startWith: 'shorts', videoId: '${video.id}' })">
+             onclick="navigateTo('creator-page-screen', { creatorId: '${video.channelId}', startWith: 'home' })">
             <div class="history-item-menu" onclick="event.stopPropagation(); deleteFromHistory('${video.id}')"><i class="fas fa-trash-alt"></i></div>
         </div>
     `).join('');
@@ -1670,11 +1712,28 @@ function loadChatMessages(chatId) {
 // =======================================================
 
 async function initializeCreatorPage(payload) {
-    const { creatorId, startWith = 'videos', videoId, playlistId } = payload;
+    const { creatorId, startWith = 'home', videoId } = payload;
     appState.creatorPage.currentChannelId = creatorId;
 
+    // ★ बदलाव: यदि startWith 'play' है, तो सीधे प्लेयर दिखाएं
+    if (startWith === 'play' && videoId) {
+        showCreatorPlayerView(videoId);
+        return;
+    }
+
+    // चैनल व्यू को रेंडर करें
+    appState.creatorPage.currentView = 'channel';
+    const creatorPageHeader = document.getElementById('creator-page-screen').querySelector('.screen-header');
     const creatorPageTabs = document.getElementById('creator-page-tabs');
+    const creatorPageContent = document.getElementById('creator-page-content');
+    
+    // हेडर को दृश्यमान बनाएं और कंटेंट एरिया को रीसेट करें
+    creatorPageHeader.style.display = 'flex';
+    creatorPageContent.innerHTML = '';
+
+    // नए टैब बनाएं: Home, Videos, Shorts, Playlists
     creatorPageTabs.innerHTML = `
+        <button class="creator-page-tab-btn haptic-trigger" data-type="home">Home</button>
         <button class="creator-page-tab-btn haptic-trigger" data-type="videos">Videos</button>
         <button class="creator-page-tab-btn haptic-trigger" data-type="shorts">Shorts</button>
         <button class="creator-page-tab-btn haptic-trigger" data-type="playlists">Playlists</button>
@@ -1684,10 +1743,6 @@ async function initializeCreatorPage(payload) {
         tab.addEventListener('click', () => {
              creatorPageTabs.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
              tab.classList.add('active');
-             if (appState.creatorPagePlayers.long) {
-                appState.creatorPagePlayers.long.destroy();
-                appState.creatorPagePlayers.long = null;
-             }
              loadCreatorPageContent({ ...payload, startWith: tab.dataset.type, videoId: null });
         });
     });
@@ -1695,31 +1750,24 @@ async function initializeCreatorPage(payload) {
     const initialTab = creatorPageTabs.querySelector(`.creator-page-tab-btn[data-type="${startWith}"]`);
     if(initialTab) initialTab.classList.add('active');
     
-    if (videoId) {
-        showCreatorPlayerView(videoId);
-    } else {
-        await loadCreatorPageContent(payload);
-    }
+    await loadCreatorPageContent({ ...payload, startWith });
 }
 
 async function loadCreatorPageContent(payload) {
     const { creatorId, startWith, playlistId } = payload;
-    appState.creatorPage.currentView = 'list';
     const contentArea = document.getElementById('creator-page-content');
     contentArea.innerHTML = '<div class="loader-container" style="height: 100%;"><div class="loader"></div></div>';
 
     let data;
-    let type = 'long';
     switch(startWith) {
+        case 'home':
         case 'videos':
             data = await fetchFromYouTubeAPI('channelVideos', { channelId: creatorId });
-            type = 'long';
-            renderCreatorVideoList(contentArea, data.items || [], type);
+            renderCreatorVideoList(contentArea, data.items || [], 'long');
             break;
         case 'shorts':
             data = await fetchFromYouTubeAPI('channelShorts', { channelId: creatorId });
-            type = 'short';
-            renderCreatorVideoList(contentArea, data.items || [], type);
+            renderCreatorVideoList(contentArea, data.items || [], 'short');
             break;
         case 'playlists':
              data = await fetchFromYouTubeAPI('playlists', { channelId: creatorId });
@@ -1727,8 +1775,7 @@ async function loadCreatorPageContent(payload) {
              break;
         case 'playlistItems':
              data = await fetchFromYouTubeAPI('playlistItems', { playlistId: playlistId });
-             type = 'long';
-             renderCreatorVideoList(contentArea, data.items || [], type);
+             renderCreatorVideoList(contentArea, data.items || [], 'long');
             break;
     }
 }
@@ -1741,16 +1788,15 @@ function renderCreatorVideoList(container, videos, type) {
     
     const grid = document.createElement('div');
     grid.className = 'creator-video-grid';
-    grid.classList.add(type === 'long' ? 'long-video-list' : 'short-video-list');
+    
+    if (type === 'long') {
+        grid.classList.add('long-video-list');
+        grid.innerHTML = videos.map(video => {
+            const videoDetails = video.snippet;
+            const videoId = videoDetails.resourceId?.videoId || video.id?.videoId || video.id;
+            const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
+            if (!videoId || !thumbnailUrl) return '';
 
-    grid.innerHTML = videos.map(video => {
-        const videoDetails = video.snippet;
-        const videoId = videoDetails.resourceId?.videoId || video.id?.videoId || video.id;
-        const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
-        
-        if (!videoId || !thumbnailUrl) return '';
-
-        if (type === 'long') {
             return `
                 <div class="long-video-card" onclick="showCreatorPlayerView('${videoId}')">
                     <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')">
@@ -1764,14 +1810,25 @@ function renderCreatorVideoList(container, videos, type) {
                     </div>
                 </div>
             `;
-        } else {
+        }).join('');
+    } else { // 'short'
+         grid.classList.add('short-video-list');
+         // ★ बदलाव: 3-कॉलम ग्रिड के लिए स्टाइल लागू करें
+         grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+         grid.innerHTML = videos.map(video => {
+             const videoDetails = video.snippet;
+             const videoId = video.id?.videoId;
+             const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
+             if (!videoId || !thumbnailUrl) return '';
+
              return `
                 <div class="history-short-card" style="background-image: url('${escapeHTML(thumbnailUrl)}'); cursor: pointer;"
                      onclick="navigateTo('home-screen')">
+                     <!-- शॉर्ट्स को होम स्क्रीन प्लेयर में चलाने के लिए नेविगेट करें -->
                 </div>
              `;
-        }
-    }).join('');
+         }).join('');
+    }
     
     container.innerHTML = '';
     container.appendChild(grid);
@@ -1806,16 +1863,32 @@ function renderCreatorPlaylistList(container, playlists, payload) {
     container.appendChild(list);
 }
 
-
+// ★ बदलाव: वीडियो प्लेयर व्यू दिखाने के लिए नया फ़ंक्शन
 function showCreatorPlayerView(videoId) {
     appState.creatorPage.currentView = 'player';
+    const creatorPageScreen = document.getElementById('creator-page-screen');
     const contentArea = document.getElementById('creator-page-content');
+    
+    // हेडर छिपाएं
+    creatorPageScreen.querySelector('.screen-header').style.display = 'none';
+
+    // सामग्री क्षेत्र को साफ करें और प्लेयर कंटेनर जोड़ें
     contentArea.innerHTML = `
-        <div id="creator-page-player-container" style="width: 100%; height: 100%; background-color: #000;">
-            <div id="creator-page-player-long" style="width: 100%; height: 100%;"></div>
+        <div id="creator-page-player-container">
+            <div class="player-wrapper">
+                <div id="creator-page-player-long"></div>
+            </div>
+            <button id="player-rotate-btn" class="haptic-trigger"><i class="fas fa-sync-alt"></i> Rotate</button>
         </div>
     `;
+    
     initializeCreatorPagePlayer(videoId, 'creator-page-player-long', 'long');
+
+    // रोटेट बटन के लिए इवेंट लिस्नर
+    document.getElementById('player-rotate-btn').addEventListener('click', () => {
+        const appContainer = document.getElementById('app-container');
+        appContainer.classList.toggle('fullscreen-active');
+    });
 }
 
 function initializeCreatorPagePlayer(videoId, containerId, type) {
@@ -1826,17 +1899,19 @@ function initializeCreatorPagePlayer(videoId, containerId, type) {
     const playerContainer = document.getElementById(containerId);
     if (!playerContainer || !isYouTubeApiReady) return;
 
+    // ★ बदलाव: YouTube UI को कम करने के लिए प्लेयर वेरिएबल्स
     appState.creatorPagePlayers[type] = new YT.Player(containerId, {
         height: '100%', width: '100%', videoId: videoId,
         playerVars: {
             'autoplay': 1, 
-            'controls': 1, 
+            'controls': 0, // नियंत्रण छिपाएं
             'rel': 0, 
-            'showinfo': 0, 
+            'showinfo': 0, // जानकारी छिपाएं
             'mute': 0, 
-            'modestbranding': 1, 
-            'fs': 1, 
-            'origin': window.location.origin
+            'modestbranding': 1, // YouTube लोगो कम करें
+            'fs': 1, // फुलस्क्रीन बटन सक्षम करें (यदि controls=1 हो)
+            'origin': window.location.origin,
+            'iv_load_policy': 3 // एनोटेशन अक्षम करें
         },
         events: {
             'onReady': (event) => {
@@ -1853,7 +1928,7 @@ function initializeCreatorPagePlayer(videoId, containerId, type) {
 }
 
 function handleCreatorPlayerStateChange(event) {
-    // This function is kept for potential future use.
+    // भविष्य के उपयोग के लिए रखा गया है
 }
 
 // =======================================================
@@ -1919,7 +1994,7 @@ function renderMyChannelsList() {
                 <div class="subtext">Added Channel</div>
             </div>
             <div class="channel-actions">
-                <button class="open-button haptic-trigger" onclick="navigateTo('creator-page-screen', { creatorId: '${channel.id}' })">Open</button>
+                <button class="open-button haptic-trigger" onclick="navigateTo('creator-page-screen', { creatorId: '${channel.id}', startWith: 'home' })">Open</button>
                 <button class="reject-button haptic-trigger" onclick="removeChannelFromList(event, '${channel.id}')"><i class="fas fa-trash-alt"></i></button>
             </div>
         </div>
@@ -1999,14 +2074,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-friend-search-btn')?.addEventListener('click', searchUser);
     document.getElementById('add-friend-search-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchUser(); });
 
-    document.getElementById('home-menu-icon')?.addEventListener('click', () => {
+    // ★ बदलाव: साइडबार खोलने के लिए मेनू आइकन इवेंट लिस्नर
+    const openSidebar = () => {
         document.getElementById('main-sidebar').classList.add('open');
         document.getElementById('sidebar-overlay').classList.add('open');
-    });
-    document.getElementById('long-video-menu-icon')?.addEventListener('click', () => {
-        document.getElementById('main-sidebar').classList.add('open');
-        document.getElementById('sidebar-overlay').classList.add('open');
-    });
+    };
+    document.getElementById('home-menu-icon')?.addEventListener('click', openSidebar);
+    document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
+    
+    // ★ बदलाव: साइडबार में प्रोफाइल बटन के लिए इवेंट लिस्नर
+    const profileSidebarBtn = document.getElementById('sidebar-profile-btn');
+    if (profileSidebarBtn) {
+        profileSidebarBtn.addEventListener('click', () => {
+            navigateTo('profile-screen');
+            // साइडबार बंद करें
+            document.getElementById('main-sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('open');
+        });
+    }
+
     document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
         document.getElementById('main-sidebar').classList.remove('open');
         document.getElementById('sidebar-overlay').classList.remove('open');
