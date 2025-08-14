@@ -1839,6 +1839,7 @@ font-weight: 700;
     overflow-y: auto;
     padding: 15px;
     padding-bottom: 75px; /* नेव बार के लिए जगह */
+    box-sizing: border-box; /* यह सुनिश्चित करने के लिए कि पैडिंग ऊंचाई के अंदर है */
 }
 
 .creator-video-grid {
@@ -1849,6 +1850,7 @@ font-weight: 700;
 /* लंबे वीडियो के लिए एक कॉलम ग्रिड */
 .creator-video-grid.long-video-list {
     grid-template-columns: 1fr;
+    gap: 15px; /* लंबे वीडियो के बीच थोड़ा और गैप */
 }
 .creator-video-grid.long-video-list .long-video-card {
     margin-bottom: 0;
@@ -1861,40 +1863,19 @@ font-weight: 700;
     gap: 8px;
 }
 
-/* JS द्वारा अप्रचलित शैलियों को हटाना या टिप्पणी करना */
-/*
-#creator-page-short-view, #creator-page-long-view { ... }
-.creator-video-viewer { ... }
-.main-video-card-wrapper { ... }
-.main-video-card { ... }
-.side-video-list-scroller { ... }
-.more-function-container { ... }
-*/
+/* ★ नया: यह सुनिश्चित करने के लिए कि शॉर्ट्स कार्ड सही दिखें */
+.creator-video-grid.short-video-list .history-short-card {
+    width: 100%; /* ग्रिड सेल की पूरी चौड़ाई लें */
+}
+
 
 /* ★ बदलाव: Player Rotation के लिए स्टाइल अब सीधे JS से नियंत्रित होती हैं */
-/* यह सुनिश्चित करने के लिए कि यह केवल तभी लागू होता है जब आवश्यक हो */
+/* और अब YouTube प्लेयर के नेटिव फुलस्क्रीन का उपयोग किया जाता है, इसलिए ये स्टाइल अब आवश्यक नहीं हैं */
+/*
 #creator-page-player-long .main-video-card-wrapper.rotated {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    padding: 0;
-    background: #000;
-    z-index: 5001;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    ...
 }
-
-#creator-page-player-long .main-video-card-wrapper.rotated .main-video-card {
-    transform: rotate(90deg);
-    width: 100vh;
-    height: 100vw;
-    max-width: none;
-    max-height: none;
-    border-radius: 0;
-}
+*/
 /* ======================================================= */
 /* ★★★ CREATOR PAGE STYLES (REWORKED) - END ★★★ */
 /* ======================================================= */
