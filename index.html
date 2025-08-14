@@ -1,191 +1,69 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Shubhzone</title>
-
-    <!-- External Fonts and Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <!-- Main App Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&family=Orbitron:wght@500&display=swap" rel="stylesheet">
-    
-    <!-- Font for Advertiser Dashboard -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- CSS फ़ाइल को यहाँ लिंक किया गया है -->
-    <link rel="stylesheet" href="style.css"> <!-- Replace with your CSS file name -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 </head>
+
 <body>
+    <div id="app-container">
 
-<!-- === SIDEBAR START === -->
-<div id="main-sidebar" class="main-sidebar">
-    <div class="sidebar-header">
-        <h3>Menu</h3>
-        <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
-    </div>
+        <!-- ======================= -->
+        <!-- ===== Screens ========= -->
+        <!-- ======================= -->
 
-    <!-- Sidebar options will be populated by JS if needed -->
-
-    <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer" class="premium-features-card haptic-trigger">
-        <div class="premium-image-wrapper">
-            <img src="https://i.ibb.co/0RF4GmTZ/Flux-Dev-A-futuristic-social-media-interface-named-Shubhzone-g-1.jpg" alt="Premium Features Image">
-        </div>
-        <span>Premium Features</span>
-    </a>
-</div>
-<div id="sidebar-overlay" class="sidebar-overlay"></div>
-<!-- === SIDEBAR END === -->
-
-<!-- === ALL MODALS START === -->
-<div id="upload-details-modal" class="modal-overlay">
-    <div class="modal-content">
-        <span class="close-button haptic-trigger" onclick="closeUploadDetailsModal()">×</span>
-        <h3 id="modal-title">Upload Details</h3>
-        <input type="hidden" id="editing-video-id">
-        <div class="input-group">
-            <label for="modal-video-title">Title</label>
-            <input type="text" id="modal-video-title" placeholder="Enter video title">
-        </div>
-        <div class="input-group">
-            <label for="modal-video-description">Description</label>
-            <textarea id="modal-video-description" rows="3" placeholder="Add a description" maxlength="300"></textarea>
-        </div>
-        <div class="input-group">
-            <label for="modal-video-hashtags">Hashtags</label>
-            <input type="text" id="modal-video-hashtags" placeholder="Add hashtags like #trending #viral" maxlength="60">
-        </div>
-        <div class="input-group">
-            <label for="modal-video-url">YouTube Video ID</label>
-            <input type="text" id="modal-video-url" placeholder="Enter YouTube video ID (e.g., dQw4w9WgXcQ)">
-        </div>
-        <div class="input-group">
-            <label for="modal-channel-name">YouTube Channel Name</label>
-            <input type="text" id="modal-channel-name" placeholder="Enter original creator's channel name">
-        </div>
-        <div class="input-group">
-            <label for="modal-channel-link">YouTube Channel Link (Optional)</label>
-            <input type="url" id="modal-channel-link" placeholder="Enter channel URL">
-        </div>
-        <div class="category-selector-wrapper">
-            <label>Category</label>
-            <div class="category-selector">
-                <div class="category-selector-display haptic-trigger" onclick="toggleCategoryOptions()">
-                    <span id="selected-category-text">Select Category</span>
-                    <i class="fas fa-chevron-down"></i>
+        <!-- Splash Screen -->
+        <div class="screen active" id="splash-screen">
+            <div class="welcome-center">
+                <div class="logo-container">
+                    <div class="logo-ring"></div>
+                    <div class="logo-icon-combo">
+                        <i class="fas fa-play"></i>
+                    </div>
                 </div>
-                <div class="category-options" id="category-options"></div>
+                <h1 class="app-name">Shubhzone</h1>
+                <p class="tagline">Create. Share. Inspire.</p>
+            </div>
+            <div class="welcome-bottom">
+                <div id="loading-container" style="display: none;">
+                    <div class="loader"></div>
+                    <span>Loading...</span>
+                </div>
+                <button class="get-started-btn" id="get-started-btn">Get Started</button>
             </div>
         </div>
-        <div class="audience-selector">
-            <label>Audience</label>
-            <div class="audience-options">
-                <div class="audience-option haptic-trigger" data-audience="all" onclick="selectAudience('all')">
-                    <i class="fas fa-users"></i> All Audiences
-                </div>
-                <div class="audience-option haptic-trigger" data-audience="18plus" onclick="selectAudience('18plus')">
-                    <i class="fas fa-user-shield"></i> 18+ Only
-                </div>
-            </div>
-        </div>
-        <div class="comments-toggle">
-            <label>Allow Comments</label>
-            <label class="toggle-switch">
-                <input type="checkbox" id="comments-toggle-input" checked class="haptic-trigger">
-                <span class="slider"></span>
-            </label>
-        </div>
-        <button id="modal-save-button" class="save-button haptic-trigger" onclick="handleSave()">Upload Video</button>
-    </div>
-</div>
 
-<div id="comments-modal" class="comments-modal-overlay">
-    <div class="comments-modal-content">
-        <div class="comments-header">
-            <h4>Comments</h4>
-            <span class="close-comments-btn haptic-trigger" onclick="closeCommentsModal()">×</span>
-        </div>
-        <ul id="comments-list"></ul>
-        <div class="comment-input-container">
-            <input type="text" id="comment-input" placeholder="Add a comment...">
-            <button id="send-comment-btn" class="haptic-trigger"><i class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
-</div>
-
-<div id="audio-issue-popup" class="modal-overlay">
-    <div class="popup-content">
-        <i class="fas fa-heart heart-icon"></i>
-        <p>Due to a technical issue, if you are unable to hear the audio, please scroll down the video.</p>
-        <button id="audio-issue-ok-btn" class="haptic-trigger">OK</button>
-    </div>
-</div>
-
-<div id="image-enlarge-modal" class="modal-overlay">
-    <div class="enlarged-image-content">
-        <img id="enlarged-image-src" src="" alt="Enlarged View">
-    </div>
-</div>
-<!-- === ALL MODALS END === -->
-
-<div class="app-container" id="app-container">
-
-    <!-- === SPLASH SCREEN === -->
-    <div id="splash-screen" class="screen active">
-        <div class="welcome-top">
-            <h1 class="welcome-text">Welcome ☁️</h1>
-        </div>
-        <div class="welcome-center">
-            <div class="logo-container">
-                <div class="logo-ring"></div>
-                <div class="logo-icon-combo">
-                    <i class="fas fa-play"></i>
-                </div>
-                <div class="orbiting-icons">
-                    <i class="fas fa-microphone orb-icon"></i>
-                    <i class="fas fa-camera orb-icon"></i>
-                    <i class="fas fa-book-open orb-icon"></i>
-                    <i class="fas fa-paint-brush orb-icon"></i>
-                </div>
-            </div>
-            <h2 class="app-name">Shubhzone</h2>
-            <p class="tagline">Har Hunar ka Ghar</p>
-        </div>
-        <div class="welcome-bottom">
-            <button id="get-started-btn" class="get-started-btn haptic-trigger">Get Started</button>
-            <div id="loading-container" style="display: none;">
-                <div class="loader"></div>
-                <p style="margin-top: 10px;">Loading Videos, Please Wait...</p>
-            </div>
-            <p class="creator-credit-new">Made with ❤️ by Udbhav</p>
-        </div>
-    </div>
-
-    <!-- === INFORMATION SCREEN === -->
-    <div id="information-screen" class="screen">
-        <div class="screen-header"><span class="header-title">Mera Shubhzone</span></div>
-        <div style="margin-top: 60px; width: 100%; overflow-y: auto; padding: 20px;">
+        <!-- Information Screen -->
+        <div class="screen" id="information-screen">
+            <h2>Your Profile</h2>
             <div class="profile-image-upload">
-                <img id="profile-image-preview" src="https://via.placeholder.com/120/222/FFFFFF?text=+" alt="Profile Preview">
-                <label for="profile-image-input" class="profile-image-label haptic-trigger">
-                    <i class="fas fa-camera"></i>
-                </label>
+                <img src="https://via.placeholder.com/120/222/FFFFFF?text=+" id="profile-image-preview" alt="Profile Preview">
+                <label for="profile-image-input" class="profile-image-label"><i class="fas fa-camera"></i></label>
                 <input type="file" id="profile-image-input" accept="image/*">
             </div>
             <div class="input-group">
-                <label for="info-name">Name</label>
-                <input type="text" id="info-name" placeholder="Enter your name">
+                <label for="info-name">Name*</label>
+                <input type="text" id="info-name" placeholder="Enter your full name">
             </div>
             <div class="input-group">
-                <label for="info-mobile">Mobile No.</label>
+                <label for="info-mobile">Mobile Number</label>
                 <input type="tel" id="info-mobile" placeholder="Enter your mobile number">
             </div>
             <div class="input-group">
-                <label for="info-email">Email ID</label>
-                <input type="email" id="info-email" placeholder="Enter your email">
+                <label for="info-email">Email</label>
+                <input type="email" id="info-email" placeholder="Enter your email address">
             </div>
             <div class="input-group">
                 <label for="info-address">Address</label>
@@ -193,31 +71,24 @@
             </div>
             <div class="input-group">
                 <label for="info-hobby">Hobby</label>
-                <input type="text" id="info-hobby" placeholder="e.g., Reading, Gaming, Coding">
+                <input type="text" id="info-hobby" placeholder="e.g., Reading, Gaming">
             </div>
             <div class="input-group">
-                <label for="info-state">State</label>
+                <label for="info-state">State*</label>
                 <select id="info-state" onchange="checkCustom(this, 'custom-state-input')">
                     <option value="">Select State</option>
-                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
                     <option value="Andhra Pradesh">Andhra Pradesh</option>
                     <option value="Arunachal Pradesh">Arunachal Pradesh</option>
                     <option value="Assam">Assam</option>
                     <option value="Bihar">Bihar</option>
-                    <option value="Chandigarh">Chandigarh</option>
                     <option value="Chhattisgarh">Chhattisgarh</option>
-                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-                    <option value="Delhi">Delhi</option>
                     <option value="Goa">Goa</option>
                     <option value="Gujarat">Gujarat</option>
                     <option value="Haryana">Haryana</option>
                     <option value="Himachal Pradesh">Himachal Pradesh</option>
-                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
                     <option value="Jharkhand">Jharkhand</option>
                     <option value="Karnataka">Karnataka</option>
                     <option value="Kerala">Kerala</option>
-                    <option value="Ladakh">Ladakh</option>
-                    <option value="Lakshadweep">Lakshadweep</option>
                     <option value="Madhya Pradesh">Madhya Pradesh</option>
                     <option value="Maharashtra">Maharashtra</option>
                     <option value="Manipur">Manipur</option>
@@ -225,7 +96,6 @@
                     <option value="Mizoram">Mizoram</option>
                     <option value="Nagaland">Nagaland</option>
                     <option value="Odisha">Odisha</option>
-                    <option value="Puducherry">Puducherry</option>
                     <option value="Punjab">Punjab</option>
                     <option value="Rajasthan">Rajasthan</option>
                     <option value="Sikkim">Sikkim</option>
@@ -235,199 +105,266 @@
                     <option value="Uttar Pradesh">Uttar Pradesh</option>
                     <option value="Uttarakhand">Uttarakhand</option>
                     <option value="West Bengal">West Bengal</option>
-                    <option value="custom">Custom</option>
+                    <option value="custom">Other</option>
                 </select>
-                <input type="text" id="custom-state-input" class="custom-input" placeholder="Please specify your state">
+                <input type="text" id="custom-state-input" class="custom-input" placeholder="Please enter your state">
             </div>
             <div class="input-group">
                 <label for="info-country">Country</label>
                 <select id="info-country" onchange="checkCustom(this, 'custom-country-input')">
                     <option value="India">India</option>
-                    <option value="custom">Custom</option>
+                    <option value="custom">Other</option>
                 </select>
-                <input type="text" id="custom-country-input" class="custom-input" placeholder="Please specify your country">
+                <input type="text" id="custom-country-input" class="custom-input" placeholder="Please enter your country">
             </div>
             <div class="button-container">
-                <button id="save-continue-btn" class="continue-btn haptic-trigger" onclick="saveAndContinue()">Continue</button>
-                <button class="logout-btn haptic-trigger" onclick="logoutUser()">Logout</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- === SHORTS SCREEN (Previously Home) === -->
-    <div id="home-screen" class="screen">
-        <div class="home-top-bar">
-            <div id="home-menu-icon" class="home-menu-icon haptic-trigger">
-                <i class="fas fa-bars"></i>
-            </div>
-            <div id="category-scroller" class="category-scroller"></div>
-        </div>
-        <div id="video-swiper">
-            <div id="home-static-message-container" style="display: none;">
-                <p class="static-message">Sorry, no video is available at the moment.</p>
-            </div>
-        </div>
-        <div class="bottom-nav">
-            <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-            <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
-            <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
-        </div>
-    </div>
-
-    <!-- === LONG VIDEO SCREEN === -->
-    <div id="long-video-screen" class="screen">
-        <div id="long-video-top-bar">
-            <div id="long-video-menu-icon" class="home-menu-icon haptic-trigger">
-                <i class="fas fa-bars"></i>
-            </div>
-            <div id="long-video-category-scroller" class="category-scroller"></div>
-        </div>
-        <div class="long-video-screen-content">
-            <div class="long-video-search-container">
-                <input type="text" id="long-video-search-input" placeholder="Search for videos...">
-                <button id="long-video-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
-                <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
-            </div>
-            <div id="long-video-grid"></div>
-        </div>
-        <div class="bottom-nav">
-            <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-            <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
-            <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
-        </div>
-    </div>
-
-    <!-- === HISTORY SCREEN === -->
-    <div id="history-screen" class="screen">
-        <div id="history-top-bar">
-            <div id="back-from-history-btn" class="home-menu-icon haptic-trigger">
-                <i class="fas fa-arrow-left"></i>
-            </div>
-            <span class="header-title">Watch History</span>
-            <button id="history-date-button" class="haptic-trigger">Clear All <i class="fas fa-trash-alt"></i></button>
-        </div>
-        <div class="history-content" style="height: calc(100% - 60px); margin-top: 60px;">
-            <div class="history-section-title">Recently Watched Shorts</div>
-            <div id="history-shorts-scroller"></div>
-            <div class="history-section-title">Watched Videos</div>
-            <div id="history-long-video-list"></div>
-        </div>
-    </div>
-    
-    <!-- === FRIENDS SCREEN === -->
-    <div id="friends-screen" class="screen">
-        <div class="friends-top-bar" style="position: absolute; top:0; width: 100%; height: 60px; display:flex; align-items:center; justify-content:center; padding: 0 15px;">
-            <div class="tab-bar" style="display:flex; justify-content: space-around; width:100%;">
-                <button class="tab-button active" data-tab="add">Add</button>
-                <button class="tab-button" data-tab="requests">Requests</button>
-                <button class="tab-button" data-tab="members">Members</button>
+                <button class="continue-btn" id="save-continue-btn" onclick="saveAndContinue()">Continue</button>
             </div>
         </div>
 
-        <main class="content-area" style="padding-top: 75px;">
-            <div class="tab-content" id="add-content">
-                <div class="add-friend-search-container" style="display:flex; gap:10px; margin-bottom: 20px;">
-                    <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID" style="flex-grow:1;">
-                    <button id="add-friend-search-btn" class="haptic-trigger">Search</button>
+        <!-- Home Screen (Shorts) -->
+        <div class="screen" id="home-screen">
+            <div class="home-top-bar">
+                <div class="home-menu-icon" id="home-menu-icon"><i class="fas fa-bars"></i></div>
+                <div class="category-scroller" id="category-scroller"></div>
+            </div>
+            <div id="video-swiper">
+                <div id="home-static-message-container" style="display: none; width: 100%; height: 100%; justify-content: center; align-items: center;">
+                    <p class="static-message"></p>
                 </div>
-                <div id="add-friend-user-list"></div>
             </div>
-            <div class="tab-content hidden" id="requests-content"></div>
-            <div class="tab-content hidden" id="members-content"></div>
-        </main>
-
-        <div class="chat-screen" id="chat-screen-overlay">
-            <header class="chat-app-bar">
-                <button class="icon-button back-arrow haptic-trigger"><i class="fas fa-arrow-left"></i></button>
-                <div class="profile-pic"><img src="" alt="Chat User Avatar" id="chat-user-profile-pic"></div>
-                <div class="username" id="chat-username"></div>
-            </header>
-            <div class="chat-messages" id="chat-messages"></div>
-            <div class="chat-input-bar">
-                <input type="text" class="input-field" placeholder="Message...">
-                <button class="send-button haptic-trigger" id="send-button"><i class="fas fa-paper-plane"></i></button>
+            <div class="bottom-nav">
+                <div class="nav-item" data-nav="long-video"><i class="fas fa-tv"></i><span>Long</span></div>
+                <div class="nav-item active" data-nav="shorts"><i class="fas fa-film"></i><span>Shorts</span></div>
+                <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></div>
             </div>
         </div>
 
-        <div class="bottom-nav">
-            <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-            <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
-            <div class="nav-item active" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
+        <!-- Long Video Screen -->
+        <div class="screen" id="long-video-screen">
+             <div id="long-video-top-bar">
+                <div class="home-menu-icon" id="long-video-menu-icon"><i class="fas fa-bars"></i></div>
+                <div id="long-video-category-scroller" class="category-scroller"></div>
+            </div>
+            <div class="long-video-screen-content">
+                <div class="long-video-search-container">
+                    <input type="text" id="long-video-search-input" placeholder="Search for videos...">
+                    <button id="long-video-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
+                    <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
+                </div>
+                <div id="long-video-grid"></div>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item active" data-nav="long-video"><i class="fas fa-tv"></i><span>Long</span></div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-film"></i><span>Shorts</span></div>
+                <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></div>
+            </div>
         </div>
+
+        <!-- Profile Screen -->
+        <div class="screen" id="profile-screen">
+            <div id="profile-header-new">
+                <img src="https://via.placeholder.com/50" alt="Avatar" id="profile-header-avatar">
+                <button id="profile-your-zone-btn" class="haptic-trigger">Your Zone</button>
+            </div>
+            <div id="profile-video-toggle-buttons">
+                <button id="profile-show-shorts-btn" class="profile-toggle-btn active haptic-trigger">Shorts</button>
+                <button id="profile-show-longs-btn" class="profile-toggle-btn haptic-trigger">Videos</button>
+            </div>
+            <div id="profile-video-content">
+                <div id="user-short-video-grid"></div>
+                <div id="user-long-video-grid" style="display: none;"></div>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" data-nav="long-video"><i class="fas fa-tv"></i><span>Long</span></div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-film"></i><span>Shorts</span></div>
+                <div class="nav-item active" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></div>
+            </div>
+        </div>
+
+        <!-- ★ नया: Subscriptions Screen -->
+        <div class="screen" id="subscriptions-screen">
+             <!-- सामग्री JS द्वारा भरी जाएगी -->
+             <div class="bottom-nav">
+                <div class="nav-item" data-nav="long-video"><i class="fas fa-tv"></i><span>Long</span></div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-film"></i><span>Shorts</span></div>
+                <div class="nav-item active" data-nav="subscriptions"><i class="fas fa-layer-group"></i><span>Subscriptions</span></div>
+                <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i><span>Profile</span></div>
+            </div>
+        </div>
+
+        <!-- History Screen -->
+        <div class="screen" id="history-screen">
+            <div id="history-top-bar">
+                <div class="header-icon-left haptic-trigger" id="back-from-history-btn"><i class="fas fa-arrow-left"></i></div>
+                <button id="history-date-button" class="haptic-trigger"></button>
+            </div>
+            <div class="history-content">
+                <h3 class="history-section-title">Shorts</h3>
+                <div id="history-shorts-scroller"></div>
+                <h3 class="history-section-title">Videos</h3>
+                <div id="history-long-video-list"></div>
+            </div>
+        </div>
+
+        <!-- Earnsure Screen -->
+        <div class="screen" id="earnsure-screen">
+            <div class="earnsure-header">
+                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+                <span class="header-title">Earnsure Policy</span>
+                <div class="earnsure-language-toggle" id="earnsure-language-toggle"></div>
+            </div>
+            <div class="earnsure-content-area"></div>
+        </div>
+
+        <!-- Your Zone Screen -->
+        <div class="screen" id="your-zone-screen">
+            <div class="screen-header">
+                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+                <span class="header-title">Your Zone</span>
+            </div>
+            <div id="your-zone-content" class="content-area"></div>
+        </div>
+        
+        <!-- Friends & Chat Screen -->
+        <div class="screen" id="friends-screen">
+            <div class="friends-top-bar">
+                <div class="tab-bar">
+                    <button class="tab-button active" data-tab="members">Members</button>
+                    <button class="tab-button" data-tab="requests">Requests</button>
+                    <button class="tab-button" data-tab="add">Add</button>
+                </div>
+            </div>
+            <div class="content-area">
+                <div id="members-content" class="tab-content"></div>
+                <div id="requests-content" class="tab-content hidden"></div>
+                <div id="add-content" class="tab-content hidden">
+                    <div class="add-friend-search-container">
+                        <input type="text" id="add-friend-search-input" placeholder="Search by name or @referralcode">
+                        <button id="add-friend-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div id="add-friend-user-list"></div>
+                </div>
+            </div>
+            <div id="chat-screen-overlay">
+                <div class="chat-app-bar">
+                    <button class="back-arrow haptic-trigger"><i class="fas fa-arrow-left"></i></button>
+                    <img id="chat-user-profile-pic" src="https://via.placeholder.com/50" class="profile-pic" alt="avatar">
+                    <div id="chat-username" class="username">Friend Name</div>
+                </div>
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input-bar">
+                    <input type="text" class="input-field" placeholder="Type a message...">
+                    <button id="send-button" class="send-button haptic-trigger"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Creator Page Screen -->
+        <div class="screen" id="creator-page-screen">
+            <!-- सामग्री JS द्वारा भरी जाएगी -->
+        </div>
+
+        <!-- Payment & Tracking Screens -->
+        <div class="screen" id="payment-screen">
+            <div class="screen-header">
+                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+                <span class="header-title">Payment Request</span>
+            </div>
+            <div id="payment-content" class="content-area"></div>
+        </div>
+
+        <div class="screen" id="track-payment-screen">
+            <div class="screen-header">
+                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+                <span class="header-title">Track Earnings</span>
+            </div>
+            <div id="track-payment-content" class="content-area"></div>
+        </div>
+        
+        <!-- Advertisement Screen -->
+        <div class="screen" id="advertisement-screen">
+            <!-- सामग्री JS द्वारा भरी जाएगी -->
+        </div>
+
+        <!-- Report Screen -->
+        <div class="screen" id="report-screen">
+            <!-- सामग्री JS द्वारा भरी जाएगी -->
+        </div>
+
+        <!-- Credit Screen -->
+        <div class="screen" id="credit-screen">
+            <!-- सामग्री JS द्वारा भरी जाएगी -->
+        </div>
+
+        <!-- ======================= -->
+        <!-- ===== Overlays ======== -->
+        <!-- ======================= -->
+
+        <!-- Sidebar -->
+        <div id="sidebar-overlay"></div>
+        <div id="main-sidebar">
+            <div class="sidebar-header">
+                <h3>Menu</h3>
+                <span id="close-sidebar-btn" class="haptic-trigger">&times;</span>
+            </div>
+            <button class="sidebar-option haptic-trigger" onclick="navigateTo('payment-screen')"><i class="fas fa-wallet" style="margin-right: 10px;"></i>Payment</button>
+            <button class="sidebar-option haptic-trigger" onclick="navigateTo('friends-screen')"><i class="fas fa-user-friends" style="margin-right: 10px;"></i>Friends</button>
+            <button class="sidebar-option haptic-trigger" onclick="navigateTo('earnsure-screen')"><i class="fas fa-file-contract" style="margin-right: 10px;"></i>Earnsure Policy</button>
+            <div class="sidebar-option haptic-trigger" style="justify-content: space-between;">
+                <span><i class="fas fa-vibration" style="margin-right: 10px;"></i>Haptics</span>
+                <label class="toggle-switch"><input type="checkbox" id="haptic-toggle-input" checked><span class="slider"></span></label>
+            </div>
+        </div>
+        
+        <!-- Upload Details Modal (Deprecated but kept for safety) -->
+        <div class="modal-overlay" id="upload-details-modal">
+            <!-- Modal Content -->
+        </div>
+        
+        <!-- Comments Modal -->
+        <div class="comments-modal-overlay" id="comments-modal" onclick="closeCommentsModal()">
+            <div class="comments-modal-content" onclick="event.stopPropagation()">
+                <div class="comments-header">
+                    <h4>Comments</h4>
+                    <span class="close-comments-btn haptic-trigger" onclick="closeCommentsModal()">&times;</span>
+                </div>
+                <ul id="comments-list"></ul>
+                <div class="comment-input-container">
+                    <input type="text" id="comment-input" placeholder="Add a comment...">
+                    <button id="send-comment-btn" class="haptic-trigger"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Description Modal -->
+        <div class="modal-overlay" id="description-modal" onclick="closeDescriptionModal()">
+             <div class="description-modal-content" onclick="event.stopPropagation()">
+                <div id="description-content" class="description-text"></div>
+                <span class="close-button" id="close-description-btn">&times;</span>
+            </div>
+        </div>
+
+        <!-- Audio Issue Popup -->
+        <div class="modal-overlay" id="audio-issue-popup">
+            <div class="popup-content">
+                <div class="heart-icon">❤️</div>
+                <p>To enjoy sound in our app, please tap the screen once after a video starts playing. Thank you!</p>
+                <button id="audio-issue-ok-btn">OK, Got It!</button>
+            </div>
+        </div>
+
     </div>
-    
-    <!-- === PROFILE SCREEN === -->
-    <div id="profile-screen" class="screen">
-        <div id="profile-header-new">
-            <img id="profile-header-avatar" src="https://via.placeholder.com/50/222/FFFFFF?text=+" alt="Avatar">
-            <button id="profile-your-zone-btn" class="haptic-trigger">Your Zone</button>
-        </div>
-        <div id="profile-video-toggle-buttons">
-            <button id="profile-show-shorts-btn" class="profile-toggle-btn active haptic-trigger">Short Video</button>
-            <button id="profile-show-longs-btn" class="profile-toggle-btn haptic-trigger">Long Video</button>
-        </div>
-        <div id="profile-video-content">
-            <div id="user-short-video-grid"></div>
-            <div id="user-long-video-grid" style="display: none;"></div>
-        </div>
-        <div class="bottom-nav">
-            <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-            <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
-            <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item active" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
-        </div>
-    </div>
 
-    <!-- === NEW PLACEHOLDER SCREENS (populated by JS) === -->
-    <div id="watch-screen" class="screen"></div>
-    <div id="subscriptions-screen" class="screen"></div>
-    
-    <!-- === OTHER FUNCTIONAL SCREENS (populated by JS) === -->
-    <div id="creator-page-screen" class="screen"></div>
-    <div id="payment-screen" class="screen"></div>
-    <div id="track-payment-screen" class="screen"></div>
-    <div id="your-zone-screen" class="screen"></div>
-    <div id="earnsure-screen" class="screen"></div>
-    <div id="advertisement-screen" class="screen"></div>
-    <div id="report-screen" class="screen"></div>
-    <div id="credit-screen" class="screen"></div>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 
-    <!-- === DESCRIPTION MODAL (used across screens) === -->
-    <div id="description-modal" class="modal-overlay">
-        <div class="description-modal-content">
-            <span id="close-description-btn" class="close-button haptic-trigger">×</span>
-            <div id="description-content" class="description-text"></div>
-        </div>
-    </div>
-
-</div>
-
-<!-- === SCRIPTS (MUST BE AT THE END) === -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-<script src="https://www.youtube.com/iframe_api"></script>
-
-<!-- JavaScript फ़ाइल को यहाँ लिंक किया गया है -->
-<script src="script.js"></script> <!-- Replace with your JS file name -->
-
-<script>
-    const setAppHeight = () => {
-        const doc = document.documentElement;
-        doc.style.setProperty('--app-height', `${window.innerHeight}px`);
-    };
-    window.addEventListener('resize', setAppHeight);
-    setAppHeight();
-</script>
-
+    <!-- Main App Script -->
+    <script src="script.js"></script>
 </body>
+
 </html>
