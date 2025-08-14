@@ -5,18 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Shubhzone</title>
 
-<!-- External Fonts and Icons -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Main App Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&family=Orbitron:wght@500&display=swap" rel="stylesheet">
-<!-- Font for Advertiser Dashboard -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- External Fonts and Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Main App Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&family=Orbitron:wght@500&display=swap" rel="stylesheet">
+    
+    <!-- Font for Advertiser Dashboard -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-
-<!-- CSS फ़ाइल को यहाँ लिंक किया गया है -->
-<link rel="stylesheet" href="style.css"> <!-- Replace with your CSS file name -->
+    <!-- CSS फ़ाइल को यहाँ लिंक किया गया है -->
+    <link rel="stylesheet" href="style.css"> <!-- Replace with your CSS file name -->
 </head>
 <body>
 
@@ -26,14 +27,9 @@
         <h3>Menu</h3>
         <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
     </div>
-    
-    <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
-    <!-- New sidebar option for Subscriptions -->
-    <button class="sidebar-option haptic-trigger" onclick="navigateTo('subscriptions-screen')">
-        <i class="fas fa-youtube" style="margin-right: 10px; color: var(--error-red);"></i> Subscriptions
-    </button>
-    <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
-    
+
+    <!-- Sidebar options will be populated by JS if needed -->
+
     <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer" class="premium-features-card haptic-trigger">
         <div class="premium-image-wrapper">
             <img src="https://i.ibb.co/0RF4GmTZ/Flux-Dev-A-futuristic-social-media-interface-named-Shubhzone-g-1.jpg" alt="Premium Features Image">
@@ -43,7 +39,6 @@
 </div>
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 <!-- === SIDEBAR END === -->
-
 
 <!-- === ALL MODALS START === -->
 <div id="upload-details-modal" class="modal-overlay">
@@ -135,7 +130,6 @@
     </div>
 </div>
 <!-- === ALL MODALS END === -->
-
 
 <div class="app-container" id="app-container">
 
@@ -270,54 +264,41 @@
         </div>
         <div id="video-swiper">
             <div id="home-static-message-container" style="display: none;">
-                <p class="static-message">Sorry, no video is available at the moment. <br> Please upload one!</p>
+                <p class="static-message">Sorry, no video is available at the moment.</p>
             </div>
         </div>
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
-        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
-    
+
     <!-- === LONG VIDEO SCREEN === -->
     <div id="long-video-screen" class="screen">
-         <div id="long-video-top-bar">
+        <div id="long-video-top-bar">
             <div id="long-video-menu-icon" class="home-menu-icon haptic-trigger">
                 <i class="fas fa-bars"></i>
             </div>
             <div id="long-video-category-scroller" class="category-scroller"></div>
         </div>
         <div class="long-video-screen-content">
-            <div id="long-video-carousel-container">
-                <div id="long-video-carousel-wrapper"></div>
-            </div>
             <div class="long-video-search-container">
                 <input type="text" id="long-video-search-input" placeholder="Search for videos...">
                 <button id="long-video-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
                 <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
             </div>
-            <div class="long-video-search-results-container" id="long-video-search-results" style="display: none;">
-                <h4>Search Results</h4>
-                <div id="long-video-search-results-grid"></div>
-            </div>
             <div id="long-video-grid"></div>
         </div>
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
-        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
 
     <!-- === HISTORY SCREEN === -->
@@ -327,45 +308,30 @@
                 <i class="fas fa-arrow-left"></i>
             </div>
             <span class="header-title">Watch History</span>
-            <button id="history-date-button" class="haptic-trigger">Today <i class="fas fa-calendar-alt"></i></button>
+            <button id="history-date-button" class="haptic-trigger">Clear All <i class="fas fa-trash-alt"></i></button>
         </div>
-        <div class="history-content">
+        <div class="history-content" style="height: calc(100% - 60px); margin-top: 60px;">
             <div class="history-section-title">Recently Watched Shorts</div>
             <div id="history-shorts-scroller"></div>
             <div class="history-section-title">Watched Videos</div>
             <div id="history-long-video-list"></div>
         </div>
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
-        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
-        <div class="bottom-nav">
-            <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-            <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
-            <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
-        </div>
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
-
-    <!-- === NEW HOME SCREEN (Previously Upload) - This screen is now unused. === -->
-    <div id="upload-screen" class="screen">
-        <!-- This screen is no longer in use as per user request to remove the Home button. -->
-    </div>
-
+    
     <!-- === FRIENDS SCREEN === -->
     <div id="friends-screen" class="screen">
-        <div class="friends-top-bar">
-            <div class="tab-bar">
+        <div class="friends-top-bar" style="position: absolute; top:0; width: 100%; height: 60px; display:flex; align-items:center; justify-content:center; padding: 0 15px;">
+            <div class="tab-bar" style="display:flex; justify-content: space-around; width:100%;">
                 <button class="tab-button active" data-tab="add">Add</button>
                 <button class="tab-button" data-tab="requests">Requests</button>
                 <button class="tab-button" data-tab="members">Members</button>
             </div>
         </div>
 
-        <main class="content-area">
+        <main class="content-area" style="padding-top: 75px;">
             <div class="tab-content" id="add-content">
-                <div class="add-friend-search-container">
-                    <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID">
+                <div class="add-friend-search-container" style="display:flex; gap:10px; margin-bottom: 20px;">
+                    <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID" style="flex-grow:1;">
                     <button id="add-friend-search-btn" class="haptic-trigger">Search</button>
                 </div>
                 <div id="add-friend-user-list"></div>
@@ -387,47 +353,52 @@
             </div>
         </div>
 
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
-        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
             <div class="nav-item active" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
-
+    
     <!-- === PROFILE SCREEN === -->
     <div id="profile-screen" class="screen">
         <div id="profile-header-new">
             <img id="profile-header-avatar" src="https://via.placeholder.com/50/222/FFFFFF?text=+" alt="Avatar">
             <button id="profile-your-zone-btn" class="haptic-trigger">Your Zone</button>
         </div>
-
         <div id="profile-video-toggle-buttons">
             <button id="profile-show-shorts-btn" class="profile-toggle-btn active haptic-trigger">Short Video</button>
             <button id="profile-show-longs-btn" class="profile-toggle-btn haptic-trigger">Long Video</button>
         </div>
-
         <div id="profile-video-content">
             <div id="user-short-video-grid"></div>
             <div id="user-long-video-grid" style="display: none;"></div>
         </div>
-
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
-        <!-- The bottom navigation bar is updated to include 'Subscriptions'. -->
         <div class="bottom-nav">
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            <div class="nav-item" data-nav="subscriptions"><i class="fab fa-youtube"></i>Subscriptions</div>
+            <div class="nav-item" data-nav="subscriptions"><i class="fas fa-rss"></i>Subscriptions</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
             <div class="nav-item active" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
         </div>
-        <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
     </div>
+
+    <!-- === NEW PLACEHOLDER SCREENS (populated by JS) === -->
+    <div id="watch-screen" class="screen"></div>
+    <div id="subscriptions-screen" class="screen"></div>
     
+    <!-- === OTHER FUNCTIONAL SCREENS (populated by JS) === -->
+    <div id="creator-page-screen" class="screen"></div>
+    <div id="payment-screen" class="screen"></div>
+    <div id="track-payment-screen" class="screen"></div>
+    <div id="your-zone-screen" class="screen"></div>
+    <div id="earnsure-screen" class="screen"></div>
+    <div id="advertisement-screen" class="screen"></div>
+    <div id="report-screen" class="screen"></div>
+    <div id="credit-screen" class="screen"></div>
+
     <!-- === DESCRIPTION MODAL (used across screens) === -->
     <div id="description-modal" class="modal-overlay">
         <div class="description-modal-content">
@@ -436,164 +407,6 @@
         </div>
     </div>
 
-    <!-- === PAYMENT SCREEN === -->
-    <div id="payment-screen" class="screen">
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Payment Request</span>
-        </div>
-        <div id="payment-content" style="width: 100%; padding: 80px 20px 20px;"></div>
-    </div>
-
-    <!-- === YOUR ZONE SCREEN === -->
-    <div id="your-zone-screen" class="screen">
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Your Zone</span>
-        </div>
-        <div id="your-zone-content"></div>
-    </div>
-    
-    <!-- === EARNSURE SCREEN === -->
-    <div id="earnsure-screen" class="screen">
-         <div class="earnsure-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <h4 class="header-title">Earnsure</h4>
-            <div class="earnsure-language-toggle" id="earnsure-language-toggle"></div>
-        </div>
-        <div class="earnsure-content-area"></div>
-    </div>
-
-    <!-- === ADVERTISEMENT SCREEN === -->
-    <div id="advertisement-screen" class="screen">
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Advertiser Panel</span>
-        </div>
-        <div class="container" style="margin-top: 60px; padding-top: 20px;">
-            <div id="uniqueCodeSection" class="section">
-                <div class="card">
-                    <h2>View Your Campaigns</h2>
-                    <h3>Enter the Unique ID provided by the admin to access your dashboard.</h3>
-                    <div class="form-group">
-                        <label for="uniqueCodeInput">Your Unique ID</label>
-                        <input type="text" id="uniqueCodeInput" placeholder="Enter your ID here">
-                    </div>
-                    <button class="btn" onclick="advertiserFunctions.applyCode()">Apply</button>
-                    <div style="text-align: center; margin-top: 20px;">
-                        <a href="#" class="logout-btn" onclick="advertiserFunctions.showSection('registrationSection')">New Advertiser? Register here.</a>
-                    </div>
-                </div>
-            </div>
-            <div id="registrationSection" class="section">
-                <div class="card">
-                    <h2>Welcome, Advertiser!</h2><h3>Let's get you set up in a minute.</h3>
-                    <form>
-                        <div class="form-group"><label for="adv-name">Your Name</label><input type="text" id="adv-name" placeholder="e.g., John Doe" required></div>
-                        <div class="form-group"><label for="adv-businessName">Business Name (Optional)</label><input type="text" id="adv-businessName" placeholder="e.g., John's Cafe"></div>
-                        <div class="form-group"><label for="adv-whatsapp">WhatsApp Number</label><input type="tel" id="adv-whatsapp" placeholder="Include country code, e.g., 919876543210" required></div>
-                        <button type="button" class="btn" onclick="advertiserFunctions.processRegistration()">Continue →</button>
-                    </form>
-                </div>
-            </div>
-            <div id="planSection" class="section">
-                <div class="card" style="background-color: transparent; border: none; box-shadow: none;">
-                    <h2 style="color: #fde047;">Our Golden Plans</h2>
-                    <h3>Each plan is crafted to deliver maximum value.</h3>
-                    <div id="planContainer" class="plan-container"></div>
-                    <input type="hidden" id="selectedPlanData" required>
-                    <button type="button" class="btn" onclick="advertiserFunctions.goToForm()" style="margin-top: 30px;">Next Step →</button>
-                </div>
-            </div>
-            <div id="adFormSection" class="section">
-                 <div class="card">
-                    <h2>Campaign Details</h2><h3>Describe the ad you want to run.</h3>
-                     <form id="adSubmissionForm">
-                        <div class="form-group"><label for="adv-adTitle">Ad Title</label><input type="text" id="adv-adTitle" placeholder="e.g., Diwali Special Sale" required></div>
-                        <div class="form-group"><label for="adv-adDesc">Ad Description (Short Message)</label><textarea id="adv-adDesc" placeholder="Your main message for the ad (100-200 characters)" maxlength="200" required></textarea></div>
-                        <div class="form-group"><label for="adv-cta">Call to Action (Button Text)</label><select id="adv-cta" required><option value="Call Now">Call Now</option><option value="Order Now">Order Now</option><option value="WhatsApp Us">WhatsApp Us</option><option value="Learn More">Learn More</option></select></div>
-                        <div class="form-group"><label for="adv-adLink">Destination Link</label><input type="url" id="adv-adLink" placeholder="https://yourwebsite.com or https://wa.me/..." required></div>
-                        <div class="form-group">
-                            <label for="adv-adType">Ad Type</label>
-                            <select id="adv-adType" required onchange="advertiserFunctions.updateImpressionDisclaimer()">
-                                <option value="banner">Banner Ad</option>
-                                <option value="image_5s">5-Second Image Ad</option>
-                                <option value="video">Video Ad</option>
-                            </select>
-                            <p id="impressionDisclaimer"></p>
-                        </div>
-                        <div class="form-group"><label for="adv-contactWhatsapp">Confirm Contact WhatsApp Number</label><input type="tel" id="adv-contactWhatsapp" placeholder="Enter campaign contact number" required></div>
-                        <button type="button" class="btn" onclick="advertiserFunctions.submitAdRequest()">Submit Ad Request</button>
-                    </form>
-                </div>
-            </div>
-            <div id="dashboardSection" class="section">
-                <div class="dashboard-header"><h2 id="welcomeMessage">Your Campaigns</h2><p>Select a campaign to view its performance.</p></div>
-                <button class="btn" onclick="advertiserFunctions.createNewAd()">+ Add New Plan</button>
-                <div class="card"><div id="campaignListContainer"></div></div>
-                <div style="text-align:center;"><button class="logout-btn" onclick="advertiserFunctions.resetUser()">This isn't me, reset.</button></div>
-            </div>
-            <div id="campaignDetailSection" class="section">
-                <div class="dashboard-header"><h2 id="detailCampaignTitle">Campaign Performance</h2><p id="detailCampaignPlan">Plan details will load here.</p></div>
-                 <div class="stats-grid">
-                    <div class="stat-card"><div class="label" id="detailAdType">Ad Type</div><div class="value" id="detailFinalImpressions">...</div></div>
-                     <div class="stat-card"><div class="label">Clicks (CTR)</div><div class="value" id="detailClickCount">...</div></div>
-                </div>
-                <div class="card"><h3 style="text-align:left; font-weight: 600; margin-bottom: 15px;">Viewer Locations (Sample)</h3><div class="stat-card geo-card"><div class="value" id="detailGeoData">Loading...</div></div></div>
-                <button class="btn btn-secondary" onclick="advertiserFunctions.goBackToDashboard()" style="margin-top: 30px;">← Back to All Campaigns</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- === CREATOR PAGE SCREEN === -->
-    <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
-    <!-- The structure of this screen is completely replaced to support the new channel page layout. -->
-    <!-- The JavaScript will dynamically build the content inside #creator-page-content. -->
-    <div id="creator-page-screen" class="screen">
-        <div class="screen-header">
-             <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-             <span class="header-title">Channel</span>
-             <div class="header-icon-right"></div>
-        </div>
-        <div id="creator-page-content" class="content-area">
-            <!-- Content is dynamically generated by initializeCreatorPage() -->
-        </div>
-    </div>
-    <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
-
-    <!-- === TRACK PAYMENT SCREEN === -->
-    <div id="track-payment-screen" class="screen">
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Track Payment</span>
-        </div>
-        <div id="track-payment-content" class="content-area" style="padding-top: 75px; padding-left: 15px; padding-right: 15px;"></div>
-    </div>
-
-    <!-- === REPORT SCREEN === -->
-    <div id="report-screen" class="screen"></div>
-    
-    <!-- === CREDIT SCREEN === -->
-    <div id="credit-screen" class="screen"></div>
-
-    <!-- === YOUTUBE CLIENT ENHANCEMENT - START === -->
-    <!-- New screen containers for the added features -->
-    <div id="subscriptions-screen" class="screen">
-        <!-- JS will populate this -->
-    </div>
-
-    <div id="playlist-view-screen" class="screen">
-        <!-- JS will populate this -->
-    </div>
-    <!-- === YOUTUBE CLIENT ENHANCEMENT - END === -->
-
-</div>
-
-<!-- === ADMIN PRIORITY AD OVERLAY === -->
-<div id="admin-priority-ad-overlay">
-    <div id="ad-timer"></div>
-    <button id="ad-close-btn">×</button>
-    <div id="ad-content-container"></div>
 </div>
 
 <!-- === SCRIPTS (MUST BE AT THE END) === -->
@@ -615,5 +428,6 @@
     window.addEventListener('resize', setAppHeight);
     setAppHeight();
 </script>
+
 </body>
 </html>
