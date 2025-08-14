@@ -1,7 +1,7 @@
 /* ================================================= */
-/* === Shubhzone App Script (Code 2) - FINAL v5.18 === */
+/* === Shubhzone App Script (Code 2) - FINAL v5.19 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
-/* === SOLVED: Creator Page, Caching, UI/UX Revamp === */
+/* === SOLVED: Long Video Filtering, Creator Page Content === */
 /* ================================================= */
 
 // Firebase कॉन्फ़िगरेशन
@@ -470,7 +470,8 @@ async function loadMoreLongVideos() {
     if (searchInput) {
         data = await fetchFromYouTubeAPI('search', { q: searchInput, pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' });
     } else if (category.toLowerCase() === 'trending') {
-        data = await fetchFromYouTubeAPI('trending', { pageToken: appState.youtubeNextPageTokens.long, regionCode: 'IN' });
+        // ★★★ FIX ★★★: 'trending' के लिए 'search' का उपयोग करें ताकि 'videoDuration' फिल्टर लागू हो सके।
+        data = await fetchFromYouTubeAPI('search', { q: 'trending videos', pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' });
     } else {
         const query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
         data = await fetchFromYouTubeAPI('search', { q: query, pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' });
@@ -1300,7 +1301,8 @@ async function populateLongVideoGrid(category = 'All') {
     
     let data;
     if (category.toLowerCase() === 'trending') {
-        data = await fetchFromYouTubeAPI('trending', { limit: 20, regionCode: 'IN' });
+        // ★★★ FIX ★★★: 'trending' के लिए 'search' का उपयोग करें ताकि 'videoDuration' फिल्टर लागू हो सके।
+        data = await fetchFromYouTubeAPI('search', { q: 'trending videos', videoDuration: 'long', limit: 20 });
     } else {
         const query = category.toLowerCase() === 'all' ? getRandomTopic() : category; 
         data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
@@ -1315,7 +1317,8 @@ async function renderTrendingCarousel() {
     if (!carouselWrapper) return;
     carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
     
-    const data = await fetchFromYouTubeAPI('trending', { limit: 10, regionCode: 'IN' });
+    // ★★★ FIX ★★★: यहां भी 'trending' की जगह 'search' का उपयोग किया जा रहा है ताकि केवल लंबे वीडियो मिलें।
+    const data = await fetchFromYouTubeAPI('search', { q: 'latest trending videos', videoDuration: 'long', limit: 10 });
     
     if (data.items && data.items.length > 0) {
         carouselWrapper.innerHTML = data.items.map(video => {
@@ -1351,6 +1354,7 @@ async function performLongVideoSearch() {
     if (!grid) return;
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     
+    // ★★★ FIX ★★★: सुनिश्चित किया गया कि 'videoDuration' हमेशा 'long' हो।
     const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
     appState.youtubeNextPageTokens.long = data.nextPageToken || null;
     renderYouTubeLongVideos(data.items || [], false);
@@ -1729,7 +1733,10 @@ async function initializeCreatorPage(payload) {
     
     // हेडर को दृश्यमान बनाएं और कंटेंट एरिया को रीसेट करें
     creatorPageHeader.style.display = 'flex';
+    creatorPageTabsContainer.style.display = 'flex'; // सुनिश्चित करें कि टैब दिखें
     creatorPageContent.innerHTML = '';
+    creatorPageContent.classList.remove('player-active');
+
 
     // नए टैब बनाएं: Home, Videos, Shorts, Playlists
     creatorPageTabsContainer.innerHTML = `
@@ -1764,7 +1771,8 @@ async function loadCreatorPageContent(payload) {
     switch(startWith) {
         case 'home':
         case 'videos':
-            data = await fetchFromYouTubeAPI('channelVideos', { channelId: creatorId, videoDuration: 'long' });
+            // ★★★ FIX ★★★: 'channelVideos' की जगह स्टैंडर्ड 'search' का उपयोग किया जा रहा है ताकि चैनल के लंबे वीडियो मज़बूती से मिलें।
+            data = await fetchFromYouTubeAPI('search', { channelId: creatorId, order: 'date', videoDuration: 'long' });
             renderCreatorVideoList(contentArea, data.items || [], 'long');
             break;
         case 'shorts':
