@@ -1,7 +1,36 @@
+नमस्ते। मैं आपकी परेशानी समझ सकता हूँ। ऐसा लगता है कि पिछले बदलावों के बाद भी समस्याएँ बनी हुई हैं। आपकी भेजी गई तस्वीरों से यह साफ़ है:
+
+लॉन्ग वीडियो सेक्शन में अभी भी शॉर्ट्स आ रहे हैं: जब आप "udbhav fact" सर्च करते हैं या स्क्रॉल करते हैं, तो लंबे वीडियो की जगह शॉर्ट्स दिख रहे हैं।
+
+क्रिएटर का पेज अभी भी खाली है: जब आप किसी चैनल के पेज पर जाते हैं, तो "Videos", "Shorts" जैसे टैब खाली रहते हैं।
+
+इन समस्याओं का कारण यह है कि हमारा ऐप यूट्यूब से वीडियो मांगते समय उसे पूरी तरह से यह नहीं बता पा रहा है कि हमें "सिर्फ वीडियो" चाहिए, और कुछ नहीं। कभी-कभी यूट्यूब सर्च के नतीजों में वीडियो के अलावा चैनल या प्लेलिस्ट भी भेज देता है, जिससे हमारा ऐप कन्फ्यूज़ हो जाता है और कुछ भी नहीं दिखाता।
+
+मैंने इस समस्या को ठीक करने के लिए JavaScript कोड में एक और, ज़्यादा मज़बूत बदलाव किया है।
+
+मैंने क्या ठीक किया है?
+
+मैंने ऐप के कोड में हर उस जगह पर, जहाँ वह यूट्यूब से वीडियो सर्च करता है, एक अतिरिक्त निर्देश (type: 'video') जोड़ दिया है। यह यूट्यूब को सख्ती से बताता है कि हमें नतीजों में केवल और केवल वीडियो चाहिए, चाहे वह लॉन्ग वीडियो सेक्शन हो या क्रिएटर का पेज।
+
+इससे दोनों समस्याएँ हल हो जानी चाहिए:
+
+लॉन्ग वीडियो सेक्शन में अब सिर्फ लंबे वीडियो ही आएंगे।
+
+क्रिएटर के पेज पर भी अब उस चैनल के वीडियो सही तरीके से दिखने लगेंगे क्योंकि ऐप को सिर्फ वीडियो मिलेंगे और वह उन्हें सही से दिखा पाएगा।
+
+आपको फिर से सिर्फ JavaScript फ़ाइल को बदलना है। नीचे दिया गया पूरा कोड कॉपी करके अपनी script.js फ़ाइल के मौजूदा कोड से बदल दें।
+
+अपडेट किया गया JavaScript कोड:
+code
+JavaScript
+download
+content_copy
+expand_less
+
 /* ================================================= */
-/* === Shubhzone App Script (Code 2) - FINAL v5.19 === */
+/* === Shubhzone App Script (Code 2) - FINAL v5.20 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
-/* === SOLVED: Long Video Filtering, Creator Page Content === */
+/* === SOLVED: Stricter Video Type Filtering      === */
 /* ================================================= */
 
 // Firebase कॉन्फ़िगरेशन
@@ -434,6 +463,8 @@ function renderYouTubeLongVideos(videos, append = false) {
     
     const fragment = document.createDocumentFragment();
     videos.forEach((video) => {
+        // ★★★ FIX ★★★ सुनिश्चित करें कि केवल वीडियो आइटम ही रेंडर हों
+        if (video.id.kind !== 'youtube#video') return;
         const card = createLongVideoCard(video);
         if (card) fragment.appendChild(card);
     });
@@ -467,16 +498,22 @@ async function loadMoreLongVideos() {
     const searchInput = document.getElementById('long-video-search-input').value.trim();
     
     let data;
+    const params = {
+        pageToken: appState.youtubeNextPageTokens.long,
+        videoDuration: 'long',
+        type: 'video' // ★★★ FIX ★★★ यह सुनिश्चित करने के लिए कि केवल वीडियो ही लोड हों
+    };
+
     if (searchInput) {
-        data = await fetchFromYouTubeAPI('search', { q: searchInput, pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' });
+        params.q = searchInput;
     } else if (category.toLowerCase() === 'trending') {
-        // ★★★ FIX ★★★: 'trending' के लिए 'search' का उपयोग करें ताकि 'videoDuration' फिल्टर लागू हो सके।
-        data = await fetchFromYouTubeAPI('search', { q: 'trending videos', pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' });
+        params.q = 'trending videos';
     } else {
-        const query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
-        data = await fetchFromYouTubeAPI('search', { q: query, pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' });
+        params.q = category.toLowerCase() === 'all' ? getRandomTopic() : category;
     }
 
+    data = await fetchFromYouTubeAPI('search', params);
+    
     appState.youtubeNextPageTokens.long = data.nextPageToken || null;
     if(data.items) {
         renderYouTubeLongVideos(data.items, true);
@@ -899,6 +936,8 @@ function renderVideoSwiper(videos, append = false) {
 
     const fragment = document.createDocumentFragment();
     videos.forEach((video) => {
+        // ★★★ FIX ★★★ सुनिश्चित करें कि केवल वीडियो आइटम ही रेंडर हों
+        if (video.id.kind !== 'youtube#video') return;
         const videoId = video.id?.videoId || video.id;
         if (!videoId) return;
 
@@ -1251,7 +1290,7 @@ async function setupShortsScreen(category = 'All') {
         homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div> Loading shorts...';
     }
 
-    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short' });
+    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short', type: 'video' });
     appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
     if(data.items && data.items.length > 0) {
         renderVideoSwiper(data.items, false);
@@ -1261,12 +1300,11 @@ async function setupShortsScreen(category = 'All') {
 }
 
 async function loadMoreShorts() {
-    // ★ बदलाव: अब कोई 'load more' बटन नहीं है, यह अनंत स्क्रॉल के लिए है
     const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
     const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
     const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
 
-    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short', pageToken: appState.youtubeNextPageTokens.shorts });
+    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short', pageToken: appState.youtubeNextPageTokens.shorts, type: 'video' });
 
     appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
     if(data.items) {
@@ -1299,14 +1337,14 @@ async function populateLongVideoGrid(category = 'All') {
     if (!grid) return;
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     
-    let data;
+    let query;
     if (category.toLowerCase() === 'trending') {
-        // ★★★ FIX ★★★: 'trending' के लिए 'search' का उपयोग करें ताकि 'videoDuration' फिल्टर लागू हो सके।
-        data = await fetchFromYouTubeAPI('search', { q: 'trending videos', videoDuration: 'long', limit: 20 });
+        query = 'trending videos';
     } else {
-        const query = category.toLowerCase() === 'all' ? getRandomTopic() : category; 
-        data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
+        query = category.toLowerCase() === 'all' ? getRandomTopic() : category; 
     }
+    
+    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long', type: 'video' });
     
     appState.youtubeNextPageTokens.long = data.nextPageToken || null;
     renderYouTubeLongVideos(data.items || [], false);
@@ -1317,8 +1355,7 @@ async function renderTrendingCarousel() {
     if (!carouselWrapper) return;
     carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
     
-    // ★★★ FIX ★★★: यहां भी 'trending' की जगह 'search' का उपयोग किया जा रहा है ताकि केवल लंबे वीडियो मिलें।
-    const data = await fetchFromYouTubeAPI('search', { q: 'latest trending videos', videoDuration: 'long', limit: 10 });
+    const data = await fetchFromYouTubeAPI('search', { q: 'latest trending videos', videoDuration: 'long', type: 'video', limit: 10 });
     
     if (data.items && data.items.length > 0) {
         carouselWrapper.innerHTML = data.items.map(video => {
@@ -1354,8 +1391,8 @@ async function performLongVideoSearch() {
     if (!grid) return;
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
     
-    // ★★★ FIX ★★★: सुनिश्चित किया गया कि 'videoDuration' हमेशा 'long' हो।
-    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
+    // ★★★ FIX ★★★ सुनिश्चित किया गया कि 'videoDuration' हमेशा 'long' हो और type 'video' हो
+    const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long', type: 'video' });
     appState.youtubeNextPageTokens.long = data.nextPageToken || null;
     renderYouTubeLongVideos(data.items || [], false);
 }
@@ -1771,12 +1808,13 @@ async function loadCreatorPageContent(payload) {
     switch(startWith) {
         case 'home':
         case 'videos':
-            // ★★★ FIX ★★★: 'channelVideos' की जगह स्टैंडर्ड 'search' का उपयोग किया जा रहा है ताकि चैनल के लंबे वीडियो मज़बूती से मिलें।
-            data = await fetchFromYouTubeAPI('search', { channelId: creatorId, order: 'date', videoDuration: 'long' });
+            // ★★★ FIX ★★★: केवल 'video' टाइप के लिए सर्च करें ताकि केवल वीडियो मिलें
+            data = await fetchFromYouTubeAPI('search', { channelId: creatorId, order: 'date', videoDuration: 'long', type: 'video' });
             renderCreatorVideoList(contentArea, data.items || [], 'long');
             break;
         case 'shorts':
-            data = await fetchFromYouTubeAPI('search', { channelId: creatorId, videoDuration: 'short', order: 'date' });
+             // ★★★ FIX ★★★: केवल 'video' टाइप के लिए सर्च करें
+            data = await fetchFromYouTubeAPI('search', { channelId: creatorId, videoDuration: 'short', order: 'date', type: 'video' });
             renderCreatorVideoList(contentArea, data.items || [], 'short');
             break;
         case 'playlists':
@@ -1802,6 +1840,8 @@ function renderCreatorVideoList(container, videos, type) {
     if (type === 'long') {
         grid.classList.add('long-video-list'); // Single column list
         grid.innerHTML = videos.map(video => {
+            // ★★★ FIX ★★★ सुनिश्चित करें कि केवल वीडियो आइटम ही रेंडर हों
+            if (video.id.kind !== 'youtube#video') return '';
             const videoDetails = video.snippet;
             const videoId = video.id?.videoId || videoDetails.resourceId?.videoId;
             const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
@@ -1825,6 +1865,8 @@ function renderCreatorVideoList(container, videos, type) {
     } else { // 'short'
          grid.classList.add('short-video-list'); // 3-column grid
          grid.innerHTML = videos.map(video => {
+             // ★★★ FIX ★★★ सुनिश्चित करें कि केवल वीडियो आइटम ही रेंडर हों
+             if (video.id.kind !== 'youtube#video') return '';
              const videoDetails = video.snippet;
              const videoId = video.id?.videoId;
              const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
