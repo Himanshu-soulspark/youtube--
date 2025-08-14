@@ -1,8 +1,7 @@
-
 /* ================================================= */
-/* === Shubhzone App Script (Code 2) - FINAL v5.15 === */
+/* === Shubhzone App Script (Code 2) - FINAL v5.16 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
-/* === SOLVED: Player, Load More & UI Bugs Fixed === */
+/* === SOLVED: Player, Ads, Load More & My Channels Bugs Fixed === */
 /* ================================================= */
 
 // Firebase कॉन्फ़िगरेशन
@@ -36,6 +35,7 @@ const analytics = firebase.analytics();
 /**
  * Injects a banner ad into the specified container element.
  * It alternates between Monetag and Adsterra for variety.
+ * ★ बदलाव: कंटेनर की दृश्यता को प्रबंधित करने के लिए म्यूटेशन ऑब्जर्वर जोड़ा गया।
  * @param {HTMLElement} container The container element to inject the ad into.
  */
 function injectBannerAd(container) {
@@ -43,18 +43,42 @@ function injectBannerAd(container) {
         console.warn("[AD] Ad container not found. Cannot inject banner ad.");
         return;
     }
-    container.innerHTML = ''; // Clear previous content
+    container.innerHTML = ''; // पिछली सामग्री साफ़ करें
+    container.style.display = 'none'; // ★ नया: विज्ञापन लोड होने तक कंटेनर छिपाएँ
 
-    // Alternate between Monetag and Adsterra native banners
+    // यह देखने के लिए कि विज्ञापन स्क्रिप्ट ने सामग्री जोड़ी है या नहीं, एक ऑब्जर्वर सेट करें
+    const observer = new MutationObserver((mutationsList, obs) => {
+        for(const mutation of mutationsList) {
+            if (mutation.type === 'childList' && container.hasChildNodes()) {
+                // विज्ञापन स्क्रिप्ट ने कुछ जोड़ा है, इसलिए कंटेनर दिखाएँ
+                container.style.display = 'flex';
+                obs.disconnect(); // एक बार जब यह काम हो जाए तो देखना बंद कर दें
+                return;
+            }
+        }
+    });
+
+    observer.observe(container, { childList: true, subtree: true });
+
+    // 10 सेकंड के बाद टाइमआउट, यदि विज्ञापन लोड नहीं होता है तो ऑब्जर्वर को हटाने के लिए
+    setTimeout(() => {
+        observer.disconnect();
+        if (!container.hasChildNodes()) {
+           container.remove(); // यदि कोई विज्ञापन नहीं है, तो DOM से खाली कंटेनर हटा दें
+        }
+    }, 10000);
+
+
+    // Monetag और Adsterra नेटिव बैनर के बीच वैकल्पिक
     if (Math.random() > 0.5) {
-        // Monetag Native Banner
+        // Monetag नेटिव बैनर
         console.log("[AD] Injecting Monetag Native Banner...");
         const adScript = document.createElement('script');
         adScript.async = true;
         adScript.text = `(function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('gizokraijaw.net',9583482,document.createElement('script'))`;
         container.appendChild(adScript);
     } else {
-        // Adsterra Native Banner
+        // Adsterra नेटिव बैनर
         console.log("[AD] Injecting Adsterra Native Banner...");
         const adScript = document.createElement('script');
         adScript.async = true;
@@ -286,13 +310,18 @@ let appState = {
         shorts: null,
         search: null,
         trending: null,
-        channel: null
+        channelVideos: null,
+        channelShorts: null,
+        channelPlaylists: null,
     },
     uploadDetails: { category: null, audience: 'all', lengthType: 'short' },
     activeComments: { videoId: null, videoOwnerUid: null, channelId: null },
     activeChat: { chatId: null, friendId: null, friendName: null, friendAvatar: null },
     creatorPagePlayers: { short: null, long: null },
-    creatorPage: { currentLongVideo: { id: null, uploaderUid: null, channelId: null } },
+    creatorPage: { 
+        currentLongVideo: { id: null, uploaderUid: null, channelId: null },
+        channelCache: new Map(), // ★ नया: चैनल डेटा को कैश करने के लिए
+    },
     adState: {
         timers: { fullscreenAdLoop: null },
         fullscreenAd: { 
@@ -327,15 +356,16 @@ let hapticFeedbackEnabled = true;
 let currentVideoCache = new Map();
 
 /**
- * YouTube API से वीडियो लाने के लिए जेनेरिक फ़ंक्शन।
- * @param {string} type 'search', 'trending', 'channel', or 'videoDetails' में से एक।
+ * YouTube API से डेटा लाने के लिए जेनेरिक फ़ंक्शन।
+ * ★ बदलाव: 'channelDetails', 'playlistItems', 'playlists' प्रकार जोड़े गए।
+ * @param {string} type 'search', 'trending', 'channelVideos', 'videoDetails', 'channelDetails', 'playlists', 'playlistItems' में से एक।
  * @param {object} params API के लिए पैरामीटर।
  * @returns {Promise<object>} API से प्रतिक्रिया।
  */
 async function fetchFromYouTubeAPI(type, params) {
     let url = `/api/youtube?type=${type}`;
     for (const key in params) {
-        if (params[key]) {
+        if (params[key] !== undefined && params[key] !== null) {
             url += `&${key}=${encodeURIComponent(params[key])}`;
         }
     }
@@ -348,10 +378,13 @@ async function fetchFromYouTubeAPI(type, params) {
         }
         const data = await response.json();
         
+        // वीडियो को कैश करें
         if (data.items) {
-            data.items.forEach(video => {
-                const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
-                if(videoId) currentVideoCache.set(videoId, video);
+            data.items.forEach(item => {
+                const videoId = item.id?.videoId || item.id;
+                if(videoId && item.snippet) {
+                    currentVideoCache.set(videoId, item);
+                }
             });
         }
 
@@ -362,7 +395,6 @@ async function fetchFromYouTubeAPI(type, params) {
     }
 }
 
-
 /**
  * खोजे गए यूट्यूब वीडियो को ग्रिड में दिखाता है।
  * @param {Array} videos - दिखाने के लिए वीडियो की सूची।
@@ -370,11 +402,9 @@ async function fetchFromYouTubeAPI(type, params) {
  */
 function renderYouTubeLongVideos(videos, append = false) {
     const grid = document.getElementById('long-video-grid');
-    const loader = document.getElementById('youtube-grid-loader');
     const loadMoreBtn = document.getElementById('long-video-load-more-btn');
 
     if (!grid) return;
-    if (loader) loader.style.display = 'none';
 
     if (!append) {
         grid.innerHTML = '';
@@ -386,20 +416,29 @@ function renderYouTubeLongVideos(videos, append = false) {
         return;
     }
     
-    videos.forEach((video, index) => {
+    const fragment = document.createDocumentFragment();
+    videos.forEach((video) => {
         const card = createLongVideoCard(video);
-        grid.appendChild(card);
-        if ((index + 1) % 4 === 0) {
-            const adContainer = document.createElement('div');
-            adContainer.className = 'long-video-grid-ad';
-            grid.appendChild(adContainer);
+        fragment.appendChild(card);
+    });
+    grid.appendChild(fragment);
+
+    // विज्ञापन को केवल तभी जोड़ें जब अपेंड न हो रहा हो, ताकि स्क्रॉल पर विज्ञापन की बाढ़ न आए
+    if (!append && videos.length > 3) {
+        const adContainer = document.createElement('div');
+        adContainer.className = 'long-video-grid-ad';
+        // विज्ञापन को ग्रिड में एक विशिष्ट स्थान पर डालें
+        if (grid.children[3]) {
+            grid.insertBefore(adContainer, grid.children[3]);
             setTimeout(() => injectBannerAd(adContainer), 100);
         }
-    });
+    }
+
 
     if (loadMoreBtn) {
         loadMoreBtn.style.display = appState.youtubeNextPageTokens.long ? 'block' : 'none';
         loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = "Load More";
     }
 }
 
@@ -411,7 +450,7 @@ async function loadMoreLongVideos() {
     }
 
     const activeCategoryChip = document.querySelector('#long-video-category-scroller .category-chip.active');
-    const category = activeCategoryChip ? activeCategoryChip.textContent : 'All';
+    const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
     const searchInput = document.getElementById('long-video-search-input').value.trim();
     
     let data;
@@ -420,7 +459,7 @@ async function loadMoreLongVideos() {
     } else if (category.toLowerCase() === 'trending') {
         data = await fetchFromYouTubeAPI('trending', { pageToken: appState.youtubeNextPageTokens.long, regionCode: 'IN' });
     } else {
-        const query = category.toLowerCase() === 'all' ? 'latest music videos' : category;
+        const query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
         data = await fetchFromYouTubeAPI('search', { q: query, pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' });
     }
 
@@ -429,8 +468,8 @@ async function loadMoreLongVideos() {
         renderYouTubeLongVideos(data.items, true);
     }
     
-    if (loadMoreBtn) {
-        loadMoreBtn.textContent = "Load More";
+    if (loadMoreBtn && !appState.youtubeNextPageTokens.long) {
+        loadMoreBtn.style.display = 'none';
     }
 }
 
@@ -438,7 +477,20 @@ function playYouTubeVideoFromCard(videoId) {
     const video = currentVideoCache.get(videoId);
     if (!video) {
         console.error("Video details not found in cache for ID:", videoId);
-        alert("Video details not found. Please try again.");
+        // यदि कैश में नहीं है तो विवरण प्राप्त करने का प्रयास करें
+        fetchFromYouTubeAPI('videoDetails', { id: videoId }).then(data => {
+            if (data.items && data.items[0]) {
+                const fetchedVideo = data.items[0];
+                currentVideoCache.set(videoId, fetchedVideo);
+                navigateTo('creator-page-screen', { 
+                    creatorId: fetchedVideo.snippet.channelId, 
+                    startWith: 'long', 
+                    videoId: videoId
+                });
+            } else {
+                 alert("Video details not found. Please try again.");
+            }
+        });
         return;
     }
     
@@ -473,6 +525,11 @@ const homeStaticMessageContainer = document.getElementById('home-static-message-
 const saveContinueBtn = document.getElementById('save-continue-btn');
 
 const categories = ["Trending", "Entertainment", "Comedy", "Music", "Dance", "Education", "Travel", "Food", "DIY", "Sports", "Gaming", "News", "Lifestyle"];
+const diverseTopics = ["latest movie trailers", "viral internet moments", "new tech gadgets", "stand up comedy", "amazing science experiments", "top music hits 2025", "travel vlogs Europe", "street food tour", "DIY home decor", "cricket highlights"];
+
+function getRandomTopic() {
+    return diverseTopics[Math.floor(Math.random() * diverseTopics.length)];
+}
 
 // Earnsure and other similar features are deprecated as per user request.
 // Keeping the objects empty or functions minimal to avoid breaking calls.
@@ -506,14 +563,15 @@ function activateScreen(screenId) {
     const activeScreen = document.getElementById(screenId);
     if (activeScreen) {
         activeScreen.style.display = 'flex';
-        activeScreen.classList.add('active'); 
+        // A small delay to allow the browser to render the flex display change before applying the transition
+        setTimeout(() => activeScreen.classList.add('active'), 10);
     }
     appState.currentScreen = screenId;
 }
 
 
 function navigateTo(nextScreenId, payload = null) {
-    if (appState.currentScreen === nextScreenId && !payload) return;
+    if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload)) return;
 
     if (nextScreenId !== 'splash-screen' && nextScreenId !== 'information-screen') {
         localStorage.setItem('shubhzone_lastScreen', nextScreenId);
@@ -523,35 +581,41 @@ function navigateTo(nextScreenId, payload = null) {
         appState.navigationStack.push(nextScreenId);
     }
     
+    // वर्तमान स्क्रीन पर चल रहे खिलाड़ियों को रोकें
     if (appState.currentScreen === 'home-screen' && activePlayerId && players[activePlayerId]) {
         pauseActivePlayer();
     }
     if (appState.currentScreen === 'creator-page-screen') {
-        if (appState.creatorPagePlayers.short) appState.creatorPagePlayers.short.destroy();
-        if (appState.creatorPagePlayers.long) appState.creatorPagePlayers.long.destroy();
-        appState.creatorPagePlayers = { short: null, long: null };
-        const videoWrapper = document.querySelector('#creator-page-long-view .main-video-card-wrapper');
-        if (videoWrapper && videoWrapper.classList.contains('rotated')) {
+        if (appState.creatorPagePlayers.short) {
+             appState.creatorPagePlayers.short.destroy();
+             appState.creatorPagePlayers.short = null;
+        }
+        if (appState.creatorPagePlayers.long) {
+            appState.creatorPagePlayers.long.destroy();
+            appState.creatorPagePlayers.long = null;
+        }
+        
+        const videoWrapper = document.querySelector('#creator-page-long-view .main-video-card-wrapper.rotated');
+        if (videoWrapper) {
             videoWrapper.classList.remove('rotated');
-            // Exit fullscreen if active due to rotation
-            if (document.fullscreenElement) {
-                document.exitFullscreen();
-            }
+             document.getElementById('app-container').classList.remove('fullscreen-active');
+            if (document.fullscreenElement) document.exitFullscreen();
         }
     }
     activePlayerId = null;
     
-    activateScreen(nextScreenId);
     appState.currentScreenPayload = payload;
+    activateScreen(nextScreenId);
 
+    // नई स्क्रीन के लिए सेटअप फ़ंक्शन कॉल करें
     if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase(); 
     if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
     if (nextScreenId === 'history-screen') initializeHistoryScreen();
     if (nextScreenId === 'your-zone-screen') populateYourZoneScreen();
     if (nextScreenId === 'home-screen') setupShortsScreen();
-    if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) initializeCreatorPage(payload.creatorId, payload.startWith, payload.videoId);
-    if (nextScreenId === 'credit-screen' && payload && payload.videoId) initializeCreditScreen(payload.videoId);
-    if (nextScreenId === 'report-screen') initializeReportScreen();
+    if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
+        initializeCreatorPage(payload);
+    }
     if (nextScreenId === 'friends-screen') {
         populateAddFriendsList();
         populateFriendRequestsList();
@@ -559,24 +623,25 @@ function navigateTo(nextScreenId, payload = null) {
         renderMyChannelsList(); // ★ नया: मित्रों स्क्रीन पर चैनल सूची प्रस्तुत करें
     }
     
-    // Deprecated screens navigation handling
-    const deprecatedScreens = ['earnsure-screen', 'payment-screen', 'track-payment-screen', 'advertisement-screen'];
+    // पदावनत स्क्रीन नेविगेशन हैंडलिंग
+    const deprecatedScreens = ['earnsure-screen', 'payment-screen', 'track-payment-screen', 'advertisement-screen', 'report-screen', 'credit-screen'];
     if (deprecatedScreens.includes(nextScreenId)) {
         const screen = document.getElementById(nextScreenId);
         if (screen) screen.innerHTML = `<div class="screen-header"><div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div><span class="header-title">Feature Removed</span></div><p class="static-message" style="margin-top: 80px;">This feature is no longer available.</p>`;
     }
 }
 
+
 function navigateBack() {
     if (appState.navigationStack.length <= 1) return;
     
-    // Handle exiting rotated fullscreen view
+    // घुमाए गए फ़ुलस्क्रीन दृश्य से बाहर निकलने को संभालें
     const creatorView = document.getElementById('creator-page-long-view');
     if (creatorView && creatorView.classList.contains('active')) {
         const videoWrapper = creatorView.querySelector('.main-video-card-wrapper');
         if (videoWrapper && videoWrapper.classList.contains('rotated')) {
-            toggleVideoRotation(); // This will handle class removal and exiting fullscreen
-            return; // Don't navigate back yet, just exit rotation
+            toggleVideoRotation(); // यह वर्ग हटाने और फ़ुलस्क्रीन से बाहर निकलने को संभालेगा
+            return; // अभी वापस नेविगेट न करें, बस रोटेशन से बाहर निकलें
         }
     }
     
@@ -589,10 +654,12 @@ function navigateBack() {
         appState.creatorPagePlayers = { short: null, long: null };
     }
     
-    navigateTo(previousScreenId);
+    // पेलोड के साथ वापस नेविगेट करने की अनुमति दें (जैसे कि निर्माता पृष्ठ से वापस सूची में)
+    navigateTo(previousScreenId, null); // पिछले पेलोड को साफ़ करें
 }
 
-async function checkUserProfileAndProceed(user, lastScreenToRestore = null) {
+
+async function checkUserProfileAndProceed(user) {
     if (!user) return;
     appState.currentUser.uid = user.uid;
     const userRef = db.collection('users').doc(user.uid);
@@ -606,7 +673,7 @@ async function checkUserProfileAndProceed(user, lastScreenToRestore = null) {
         }
         userData.likedVideos = userData.likedVideos || [];
         userData.friends = userData.friends || [];
-        // Resetting payment related fields for all users
+        // सभी उपयोगकर्ताओं के लिए भुगतान संबंधी फ़ील्ड रीसेट करना
         userData.creatorCoins = 0;
         userData.unconvertedCreatorSeconds = 0;
         
@@ -622,7 +689,6 @@ async function checkUserProfileAndProceed(user, lastScreenToRestore = null) {
         }
         updateProfileUI();
         
-        // ★ बदलाव: उपयोगकर्ता को हमेशा एक नई शुरुआत दें
         if (userData.name && userData.state) {
             await startAppLogic();
         } else {
@@ -650,7 +716,6 @@ function initializeApp() {
     if (appInitializationComplete) return;
     appInitializationComplete = true;
 
-    // ★ बदलाव: पिछली स्क्रीन को पुनर्स्थापित करने के लिए तर्क को हटा दिया गया
     auth.onAuthStateChanged(user => {
         if (user) {
             checkUserProfileAndProceed(user);
@@ -660,7 +725,6 @@ function initializeApp() {
     });
 
     activateScreen('splash-screen');
-    startAppTimeTracker();
 }
 
 
@@ -759,9 +823,6 @@ function updateProfileUI() {
     const profileHeaderAvatar = document.getElementById('profile-header-avatar');
     if (profileHeaderAvatar) profileHeaderAvatar.src = appState.currentUser.avatar || "https://via.placeholder.com/50/222/FFFFFF?text=+";
     
-    const yourZoneAvatar = document.getElementById('your-zone-header-avatar');
-    if (yourZoneAvatar) yourZoneAvatar.src = appState.currentUser.avatar || "https://via.placeholder.com/40";
-    
     profileImagePreview.src = appState.currentUser.avatar || "https://via.placeholder.com/120/222/FFFFFF?text=+";
     document.getElementById('info-name').value = appState.currentUser.name || '';
     document.getElementById('info-mobile').value = appState.currentUser.mobile || '';
@@ -772,14 +833,9 @@ function updateProfileUI() {
     document.getElementById('info-country').value = appState.currentUser.country || 'India';
 }
 
-function openUploadDetailsModal() {
-    // ★ बदलाव: इस सुविधा को हटा दिया गया है
-    alert("This feature is no longer available. All video content is now sourced directly from YouTube.");
-}
 
 let appStartLogicHasRun = false;
 const startAppLogic = async () => {
-    // ★ बदलाव: यह सुनिश्चित करने के लिए कि यह केवल एक बार चले, मौजूदा चेक को रखा गया है
     if (appStartLogicHasRun && appState.currentScreen !== 'splash-screen' && appState.currentScreen !== 'information-screen') {
         return;
     }
@@ -792,17 +848,11 @@ const startAppLogic = async () => {
     if (getStartedBtn) getStartedBtn.style.display = 'none';
     if (loadingContainer) loadingContainer.style.display = 'flex';
     
-    renderCategoriesInBar();
-    
     // ★ बदलाव: ऐप हमेशा लॉन्ग वीडियो स्क्रीन से शुरू होता है
     const screenToNavigate = 'long-video-screen';
     
     navigateTo(screenToNavigate);
     updateNavActiveState('long-video');
-    
-    // हर बार नए वीडियो लोड हों, इसलिए सीधे सेटअप फ़ंक्शंस को कॉल करें
-    await setupLongVideoScreen();
-    await setupShortsScreen();
 };
 
 function renderVideoSwiper(videos, append = false) {
@@ -810,15 +860,12 @@ function renderVideoSwiper(videos, append = false) {
 
     if (!append) {
         videoSwiper.innerHTML = '';
-        // सभी खिलाड़ियों को नष्ट करें और रीसेट करें
         Object.values(players).forEach(player => {
-            if (player && typeof player.destroy === 'function') {
-                player.destroy();
-            }
+            if (player && typeof player.destroy === 'function') player.destroy();
         });
         players = {};
         if (videoObserver) videoObserver.disconnect();
-        setupVideoObserver(); // नए सामग्री सेट के लिए ऑब्जर्वर को फिर से शुरू करें
+        setupVideoObserver();
     }
     
     if (!videos || videos.length === 0) {
@@ -836,8 +883,9 @@ function renderVideoSwiper(videos, append = false) {
         homeStaticMessageContainer.style.display = 'none';
     }
 
-    videos.forEach((video, index) => {
-        const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
+    const fragment = document.createDocumentFragment();
+    videos.forEach((video) => {
+        const videoId = video.id?.videoId || video.id;
         if (!videoId) return;
 
         const slide = document.createElement('div');
@@ -846,19 +894,17 @@ function renderVideoSwiper(videos, append = false) {
         slide.dataset.channelId = video.snippet.channelId;
         
         slide.addEventListener('click', (e) => {
-            if (e.target.closest('.video-actions-overlay') || e.target.closest('.uploader-info')) return;
+            if (e.target.closest('.video-actions-overlay, .video-meta-overlay')) return;
             togglePlayPause(videoId);
         });
         
         const playerHtml = `<div class="player-container" id="player-${videoId}"></div>`;
         const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
         const uploaderName = video.snippet.channelTitle;
-        const uploaderAvatar = 'https://via.placeholder.com/40'; // प्लेसहोल्डर, क्योंकि चैनल अवतार के लिए अतिरिक्त एपीआई कॉल की आवश्यकता होती है
+        const uploaderAvatar = 'https://via.placeholder.com/40'; 
         const title = video.snippet.title;
 
         const creatorProfileOnClick = `navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'short', videoId: '${videoId}' })`;
-
-        // ★ बदलाव: क्रेडिट बटन को ऐड चैनल बटन से बदला गया
         const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
 
         slide.innerHTML = `
@@ -880,21 +926,24 @@ function renderVideoSwiper(videos, append = false) {
                     <span class="count">...</span>
                 </div>
             </div>`;
-        videoSwiper.appendChild(slide);
-        
+        fragment.appendChild(slide);
         videoObserver.observe(slide);
-
-        if ((index + 1) % 5 === 0) {
-            const adSlide = document.createElement('div');
-            adSlide.className = 'video-slide native-ad-slide';
-            const adSlotContainer = document.createElement('div');
-            adSlotContainer.className = 'ad-slot-container';
-            adSlide.innerHTML = `<div class="ad-slide-wrapper"><p style="color: var(--text-secondary); font-size: 0.9em; text-align: center; margin-bottom: 10px;">Advertisement</p></div>`;
-            adSlide.querySelector('.ad-slide-wrapper').appendChild(adSlotContainer);
-            videoSwiper.appendChild(adSlide);
-            setTimeout(() => injectBannerAd(adSlotContainer), 200);
-        }
     });
+    videoSwiper.appendChild(fragment);
+
+    // विज्ञापन स्लाइड हर 5 वीडियो के बाद जोड़ें
+    const adSlidesNeeded = Math.floor(videoSwiper.querySelectorAll('.video-slide').length / 5);
+    const existingAdSlides = videoSwiper.querySelectorAll('.native-ad-slide').length;
+    if (adSlidesNeeded > existingAdSlides) {
+        const adSlide = document.createElement('div');
+        adSlide.className = 'video-slide native-ad-slide';
+        const adSlotContainer = document.createElement('div');
+        adSlotContainer.className = 'ad-slot-container';
+        adSlide.innerHTML = `<div class="ad-slide-wrapper"><p style="color: var(--text-secondary); font-size: 0.9em; text-align: center; margin-bottom: 10px;">Advertisement</p></div>`;
+        adSlide.querySelector('.ad-slide-wrapper').appendChild(adSlotContainer);
+        videoSwiper.appendChild(adSlide);
+        setTimeout(() => injectBannerAd(adSlotContainer), 200);
+    }
     
     const oldTrigger = document.getElementById('shorts-load-more-trigger');
     if (oldTrigger) oldTrigger.remove();
@@ -908,12 +957,9 @@ function renderVideoSwiper(videos, append = false) {
     }
 }
 
+
 function onYouTubeIframeAPIReady() {
     isYouTubeApiReady = true;
-    if (window.pendingAppStartResolve) {
-        window.pendingAppStartResolve();
-        delete window.pendingAppStartResolve;
-    }
 }
 
 function onPlayerReady(event) {
@@ -935,21 +981,11 @@ function onPlayerStateChange(event) {
         handleCreatorPlayerStateChange(event);
         return;
     }
-
-    const slide = iframe.closest('.video-slide');
-    if (!slide) return;
-
-    const videoId = slide.dataset.videoId;
-    const preloader = slide.querySelector('.video-preloader');
-    if (event.data !== YT.PlayerState.UNSTARTED && preloader) {
-        preloader.style.display = 'none';
-    }
 }
 
-function addVideoToHistory(videoId) {
-    if (!videoId) return;
-    const videoData = currentVideoCache.get(videoId);
-    if (!videoData) return;
+function addVideoToHistory(videoData) {
+    if (!videoData || !videoData.id) return;
+    const videoId = videoData.id.videoId || videoData.id;
 
     const historyItem = {
         id: videoId,
@@ -968,10 +1004,10 @@ function addVideoToHistory(videoId) {
     localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
 }
 
-function addLongVideoToHistory(videoId) {
-    if (!videoId) return;
-    const videoData = currentVideoCache.get(videoId);
-    if (!videoData) return;
+function addLongVideoToHistory(videoData) {
+     if (!videoData || !videoData.id) return;
+    const videoId = videoData.id.videoId || videoData.id;
+    
     const historyItem = {
         id: videoId,
         watchedAt: new Date().toISOString(),
@@ -995,7 +1031,7 @@ function togglePlayPause(videoId) {
     if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING) {
         player.pauseVideo();
     } else {
-        playActivePlayer(videoId);
+        player.playVideo();
     }
 }
 
@@ -1006,7 +1042,8 @@ function playActivePlayer(videoId) {
         pauseActivePlayer();
     }
     activePlayerId = videoId;
-    addVideoToHistory(videoId);
+    const videoData = currentVideoCache.get(videoId);
+    if(videoData) addVideoToHistory(videoData);
     
     const player = players[videoId];
     if (!player || typeof player.playVideo !== 'function' || !player.getIframe() || !document.body.contains(player.getIframe())) {
@@ -1056,7 +1093,7 @@ function createPlayerForSlide(slide) {
         events: {
             'onReady': (event) => {
                 onPlayerReady(event);
-                if (videoId === activePlayerId) {
+                if (slide.getBoundingClientRect().top >= 0 && slide.getBoundingClientRect().bottom <= window.innerHeight) {
                     playActivePlayer(videoId);
                 }
             },
@@ -1101,33 +1138,11 @@ async function openCommentsModal(videoId, videoOwnerUid = null, channelId = null
     appState.activeComments = { videoId, videoOwnerUid, channelId };
     commentsModal.classList.add('active');
     commentsList.innerHTML = '<li style="text-align:center; color: var(--text-secondary);">Loading comments...</li>';
-    try {
-        // टिप्पणियाँ अब समर्थित नहीं हैं क्योंकि वे YouTube से हैं
-        commentsList.innerHTML = '<li style="text-align:center; color: var(--text-secondary);">Comments can be viewed on YouTube.</li>';
-        sendCommentBtn.disabled = true;
-        commentInput.disabled = true;
-    } catch (error) {
-        console.error("Error loading comments:", error);
-        commentsList.innerHTML = '<li style="text-align:center; color: var(--error-red);">Could not load comments.</li>';
-        sendCommentBtn.disabled = true;
-        commentInput.disabled = true;
-    }
-}
-
-function formatTimeAgo(date) {
-    const now = new Date();
-    const seconds = Math.round((now - date) / 1000);
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.round(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.round(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.round(hours / 24);
-    if (days < 30) return `${days}d ago`;
-    const months = Math.round(days / 30.4);
-    if (months < 12) return `${months}mo ago`;
-    const years = Math.round(days / 365);
-    return `${years}y ago`;
+    
+    commentsList.innerHTML = '<li style="text-align:center; color: var(--text-secondary);">Comments can be viewed on YouTube.</li>';
+    sendCommentBtn.disabled = true;
+    commentInput.disabled = true;
+    commentInput.placeholder = "Commenting disabled.";
 }
 
 function closeCommentsModal() {
@@ -1137,7 +1152,7 @@ function closeCommentsModal() {
 }
 
 async function postComment() {
-    alert("Commenting is not available here. Please comment on YouTube.");
+    alert("Commenting is not available here. Please comment directly on YouTube.");
 }
 
 function logoutUser() {
@@ -1162,12 +1177,14 @@ function renderCategoriesInBar() {
         const allChip = document.createElement('div');
         allChip.className = 'category-chip active haptic-trigger';
         allChip.textContent = 'All';
+        allChip.dataset.category = "All";
         allChip.onclick = () => filterVideosByCategory(s.id, 'All', allChip);
         s.appendChild(allChip);
         categories.forEach(category => {
             const chip = document.createElement('div');
             chip.className = 'category-chip haptic-trigger';
             chip.textContent = category;
+            chip.dataset.category = category;
             chip.onclick = () => filterVideosByCategory(s.id, category, chip);
             s.appendChild(chip);
         });
@@ -1181,15 +1198,12 @@ function filterVideosByCategory(scrollerId, category, element) {
     scroller.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
     if (element) element.classList.add('active');
     
-    // खोज इनपुट साफ़ करें
     const searchInput = document.getElementById('long-video-search-input');
     if (searchInput) searchInput.value = '';
 
     if (scrollerId === 'category-scroller') { 
-        if (activePlayerId) {
-            pauseActivePlayer();
-            activePlayerId = null;
-        }
+        if (activePlayerId) pauseActivePlayer();
+        activePlayerId = null;
         setupShortsScreen(category);
     } else { 
         populateLongVideoGrid(category);
@@ -1198,7 +1212,6 @@ function filterVideosByCategory(scrollerId, category, element) {
 
 
 function renderUserProfileVideos() {
-    // ★ बदलाव: उपयोगकर्ता द्वारा अपलोड किए गए वीडियो अब समर्थित नहीं हैं
     const shortGrid = document.getElementById('user-short-video-grid');
     const longGrid = document.getElementById('user-long-video-grid');
     
@@ -1208,19 +1221,8 @@ function renderUserProfileVideos() {
     if (longGrid) longGrid.innerHTML = message;
 }
 
-function showAudioIssuePopup() {
-    if (!hasShownAudioPopup) {
-        document.getElementById('audio-issue-popup').classList.add('active');
-        hasShownAudioPopup = true;
-    }
-}
-
-function closeAudioIssuePopup() {
-    document.getElementById('audio-issue-popup').classList.remove('active');
-}
-
 async function setupShortsScreen(category = 'All') {
-    const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`);
+    const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
 
     if (homeStaticMessageContainer) {
         videoSwiper.innerHTML = '';
@@ -1234,15 +1236,14 @@ async function setupShortsScreen(category = 'All') {
     if(data.items && data.items.length > 0) {
         renderVideoSwiper(data.items, false);
     } else {
-        renderVideoSwiper([], false); // खाली प्रस्तुत करें
-        homeStaticMessageContainer.querySelector('.static-message').textContent = 'No shorts found for this category.';
+        renderVideoSwiper([], false);
     }
 }
 
 async function loadMoreShorts() {
     const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
-    const category = activeCategoryChip ? activeCategoryChip.textContent : 'All';
-    const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? 'youtube shorts' : `${category} shorts`);
+    const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
+    const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
 
     const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short', pageToken: appState.youtubeNextPageTokens.shorts });
 
@@ -1254,8 +1255,7 @@ async function loadMoreShorts() {
 
 
 async function setupLongVideoScreen() {
-    populateLongVideoCategories();
-    // ★ बदलाव: डिफ़ॉल्ट रूप से ट्रेंडिंग वीडियो लोड करें
+    renderCategoriesInBar();
     await populateLongVideoGrid('Trending');
     await renderTrendingCarousel();
     
@@ -1266,15 +1266,17 @@ async function setupLongVideoScreen() {
         loadMoreBtn.id = 'long-video-load-more-btn';
         loadMoreBtn.className = 'continue-btn haptic-trigger';
         loadMoreBtn.textContent = 'Load More';
-        loadMoreBtn.style.margin = '0 20px 20px 20px';
+        loadMoreBtn.style.margin = '20px';
         loadMoreBtn.style.display = 'none';
         loadMoreBtn.onclick = loadMoreLongVideos;
-        gridContainer.appendChild(loadMoreBtn);
+        // इसे ग्रिड के बाद डालें
+        const grid = document.getElementById('long-video-grid');
+        if (grid.parentNode === gridContainer) {
+             gridContainer.insertBefore(loadMoreBtn, grid.nextSibling);
+        } else {
+             gridContainer.appendChild(loadMoreBtn);
+        }
     }
-}
-
-function populateLongVideoCategories() {
-    renderCategoriesInBar();
 }
 
 async function populateLongVideoGrid(category = 'All') {
@@ -1286,7 +1288,7 @@ async function populateLongVideoGrid(category = 'All') {
     if (category.toLowerCase() === 'trending') {
         data = await fetchFromYouTubeAPI('trending', { limit: 20, regionCode: 'IN' });
     } else {
-        const query = category.toLowerCase() === 'all' ? 'latest music videos' : category; 
+        const query = category.toLowerCase() === 'all' ? getRandomTopic() : category; 
         data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
     }
     
@@ -1294,8 +1296,7 @@ async function populateLongVideoGrid(category = 'All') {
     if (data.items) {
         renderYouTubeLongVideos(data.items, false);
     } else {
-        renderYouTubeLongVideos([], false); // खाली प्रस्तुत करें
-        grid.innerHTML = `<p class="static-message">${data.error || 'Could not load videos.'}</p>`;
+        renderYouTubeLongVideos([], false);
     }
 }
 
@@ -1308,7 +1309,7 @@ async function renderTrendingCarousel() {
     
     if (data.items && data.items.length > 0) {
         carouselWrapper.innerHTML = data.items.map(video => {
-            const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
+            const videoId = video.id?.videoId || video.id;
             const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
             return `
                 <div class="carousel-card haptic-trigger" 
@@ -1328,14 +1329,12 @@ async function performLongVideoSearch() {
     const query = input.value.trim();
     
     if (!query) {
-        // यदि खोज खाली है, तो सक्रिय श्रेणी पर वापस लौटें
         const activeCategoryChip = document.querySelector('#long-video-category-scroller .category-chip.active');
-        const category = activeCategoryChip ? activeCategoryChip.textContent : 'Trending';
+        const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'Trending';
         filterVideosByCategory('long-video-category-scroller', category, activeCategoryChip);
         return;
     }
     
-    // श्रेणी चयन को निष्क्रिय करें
     document.querySelectorAll('#long-video-category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
 
     const grid = document.getElementById('long-video-grid');
@@ -1347,12 +1346,12 @@ async function performLongVideoSearch() {
     if(data.items) {
         renderYouTubeLongVideos(data.items, false);
     } else {
-        renderYouTubeLongVideos([], false); // खाली प्रस्तुत करें
+        renderYouTubeLongVideos([], false);
     }
 }
 
 function createLongVideoCard(video) {
-    const videoId = typeof video.id === 'object' ? video.id.videoId : video.id;
+    const videoId = video.id?.videoId || video.id;
     if (!videoId) return document.createElement('div');
 
     const card = document.createElement('div');
@@ -1362,7 +1361,6 @@ function createLongVideoCard(video) {
     
     const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
     
-    // ★ बदलाव: क्रेडिट बटन को ऐड चैनल बटन से बदला गया
     const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
 
     card.innerHTML = `
@@ -1370,7 +1368,7 @@ function createLongVideoCard(video) {
             <i class="fas fa-play play-icon-overlay"></i>
         </div>
         <div class="long-video-info-container">
-            <div class="long-video-details" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'long', videoId: '${videoId}' })">
+            <div class="long-video-details" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'videos', videoId: '${videoId}' })">
                 <span class="long-video-name">${escapeHTML(video.snippet.title)}</span>
                 <span class="long-video-uploader">${escapeHTML(video.snippet.channelTitle)}</span>
             </div>
@@ -1378,22 +1376,6 @@ function createLongVideoCard(video) {
         <button class="add-channel-btn-long-grid haptic-trigger" onclick="${addChannelOnClick}"><i class="fas fa-plus"></i> Add Channel</button>
     `;
     return card;
-}
-
-function showVideoDescription(event, videoId) {
-    event.stopPropagation();
-    const video = currentVideoCache.get(videoId);
-    if (video) {
-        const descriptionText = video.snippet.description || "No description available.";
-        descriptionContent.innerHTML = escapeHTML(descriptionText).replace(/\n/g, '<br>');
-        descriptionModal.classList.add('active');
-    } else {
-        alert("Could not find video details.");
-    }
-}
-
-function closeDescriptionModal() {
-    descriptionModal.classList.remove('active');
 }
 
 function initializeHistoryScreen() {
@@ -1411,311 +1393,72 @@ function initializeHistoryScreen() {
 function renderHistoryShortsScroller() {
     const scroller = document.getElementById('history-shorts-scroller');
     if (!scroller) return;
-    scroller.innerHTML = '';
-
-    const historyVideos = appState.viewingHistory.filter(v => v.videoLengthType !== 'long');
-        
+    
+    const historyVideos = appState.viewingHistory.filter(v => v.videoLengthType === 'short');
     if (historyVideos.length === 0) {
         scroller.innerHTML = `<p class="static-message" style="color: var(--text-secondary);">No short video history.</p>`;
         return;
     }
 
-    historyVideos.forEach(video => {
-        const card = document.createElement('div');
-        card.className = 'history-short-card haptic-trigger';
-        card.style.backgroundImage = `url(${escapeHTML(video.thumbnailUrl)})`;
-        card.innerHTML = `<div class="history-item-menu" onclick="event.stopPropagation(); showHistoryItemMenu(event, '${video.id}')"><i class="fas fa-trash-alt"></i></div>`;
-        card.onclick = () => navigateTo('creator-page-screen', { creatorId: video.channelId, startWith: 'short', videoId: video.id });
-        scroller.appendChild(card);
-    });
+    scroller.innerHTML = historyVideos.map(video => `
+        <div class="history-short-card haptic-trigger" 
+             style="background-image: url(${escapeHTML(video.thumbnailUrl)})"
+             onclick="navigateTo('creator-page-screen', { creatorId: '${video.channelId}', startWith: 'shorts', videoId: '${video.id}' })">
+            <div class="history-item-menu" onclick="event.stopPropagation(); deleteFromHistory('${video.id}')"><i class="fas fa-trash-alt"></i></div>
+        </div>
+    `).join('');
 }
 
 
 function renderHistoryLongVideoList() {
     const list = document.getElementById('history-long-video-list');
     if (!list) return;
-    list.innerHTML = '';
 
     const historyVideos = appState.viewingHistory.filter(v => v.videoLengthType === 'long');
-
     if (historyVideos.length === 0) {
         list.innerHTML = `<p class="static-message" style="color: var(--text-secondary);">No long video history.</p>`;
         return;
     }
 
-    historyVideos.forEach(video => {
-        const item = document.createElement('div');
-        item.className = 'history-list-item haptic-trigger';
-        item.innerHTML = `
+    list.innerHTML = historyVideos.map(video => `
+        <div class="history-list-item haptic-trigger">
             <div class="history-item-thumbnail" style="background-image: url('${escapeHTML(video.thumbnailUrl)})'" onclick="playYouTubeVideoFromCard('${video.id}')"></div>
             <div class="history-item-info" onclick="playYouTubeVideoFromCard('${video.id}')">
                 <span class="history-item-title">${escapeHTML(video.title)}</span>
                 <span class="history-item-uploader">${escapeHTML(video.channelTitle)}</span>
             </div>
-            <div class="history-item-menu haptic-trigger" onclick="showHistoryItemMenu(event, '${video.id}')">
+            <div class="history-item-menu haptic-trigger" onclick="deleteFromHistory('${video.id}')">
                 <i class="fas fa-trash-alt"></i>
             </div>
-        `;
-        list.appendChild(item);
-    });
+        </div>
+    `).join('');
 }
+
 
 function clearAllHistory() {
     if (confirm("Are you sure you want to clear your entire watch history? This cannot be undone.")) {
         appState.viewingHistory = [];
         localStorage.removeItem('shubhzoneViewingHistory');
         initializeHistoryScreen();
-        alert("Watch history cleared.");
     }
 }
 
-
-function showHistoryItemMenu(event, videoId) {
-    event.stopPropagation();
-    if (confirm(`Remove this video from your history?`)) {
-        deleteFromHistory(videoId);
-    }
-}
 
 function deleteFromHistory(videoId) {
-    const index = appState.viewingHistory.findIndex(item => item.id === videoId);
-    if (index > -1) {
-        appState.viewingHistory.splice(index, 1);
+    if (confirm(`Remove this video from your history?`)) {
+        appState.viewingHistory = appState.viewingHistory.filter(item => item.id !== videoId);
         localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
         initializeHistoryScreen();
     }
 }
 
-function populateYourZoneScreen() {
-    const content = document.getElementById('your-zone-content');
-    if (!content) return;
-    
-    const { uid, referralCode, avatar, name, email } = appState.currentUser;
-    content.innerHTML = `
-        <div class="your-zone-header">
-            <img id="your-zone-header-avatar" src="${escapeHTML(avatar)}" alt="Avatar" class="your-zone-avatar">
-            <h3 class="your-zone-name">${escapeHTML(name)}</h3>
-            <p class="your-zone-email">${escapeHTML(email)}</p>
-        </div>
-        <div class="your-zone-card">
-            <label>Your Unique ID</label>
-            <div class="input-with-button">
-                <input type="text" value="${escapeHTML(uid)}" readonly>
-                <button class="copy-btn haptic-trigger" onclick="copyToClipboard('${escapeHTML(uid)}', event)"><i class="fas fa-copy"></i></button>
-            </div>
-        </div>
-        <div class="your-zone-card">
-            <label>Your Referral Code</label>
-            <div class="input-with-button">
-                <input type="text" value="${escapeHTML(referralCode || 'N/A')}" readonly>
-                <button class="copy-btn haptic-trigger" onclick="copyToClipboard('${escapeHTML(referralCode)}', event)"><i class="fas fa-copy"></i></button>
-            </div>
-        </div>
-        <button class="your-zone-action-btn edit haptic-trigger" onclick="navigateTo('information-screen')">
-            <i class="fas fa-user-edit"></i> Edit Profile
-        </button>
-        <button class="your-zone-action-btn logout haptic-trigger" onclick="logoutUser()">
-            <i class="fas fa-sign-out-alt"></i> Log Out
-        </button>
-    `;
-}
-
-async function sendFriendRequest(receiverId, buttonElement) {
-    if (!appState.currentUser.uid || !receiverId) return;
-
-    buttonElement.disabled = true;
-    buttonElement.textContent = '...';
-
-    const requestData = {
-        senderId: appState.currentUser.uid,
-        senderName: appState.currentUser.name,
-        senderAvatar: appState.currentUser.avatar,
-        receiverId: receiverId,
-        status: 'pending',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    try {
-        const existingRequest = await db.collection('friendRequests')
-            .where('senderId', '==', appState.currentUser.uid)
-            .where('receiverId', '==', receiverId)
-            .get();
-
-        if (!existingRequest.empty) {
-            alert("You have already sent a friend request to this user.");
-            buttonElement.textContent = 'Requested';
-            buttonElement.classList.add('requested');
-            return;
-        }
-
-        await db.collection('friendRequests').add(requestData);
-        buttonElement.textContent = 'Requested';
-        buttonElement.classList.add('requested');
-    } catch (error) {
-        console.error("Error sending friend request:", error);
-        alert("Failed to send friend request.");
-        buttonElement.disabled = false;
-        buttonElement.textContent = 'Add Friend';
-    }
-}
-
-async function populateFriendRequestsList() {
-    const requestsContent = document.getElementById('requests-content');
-    if (!requestsContent) return;
-    requestsContent.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-
-    try {
-        const requestsSnapshot = await db.collection('friendRequests')
-            .where('receiverId', '==', appState.currentUser.uid)
-            .where('status', '==', 'pending')
-            .orderBy('createdAt', 'desc')
-            .get();
-
-        if (requestsSnapshot.empty) {
-            requestsContent.innerHTML = '<p class="static-message">No new friend requests.</p>';
-            return;
-        }
-
-        const requestsHtml = requestsSnapshot.docs.map(doc => {
-            const request = { id: doc.id, ...doc.data() };
-            return `
-                <div class="holographic-card" id="request-${request.id}">
-                    <div class="profile-pic" onclick="showEnlargedImage('${escapeHTML(request.senderAvatar) || 'https://via.placeholder.com/60'}')"><img src="${escapeHTML(request.senderAvatar) || 'https://via.placeholder.com/60'}" alt="avatar"></div>
-                    <div class="info">
-                        <div class="name">${escapeHTML(request.senderName) || 'User'}</div>
-                        <div class="subtext">Wants to be your friend</div>
-                    </div>
-                    <div class="request-actions">
-                        <button class="accept-button haptic-trigger" onclick="acceptFriendRequest(event, '${request.id}', '${request.senderId}')">Accept</button>
-                        <button class="reject-button haptic-trigger" onclick="rejectFriendRequest(event, '${request.id}')">Reject</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        requestsContent.innerHTML = requestsHtml;
-
-    } catch (error) {
-        console.error("Error fetching friend requests:", error);
-        requestsContent.innerHTML = `<p class="static-message" style="color: var(--error-red);">Could not load requests. Please check your Firestore Indexes.</p><p style="font-size: 0.8em; color: var(--text-secondary);">${error.message}</p>`;
-    }
-}
-
-async function acceptFriendRequest(event, requestId, senderId) {
-    const actionDiv = event.target.closest('.request-actions');
-    actionDiv.innerHTML = '<div class="loader" style="width: 20px; height: 20px;"></div>';
-
-    const batch = db.batch();
-    
-    const requestRef = db.collection('friendRequests').doc(requestId);
-    batch.update(requestRef, { status: 'accepted' });
-
-    const currentUserRef = db.collection('users').doc(appState.currentUser.uid);
-    batch.update(currentUserRef, { friends: firebase.firestore.FieldValue.arrayUnion(senderId) });
-    
-    const senderUserRef = db.collection('users').doc(senderId);
-    batch.update(senderUserRef, { friends: firebase.firestore.FieldValue.arrayUnion(appState.currentUser.uid) });
-
-    try {
-        await batch.commit();
-        
-        if (!appState.currentUser.friends.includes(senderId)) {
-            appState.currentUser.friends.push(senderId);
-        }
-
-        alert("Friend request accepted!");
-        
-        const requestCard = document.getElementById(`request-${requestId}`);
-        if (requestCard) requestCard.remove();
-        
-        populateMembersList();
-
-    } catch (error) {
-        console.error("Error accepting friend request:", error);
-        alert("Failed to accept request. Please check your internet connection and Firestore rules.");
-        actionDiv.innerHTML = `<button class="accept-button haptic-trigger" onclick="acceptFriendRequest(event, '${requestId}', '${senderId}')">Accept</button>
-                               <button class="reject-button haptic-trigger" onclick="rejectFriendRequest(event, '${requestId}')">Reject</button>`;
-    }
-}
-
-
-async function rejectFriendRequest(event, requestId) {
-    const actionDiv = event.target.closest('.request-actions');
-    actionDiv.innerHTML = '<div class="loader" style="width: 20px; height: 20px;"></div>';
-
-    try {
-        await db.collection('friendRequests').doc(requestId).delete();
-        const requestCard = document.getElementById(`request-${requestId}`);
-        if (requestCard) requestCard.remove();
-    } catch (error) {
-        console.error("Error rejecting friend request:", error);
-        alert("Failed to reject request.");
-        actionDiv.innerHTML = `<button class="accept-button haptic-trigger" onclick="acceptFriendRequest(event, '${requestId}', '${senderId}')">Accept</button>
-                               <button class="reject-button haptic-trigger" onclick="rejectFriendRequest(event, '${requestId}')">Reject</button>`;
-    }
-}
-
-async function populateMembersList() {
-    const membersContent = document.getElementById('members-content');
-    if (!membersContent) return;
-    membersContent.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-
-    const friendIds = appState.currentUser.friends || [];
-
-    if (friendIds.length === 0) {
-        membersContent.innerHTML = '<p class="static-message">You have no friends yet. Add some from the "Add" tab!</p>';
-        return;
-    }
-
-    try {
-        const friendPromises = friendIds.map(id => db.collection('users').doc(id).get());
-        const friendDocs = await Promise.all(friendPromises);
-
-        let finalHtml = '';
-        
-        const friends = friendDocs
-            .map(doc => ({ id: doc.id, ...doc.data() }));
-
-        friends.forEach((friend, index) => {
-            finalHtml += `
-                <div class="holographic-card" onclick="startChat('${friend.id}', '${escapeHTML(friend.name)}', '${escapeHTML(friend.avatar)}')">
-                    <div class="profile-pic" onclick="event.stopPropagation(); showEnlargedImage('${escapeHTML(friend.avatar) || 'https://via.placeholder.com/60'}')">
-                        <img src="${escapeHTML(friend.avatar) || 'https://via.placeholder.com/60'}" alt="avatar">
-                    </div>
-                    <div class="info">
-                        <div class="name">${escapeHTML(friend.name) || 'Shubhzone User'}</div>
-                        <div class="subtext">Tap to chat</div>
-                    </div>
-                </div>`;
-            
-            if ((index + 1) % 5 === 0) {
-                const adContainerId = `friend-ad-${index}`;
-                finalHtml += `<div class="friend-list-ad" id="${adContainerId}"></div>`;
-                setTimeout(() => {
-                    const adElement = document.getElementById(adContainerId);
-                    if (adElement) injectBannerAd(adElement);
-                }, 100);
-            }
-        });
-        
-        membersContent.innerHTML = finalHtml || '<p class="static-message">Could not load friends list.</p>';
-
-    } catch (error) {
-        console.error("Error fetching members:", error);
-        membersContent.innerHTML = '<p class="static-message" style="color: var(--error-red);">Could not load your friends.</p>';
-    }
-}
-
-
+// ... (बाकी मित्र और चैट फ़ंक्शन अपरिवर्तित) ...
 async function populateAddFriendsList(featuredUser = null) {
     const addContent = document.querySelector('#friends-screen #add-content');
     if (!addContent) return;
     
     const userListContainer = addContent.querySelector('#add-friend-user-list');
-    if (!userListContainer) {
-        console.error('#add-friend-user-list container not found');
-        return;
-    }
+    if (!userListContainer) return;
     userListContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
     try {
@@ -1768,7 +1511,6 @@ async function populateAddFriendsList(featuredUser = null) {
         userListContainer.innerHTML = '<p class="static-message" style="color: var(--error-red);">Could not load user list.</p>';
     }
 }
-
 async function searchUser() {
     const searchInput = document.getElementById('add-friend-search-input');
     const query = searchInput.value.trim();
@@ -1784,15 +1526,9 @@ async function searchUser() {
     try {
         let userQuery;
         if (query.startsWith('@')) {
-            userQuery = await db.collection('users')
-                .where('referralCode', '==', query)
-                .limit(1)
-                .get();
+            userQuery = await db.collection('users').where('referralCode', '==', query).limit(1).get();
         } else {
-             userQuery = await db.collection('users')
-                .where('name', '>=', query)
-                .where('name', '<=', query + '\uf8ff')
-                .get();
+             userQuery = await db.collection('users').where('name', '>=', query).where('name', '<=', query + '\uf8ff').get();
         }
 
         if (userQuery.empty) {
@@ -1806,303 +1542,336 @@ async function searchUser() {
         userListContainer.innerHTML = `<p class="static-message" style="color: var(--error-red);">Error during search. Check Firestore indexes.</p>`;
     }
 }
+async function sendFriendRequest(receiverId, buttonElement) {
+    if (!appState.currentUser.uid || !receiverId) return;
 
+    buttonElement.disabled = true;
+    buttonElement.textContent = '...';
+
+    const requestData = {
+        senderId: appState.currentUser.uid, senderName: appState.currentUser.name, senderAvatar: appState.currentUser.avatar,
+        receiverId: receiverId, status: 'pending', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    try {
+        const existingRequest = await db.collection('friendRequests').where('senderId', '==', appState.currentUser.uid).where('receiverId', '==', receiverId).get();
+        if (!existingRequest.empty) {
+            alert("You have already sent a friend request to this user.");
+            buttonElement.textContent = 'Requested'; buttonElement.classList.add('requested'); return;
+        }
+        await db.collection('friendRequests').add(requestData);
+        buttonElement.textContent = 'Requested'; buttonElement.classList.add('requested');
+    } catch (error) {
+        console.error("Error sending friend request:", error);
+        alert("Failed to send friend request.");
+        buttonElement.disabled = false; buttonElement.textContent = 'Add Friend';
+    }
+}
+async function populateFriendRequestsList() {
+    const requestsContent = document.getElementById('requests-content');
+    if (!requestsContent) return;
+    requestsContent.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+    try {
+        const requestsSnapshot = await db.collection('friendRequests').where('receiverId', '==', appState.currentUser.uid).where('status', '==', 'pending').orderBy('createdAt', 'desc').get();
+        if (requestsSnapshot.empty) {
+            requestsContent.innerHTML = '<p class="static-message">No new friend requests.</p>'; return;
+        }
+        requestsContent.innerHTML = requestsSnapshot.docs.map(doc => {
+            const request = { id: doc.id, ...doc.data() };
+            return `<div class="holographic-card" id="request-${request.id}"> <div class="profile-pic" onclick="showEnlargedImage('${escapeHTML(request.senderAvatar) || 'https://via.placeholder.com/60'}')"><img src="${escapeHTML(request.senderAvatar) || 'https://via.placeholder.com/60'}" alt="avatar"></div> <div class="info"> <div class="name">${escapeHTML(request.senderName) || 'User'}</div> <div class="subtext">Wants to be your friend</div> </div> <div class="request-actions"> <button class="accept-button haptic-trigger" onclick="acceptFriendRequest(event, '${request.id}', '${request.senderId}')">Accept</button> <button class="reject-button haptic-trigger" onclick="rejectFriendRequest(event, '${request.id}')">Reject</button> </div> </div>`;
+        }).join('');
+    } catch (error) {
+        console.error("Error fetching friend requests:", error);
+        requestsContent.innerHTML = `<p class="static-message" style="color: var(--error-red);">Could not load requests.</p>`;
+    }
+}
+async function acceptFriendRequest(event, requestId, senderId) {
+    const actionDiv = event.target.closest('.request-actions');
+    actionDiv.innerHTML = '<div class="loader" style="width: 20px; height: 20px;"></div>';
+    const batch = db.batch();
+    batch.update(db.collection('friendRequests').doc(requestId), { status: 'accepted' });
+    batch.update(db.collection('users').doc(appState.currentUser.uid), { friends: firebase.firestore.FieldValue.arrayUnion(senderId) });
+    batch.update(db.collection('users').doc(senderId), { friends: firebase.firestore.FieldValue.arrayUnion(appState.currentUser.uid) });
+    try {
+        await batch.commit();
+        if (!appState.currentUser.friends.includes(senderId)) appState.currentUser.friends.push(senderId);
+        const requestCard = document.getElementById(`request-${requestId}`);
+        if (requestCard) requestCard.remove();
+        populateMembersList();
+    } catch (error) {
+        console.error("Error accepting friend request:", error);
+        alert("Failed to accept request.");
+        actionDiv.innerHTML = `<button class="accept-button haptic-trigger" onclick="acceptFriendRequest(event, '${requestId}', '${senderId}')">Accept</button> <button class="reject-button haptic-trigger" onclick="rejectFriendRequest(event, '${requestId}')">Reject</button>`;
+    }
+}
+async function rejectFriendRequest(event, requestId) {
+    const actionDiv = event.target.closest('.request-actions');
+    actionDiv.innerHTML = '<div class="loader" style="width: 20px; height: 20px;"></div>';
+    try {
+        await db.collection('friendRequests').doc(requestId).delete();
+        const requestCard = document.getElementById(`request-${requestId}`);
+        if (requestCard) requestCard.remove();
+    } catch (error) {
+        console.error("Error rejecting friend request:", error);
+        alert("Failed to reject request.");
+    }
+}
+async function populateMembersList() {
+    const membersContent = document.getElementById('members-content');
+    if (!membersContent) return;
+    membersContent.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+    const friendIds = appState.currentUser.friends || [];
+    if (friendIds.length === 0) {
+        membersContent.innerHTML = '<p class="static-message">You have no friends yet.</p>'; return;
+    }
+    try {
+        const friendDocs = await Promise.all(friendIds.map(id => db.collection('users').doc(id).get()));
+        let finalHtml = friendDocs.map((doc, index) => {
+            const friend = { id: doc.id, ...doc.data() };
+            let cardHtml = `<div class="holographic-card" onclick="startChat('${friend.id}', '${escapeHTML(friend.name)}', '${escapeHTML(friend.avatar)}')"> <div class="profile-pic" onclick="event.stopPropagation(); showEnlargedImage('${escapeHTML(friend.avatar) || 'https://via.placeholder.com/60'}')"> <img src="${escapeHTML(friend.avatar) || 'https://via.placeholder.com/60'}" alt="avatar"> </div> <div class="info"> <div class="name">${escapeHTML(friend.name) || 'User'}</div> <div class="subtext">Tap to chat</div> </div> </div>`;
+            if ((index + 1) % 5 === 0) {
+                const adContainerId = `friend-ad-${index}`;
+                cardHtml += `<div class="friend-list-ad" id="${adContainerId}"></div>`;
+                setTimeout(() => {
+                    const adElement = document.getElementById(adContainerId);
+                    if (adElement) injectBannerAd(adElement);
+                }, 100);
+            }
+            return cardHtml;
+        }).join('');
+        membersContent.innerHTML = finalHtml || '<p class="static-message">Could not load friends list.</p>';
+    } catch (error) {
+        console.error("Error fetching members:", error);
+        membersContent.innerHTML = '<p class="static-message" style="color: var(--error-red);">Could not load your friends.</p>';
+    }
+}
 async function startChat(friendId, friendName, friendAvatar) {
     const chatScreen = document.getElementById('chat-screen-overlay');
     if (!chatScreen) return;
     
     document.getElementById('chat-username').textContent = friendName;
     document.getElementById('chat-user-profile-pic').src = friendAvatar || 'https://via.placeholder.com/50';
-
-    const uids = [appState.currentUser.uid, friendId].sort();
-    const chatId = uids.join('_');
-    
+    const chatId = [appState.currentUser.uid, friendId].sort().join('_');
     appState.activeChat = { chatId, friendId, friendName, friendAvatar };
 
     try {
         const chatRef = db.collection('chats').doc(chatId);
-        
-        const friendDoc = await db.collection('users').doc(friendId).get();
-        let finalFriendName = friendName;
-        let finalFriendAvatar = friendAvatar;
-        
-        if (friendDoc.exists) {
-            finalFriendName = friendDoc.data().name || friendName;
-            finalFriendAvatar = friendDoc.data().avatar || friendAvatar;
-        }
-
         await chatRef.set({
-            members: uids,
+            members: [appState.currentUser.uid, friendId],
             memberDetails: {
                 [appState.currentUser.uid]: { name: appState.currentUser.name, avatar: appState.currentUser.avatar },
-                [friendId]: { name: finalFriendName, avatar: finalFriendAvatar }
+                [friendId]: { name: friendName, avatar: friendAvatar }
             }
         }, { merge: true });
-
         chatScreen.classList.add('active');
         loadChatMessages(chatId);
-
     } catch (error) {
         console.error("Error starting chat:", error);
-        alert("Could not start chat. Please check your internet connection or try again.");
+        alert("Could not start chat.");
     }
 }
-
 async function sendMessage() {
     const { chatId } = appState.activeChat;
     const inputField = document.querySelector('#chat-screen-overlay .input-field');
     const text = inputField.value.trim();
-
     if (!text || !chatId) return;
-
-    const messageData = {
-        text: text,
-        senderId: appState.currentUser.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    
     inputField.value = '';
-
     try {
-        await db.collection('chats').doc(chatId).collection('messages').add(messageData);
+        await db.collection('chats').doc(chatId).collection('messages').add({
+            text: text, senderId: appState.currentUser.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
     } catch (error) {
         console.error("Error sending message:", error);
-        alert("Message could not be sent.");
         inputField.value = text;
     }
 }
-
 function loadChatMessages(chatId) {
     const messagesContainer = document.getElementById('chat-messages');
     messagesContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-    
     db.collection('chats').doc(chatId).collection('messages').orderBy('createdAt', 'asc')
       .onSnapshot(snapshot => {
-          if (snapshot.empty) {
-              messagesContainer.innerHTML = '<p class="static-message">No messages yet. Say hi!</p>';
-              return;
-          }
-          const messagesHtml = snapshot.docs.map(doc => {
+          messagesContainer.innerHTML = snapshot.empty ? '<p class="static-message">No messages yet. Say hi!</p>' : snapshot.docs.map(doc => {
               const msg = doc.data();
               const bubbleClass = msg.senderId === appState.currentUser.uid ? 'sender' : 'receiver';
               return `<div class="message-bubble ${bubbleClass}">${escapeHTML(msg.text)}</div>`;
           }).join('');
-
-          messagesContainer.innerHTML = messagesHtml;
           messagesContainer.scrollTop = messagesContainer.scrollHeight; 
       }, error => {
           console.error("Error loading chat messages:", error);
-          messagesContainer.innerHTML = '<p class="static-message" style="color: var(--error-red);">Could not load chat. Check security rules.</p>';
+          messagesContainer.innerHTML = '<p class="static-message" style="color: var(--error-red);">Could not load chat.</p>';
       });
 }
 
-function initializeMessagingInterface() {
-    const friendsScreen = document.getElementById('friends-screen');
-    if (!friendsScreen) return;
+// =======================================================
+// ★★★ CREATOR PAGE LOGIC (REWORKED) - START ★★★
+// =======================================================
+async function initializeCreatorPage(payload) {
+    const { creatorId, startWith = 'videos', videoId, playlistId } = payload;
     
-    friendsScreen.querySelectorAll('.tab-button').forEach(button => {
-        button.classList.add('haptic-trigger');
-        button.addEventListener('click', () => {
-             friendsScreen.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-             friendsScreen.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-             button.classList.add('active');
-             const contentToShow = friendsScreen.querySelector('#' + button.dataset.tab + '-content');
-             if (contentToShow) contentToShow.classList.remove('hidden');
+    // हेडर में टैब सेट करें
+    const creatorPageTabs = document.getElementById('creator-page-tabs');
+    creatorPageTabs.innerHTML = `
+        <button class="creator-page-tab-btn haptic-trigger" data-type="videos">Videos</button>
+        <button class="creator-page-tab-btn haptic-trigger" data-type="shorts">Shorts</button>
+        <button class="creator-page-tab-btn haptic-trigger" data-type="playlists">Playlists</button>
+    `;
+    
+    // सामग्री क्षेत्र साफ़ करें
+    const contentArea = document.getElementById('creator-page-content');
+    contentArea.innerHTML = '<div class="loader-container" style="height: 100%;"><div class="loader"></div></div>';
 
-             if (button.dataset.tab === 'add') populateAddFriendsList();
-             if (button.dataset.tab === 'requests') populateFriendRequestsList();
-             if (button.dataset.tab === 'members') populateMembersList();
-             if (button.dataset.tab === 'my-channels') renderMyChannelsList(); // ★ नया: टैब क्लिक पर चैनल सूची रेंडर करें
+    // टैब क्लिक हैंडलर संलग्न करें
+    creatorPageTabs.querySelectorAll('.creator-page-tab-btn').forEach(tab => {
+        tab.addEventListener('click', () => {
+             creatorPageTabs.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
+             tab.classList.add('active');
+             loadCreatorPageContent({ ...payload, startWith: tab.dataset.type });
         });
     });
 
-    const chatScreenOverlay = document.getElementById('chat-screen-overlay');
-    chatScreenOverlay.querySelector('.back-arrow')?.addEventListener('click', () => {
-        chatScreenOverlay.classList.remove('active');
-        const { chatId } = appState.activeChat;
-        if (chatId) {
-            const unsubscribe = db.collection('chats').doc(chatId).collection('messages').onSnapshot(() => {});
-            if (unsubscribe) unsubscribe();
-        }
-        appState.activeChat = {};
-    });
-
-    const sendButton = document.getElementById('send-button');
-    const messageInput = document.querySelector('#chat-screen-overlay .input-field');
-
-    sendButton?.addEventListener('click', sendMessage);
-    messageInput?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendMessage();
-        }
-    });
-    messageInput?.addEventListener('input', (e) => {
-        if (e.target.value.trim().length > 0) {
-            sendButton.classList.add('active');
-        } else {
-            sendButton.classList.remove('active');
-        }
-    });
-
+    // प्रारंभिक सामग्री लोड करें
+    const initialTab = creatorPageTabs.querySelector(`.creator-page-tab-btn[data-type="${startWith}"]`);
+    if(initialTab) initialTab.classList.add('active');
+    
+    await loadCreatorPageContent(payload);
 }
 
-function provideHapticFeedback() { if (hapticFeedbackEnabled && navigator.vibrate) navigator.vibrate(50); }
-function loadHapticPreference() {
-    hapticFeedbackEnabled = (localStorage.getItem('hapticFeedbackEnabled') !== 'false');
-    const hapticToggleInput = document.getElementById('haptic-toggle-input');
-    if (hapticToggleInput) hapticToggleInput.checked = hapticFeedbackEnabled;
-}
-function saveHapticPreference(enabled) {
-    localStorage.setItem('hapticFeedbackEnabled', enabled);
-    hapticFeedbackEnabled = enabled;
-}
+async function loadCreatorPageContent(payload) {
+    const { creatorId, startWith, videoId, playlistId } = payload;
+    const contentArea = document.getElementById('creator-page-content');
+    contentArea.innerHTML = '<div class="loader-container" style="height: 100%;"><div class="loader"></div></div>';
 
-function toggleProfileVideoView(viewType) {
-    const shortGrid = document.getElementById('user-short-video-grid');
-    const longGrid = document.getElementById('user-long-video-grid');
-    const shortBtn = document.getElementById('profile-show-shorts-btn');
-    const longBtn = document.getElementById('profile-show-longs-btn');
+    // प्लेयर रोकें यदि कोई हो
+    if (appState.creatorPagePlayers.long) appState.creatorPagePlayers.long.stopVideo();
+    if (appState.creatorPagePlayers.short) appState.creatorPagePlayers.short.stopVideo();
 
-    if (viewType === 'short') {
-        if(shortGrid) shortGrid.style.display = 'grid';
-        if(longGrid) longGrid.style.display = 'none';
-        if(shortBtn) shortBtn.classList.add('active');
-        if(longBtn) longBtn.classList.remove('active');
-    } else {
-        if(shortGrid) shortGrid.style.display = 'none';
-        if(longGrid) longGrid.style.display = 'grid';
-        if(shortBtn) shortBtn.classList.remove('active');
-        if(longBtn) longBtn.classList.add('active');
+    switch(startWith) {
+        case 'videos':
+            const videosData = await fetchFromYouTubeAPI('channelVideos', { channelId: creatorId });
+            renderCreatorVideoList(contentArea, videosData.items, 'long', payload);
+            break;
+        case 'shorts':
+            const shortsData = await fetchFromYouTubeAPI('channelShorts', { channelId: creatorId });
+             renderCreatorVideoList(contentArea, shortsData.items, 'short', payload);
+            break;
+        case 'playlists':
+            const playlistsData = await fetchFromYouTubeAPI('playlists', { channelId: creatorId });
+            renderCreatorPlaylistList(contentArea, playlistsData.items, payload);
+            break;
+        case 'playlistItems':
+             const playlistItemsData = await fetchFromYouTubeAPI('playlistItems', { playlistId: playlistId });
+             renderCreatorVideoList(contentArea, playlistItemsData.items, 'long', payload);
+            break;
     }
 }
 
-// =======================================================
-// ★★★ CREATOR PAGE LOGIC - START ★★★
-// =======================================================
-
-async function initializeCreatorPage(channelId, startWith = 'short', startVideoId = null) {
-    const shortView = document.getElementById('creator-page-short-view');
-    const longView = document.getElementById('creator-page-long-view');
-    if (!shortView || !longView) return;
-    
-    shortView.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-    longView.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-    
-    const channelVideosData = await fetchFromYouTubeAPI('channel', { channelId: channelId });
-    const allVideos = channelVideosData.items || [];
-    
-    // लघु और लंबे वीडियो को अलग करने के लिए एक सरल अनुमान
-    const shortVideos = allVideos.filter(v => 
-        (v.snippet.title && v.snippet.title.toLowerCase().includes('#shorts')) ||
-        (v.snippet.description && v.snippet.description.toLowerCase().includes('#shorts'))
-    );
-    const longVideos = allVideos.filter(v => !shortVideos.some(short => (short.id.videoId || short.id) === (v.id.videoId || v.id)));
-
-    let startShortVideo = shortVideos.find(v => (v.id.videoId || v.id) === startVideoId) || shortVideos[0];
-    let startLongVideo = longVideos.find(v => (v.id.videoId || v.id) === startVideoId) || longVideos[0];
-    
-    const tabs = document.querySelectorAll('#creator-page-tabs .creator-page-tab-btn');
-    tabs.forEach(tab => {
-        tab.onclick = () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            document.querySelectorAll('.creator-page-view').forEach(v => v.classList.remove('active'));
-            const activeView = document.getElementById(`creator-page-${tab.dataset.type}-view`);
-            if (activeView) activeView.classList.add('active');
-            
-            const otherType = tab.dataset.type === 'short' ? 'long' : 'short';
-            if(appState.creatorPagePlayers[otherType] && typeof appState.creatorPagePlayers[otherType].pauseVideo === 'function') {
-                appState.creatorPagePlayers[otherType].pauseVideo();
-            }
-            if(appState.creatorPagePlayers[tab.dataset.type] && typeof appState.creatorPagePlayers[tab.dataset.type].playVideo === 'function') {
-                appState.creatorPagePlayers[tab.dataset.type].playVideo();
-            }
-        };
-    });
-    
-    if (startWith === 'long' && startLongVideo) {
-        appState.creatorPage.currentLongVideo = { id: (startLongVideo.id.videoId || startLongVideo.id), channelId: channelId };
-    }
-    
-    renderCreatorVideoView(shortView, shortVideos, 'short', channelId, startShortVideo ? (startShortVideo.id.videoId || startShortVideo.id) : null);
-    renderCreatorVideoView(longView, longVideos, 'long', channelId, startLongVideo ? (startLongVideo.id.videoId || startLongVideo.id) : null);
-    
-    document.querySelectorAll('.creator-page-view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
-    document.getElementById(`creator-page-${startWith}-view`).classList.add('active');
-    document.querySelector(`.creator-page-tab-btn[data-type="${startWith}"]`).classList.add('active');
-}
-
-
-function renderCreatorVideoView(container, videos, type, channelId, startVideoId = null) {
-    container.innerHTML = '';
-    if (videos.length === 0) {
-        container.innerHTML = `<p class="static-message">This creator has no ${type} videos.</p>`;
+function renderCreatorVideoList(container, videos, type, payload) {
+    if (!videos || videos.length === 0) {
+        container.innerHTML = `<p class="static-message">No ${type} videos found for this creator.</p>`;
         return;
     }
     
-    let firstVideo = videos.find(v => (v.id.videoId || v.id) === startVideoId) || videos[0];
-    
-    const videoListHtml = videos.map((v) => {
-        const thumbClass = (type === 'long') ? 'side-video-thumb-long' : 'side-video-thumb-short';
-        const videoId = v.id.videoId || v.id;
-        return `<img src="${v.snippet.thumbnails.medium.url}" class="side-video-thumb haptic-trigger ${thumbClass}" onclick="playCreatorVideo('${type}', '${videoId}', '${channelId}')">`;
+    const grid = document.createElement('div');
+    grid.className = 'creator-video-grid'; // इस वर्ग के लिए स्टाइलिंग की आवश्यकता होगी
+    grid.style.display = 'grid';
+    grid.style.gap = '10px';
+    grid.style.padding = '10px';
+    grid.style.overflowY = 'auto';
+    grid.style.height = '100%';
+
+    if (type === 'long') {
+        grid.style.gridTemplateColumns = '1fr';
+    } else {
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+    }
+
+    grid.innerHTML = videos.map(video => {
+        const videoDetails = video.snippet;
+        const videoId = videoDetails.resourceId?.videoId || video.id?.videoId || video.id;
+        const thumbnailUrl = videoDetails.thumbnails.high?.url || videoDetails.thumbnails.medium?.url;
+        
+        if (type === 'long') {
+            return `
+                <div class="long-video-card" style="margin-bottom: 10px;" onclick="playYouTubeVideoFromCard('${videoId}')">
+                    <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')">
+                         <i class="fas fa-play play-icon-overlay"></i>
+                    </div>
+                    <div class="long-video-info-container">
+                        <div class="long-video-details">
+                            <span class="long-video-name">${escapeHTML(videoDetails.title)}</span>
+                            <span class="long-video-uploader">${escapeHTML(videoDetails.videoOwnerChannelTitle || videoDetails.channelTitle)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else { // Shorts
+             return `
+                <div class="history-short-card" style="background-image: url('${escapeHTML(thumbnailUrl)}'); cursor: pointer;"
+                     onclick="navigateTo('home-screen')">
+                     <!-- शॉर्ट्स को होम स्क्रीन पर रीडायरेक्ट करें, क्योंकि वर्टिकल स्वाइपर बेहतर अनुभव है -->
+                </div>
+             `;
+        }
+
     }).join('');
+    
+    container.innerHTML = '';
+    container.appendChild(grid);
+}
 
-    // ★ बदलाव: कस्टम नियंत्रणों को सरल बनाया गया
-    const playerControlsHtml = `
-        <div class="custom-player-controls-overlay">
-            <div class="controls-center" onclick="toggleCreatorPlayer('${type}')">
-                <i class="fas fa-play-circle control-btn-main"></i>
-            </div>
-            <div class="controls-bottom">
-                <i class="fas fa-sync-alt rotate-btn-player haptic-trigger" onclick="event.stopPropagation(); toggleVideoRotation();"></i>
-            </div>
-        </div>
-    `;
+function renderCreatorPlaylistList(container, playlists, payload) {
+    if (!playlists || playlists.length === 0) {
+        container.innerHTML = `<p class="static-message">No playlists found for this creator.</p>`;
+        return;
+    }
 
-    container.innerHTML = `
-        <div class="creator-video-viewer">
-            <div class="main-video-card-wrapper">
-                <div class="main-video-card">
-                    <div id="creator-page-player-${type}"></div>
-                    ${type === 'long' ? playerControlsHtml : ''}
+    const list = document.createElement('div');
+    list.className = 'creator-playlist-list';
+    list.style.padding = '10px';
+    list.style.overflowY = 'auto';
+    list.style.height = '100%';
+
+    list.innerHTML = playlists.map(playlist => {
+        const p = playlist.snippet;
+        return `
+            <div class="history-list-item haptic-trigger" style="margin-bottom: 10px;" 
+                 onclick="loadCreatorPageContent({ creatorId: '${payload.creatorId}', startWith: 'playlistItems', playlistId: '${playlist.id}' })">
+                <div class="history-item-thumbnail" style="background-image: url('${escapeHTML(p.thumbnails.medium.url)}')"></div>
+                <div class="history-item-info">
+                    <span class="history-item-title">${escapeHTML(p.title)}</span>
+                    <span class="history-item-uploader">${playlist.contentDetails.itemCount} videos</span>
                 </div>
             </div>
-            <div class="side-video-list-scroller">${videoListHtml}</div>
-        </div>
-    `;
-    
-    if (firstVideo && isYouTubeApiReady) {
-        const videoIdToPlay = firstVideo.id.videoId || firstVideo.id;
-        initializeCreatorPagePlayer(videoIdToPlay, `creator-page-player-${type}`, type);
-    }
+        `;
+    }).join('');
+
+    container.innerHTML = '';
+    container.appendChild(list);
 }
+
 
 function initializeCreatorPagePlayer(videoId, containerId, type) {
     if (appState.creatorPagePlayers[type]) {
         appState.creatorPagePlayers[type].destroy();
     }
     
+    const playerContainer = document.getElementById(containerId);
+    if (!playerContainer) return;
+
     appState.creatorPagePlayers[type] = new YT.Player(containerId, {
-        height: '100%',
-        width: '100%',
-        videoId: videoId,
+        height: '100%', width: '100%', videoId: videoId,
         playerVars: {
-            'autoplay': 1, 
-            'controls': 0, // ★ बदलाव: सभी डिफ़ॉल्ट नियंत्रण छिपाएँ
-            'rel': 0, 'showinfo': 0, 'mute': 0, 'modestbranding': 1,
-            'fs': 0, // ★ बदलाव: डिफ़ॉल्ट फ़ुलस्क्रीन बटन अक्षम करें
+            'autoplay': 1, 'controls': 0, 'rel': 0, 'showinfo': 0, 
+            'mute': 0, // ★ बदलाव: अनम्यूटेड प्लेबैक का प्रयास करें, ब्राउज़र इसे संभाल लेगा
+            'modestbranding': 1, 'fs': 0,
             'origin': window.location.origin
         },
         events: {
             'onReady': (event) => {
                 event.target.playVideo();
-                // पहले वीडियो के लिए इतिहास जोड़ें
-                if (type === 'long') {
-                    addLongVideoToHistory(videoId);
-                } else {
-                    addVideoToHistory(videoId);
+                const videoData = currentVideoCache.get(videoId);
+                if (videoData) {
+                    if (type === 'long') addLongVideoToHistory(videoData);
+                    else addVideoToHistory(videoData);
                 }
             },
             'onStateChange': handleCreatorPlayerStateChange
@@ -2115,65 +1884,38 @@ function toggleCreatorPlayer(type) {
     if (player && typeof player.getPlayerState === 'function') {
         const state = player.getPlayerState();
         if (state === YT.PlayerState.PLAYING) player.pauseVideo();
-        else player.playVideo();
-    }
-}
-
-function playCreatorVideo(type, videoId, channelId) {
-    if (type === 'long') {
-        appState.creatorPage.currentLongVideo = { id: videoId, channelId: channelId };
-        addLongVideoToHistory(videoId);
-    } else {
-        addVideoToHistory(videoId);
-    }
-    const player = appState.creatorPagePlayers[type];
-    if (player && typeof player.loadVideoById === 'function') {
-        player.loadVideoById(videoId);
-    }
-}
-
-
-function toggleCreatorVideoList() {
-    const activeView = document.querySelector('.creator-page-view.active');
-    if (activeView) {
-        const viewer = activeView.querySelector('.creator-video-viewer');
-        if (viewer) viewer.classList.toggle('show-side-list');
+        else {
+             player.unMute();
+             player.playVideo();
+        }
     }
 }
 
 function toggleVideoRotation() {
-    const longVideoView = document.getElementById('creator-page-long-view');
-    if (longVideoView && longVideoView.classList.contains('active')) {
-        const videoWrapper = longVideoView.querySelector('.main-video-card-wrapper');
-        const appContainer = document.getElementById('app-container');
+    // केवल लॉन्ग वीडियो प्लेयर के लिए रोटेशन लागू करें
+    const mainPlayerCard = document.querySelector('#creator-page-player-long')?.closest('.main-video-card');
+    if (!mainPlayerCard) {
+        // alert("Rotation is only available for long videos.");
+        return;
+    }
+    const videoWrapper = mainPlayerCard.closest('.main-video-card-wrapper');
+    const appContainer = document.getElementById('app-container');
 
-        if (videoWrapper) {
-            videoWrapper.classList.toggle('rotated');
-            appContainer.classList.toggle('fullscreen-active');
+    if (videoWrapper) {
+        const isRotated = videoWrapper.classList.toggle('rotated');
+        appContainer.classList.toggle('fullscreen-active', isRotated);
 
-            // फ़ुलस्क्रीन मोड को प्रबंधित करें
-            try {
-                if (videoWrapper.classList.contains('rotated')) {
-                    if (appContainer.requestFullscreen) {
-                        appContainer.requestFullscreen();
-                    } else if (appContainer.webkitRequestFullscreen) { /* Safari */
-                        appContainer.webkitRequestFullscreen();
-                    }
-                    screen.orientation.lock('landscape').catch(err => console.log("Screen orientation lock failed:", err));
-                } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    } else if (document.webkitExitFullscreen) { /* Safari */
-                        document.webkitExitFullscreen();
-                    }
-                    screen.orientation.unlock();
-                }
-            } catch (err) {
-                console.error("Fullscreen API error:", err);
+        try {
+            if (isRotated) {
+                if (appContainer.requestFullscreen) appContainer.requestFullscreen();
+                screen.orientation.lock('landscape').catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+                screen.orientation.unlock();
             }
+        } catch (err) {
+            console.error("Fullscreen API error:", err);
         }
-    } else {
-        alert("Rotation is only available for long videos.");
     }
 }
 
@@ -2182,8 +1924,12 @@ function handleCreatorPlayerStateChange(event) {
     const player = event.target;
     const playerState = event.data;
     const iframe = player.getIframe();
+    if (!iframe) return;
+
+    const mainCard = iframe.closest('.main-video-card');
+    if (!mainCard) return;
     
-    const playPauseBtn = iframe.closest('.main-video-card')?.querySelector('.control-btn-main');
+    const playPauseBtn = mainCard.querySelector('.control-btn-main');
     if (playPauseBtn) {
         if (playerState === YT.PlayerState.PLAYING) {
             playPauseBtn.classList.replace('fa-play-circle', 'fa-pause-circle');
@@ -2191,24 +1937,17 @@ function handleCreatorPlayerStateChange(event) {
             playPauseBtn.classList.replace('fa-pause-circle', 'fa-play-circle');
         }
     }
-
-    const videoId = player.getVideoData().video_id;
-    if (!videoId) return;
-    
-    if (playerState === YT.PlayerState.PLAYING) {
-        addLongVideoToHistory(videoId);
-    }
 }
 
 // =======================================================
-// ★★★ CREATOR PAGE LOGIC - END ★★★
+// ★★★ CREATOR PAGE LOGIC (REWORKED) - END ★★★
 // =======================================================
 
 // =======================================================
 // ★★★ ADDED CHANNELS LOGIC - START ★★★
 // =======================================================
 async function addChannelToList(event, channelId) {
-    event.stopPropagation(); // कार्ड पर क्लिक होने से रोकें
+    event.stopPropagation();
     if (!channelId) return;
 
     let channels = appState.currentUser.addedChannels || [];
@@ -2218,38 +1957,23 @@ async function addChannelToList(event, channelId) {
     }
 
     try {
-        // चैनल विवरण प्राप्त करें (कैश से या एपीआई से)
-        let channelDetails = {};
-        const videoWithChannel = Array.from(currentVideoCache.values()).find(v => v.snippet.channelId === channelId);
-
-        if (videoWithChannel) {
-            channelDetails = {
-                id: channelId,
-                name: videoWithChannel.snippet.channelTitle,
-                // चैनल अवतार के लिए एक अलग एपीआई कॉल की आवश्यकता होगी, अभी के लिए प्लेसहोल्डर का उपयोग करें
-                avatar: 'https://via.placeholder.com/60' 
-            };
-        } else {
-            // यदि कैश में नहीं है तो एक वीडियो से विवरण प्राप्त करने का प्रयास करें
-            const data = await fetchFromYouTubeAPI('channel', { channelId: channelId, limit: 1 });
-            if (data.items && data.items.length > 0) {
-                 channelDetails = {
-                    id: channelId,
-                    name: data.items[0].snippet.channelTitle,
-                    avatar: 'https://via.placeholder.com/60'
-                };
-            } else {
-                alert("Could not retrieve channel details.");
-                return;
-            }
+        const data = await fetchFromYouTubeAPI('channelDetails', { id: channelId });
+        if (!data.items || data.items.length === 0) {
+            alert("Could not retrieve channel details.");
+            return;
         }
+        
+        const channelDetails = {
+            id: channelId,
+            name: data.items[0].snippet.title,
+            avatar: data.items[0].snippet.thumbnails.default.url
+        };
         
         channels.push(channelDetails);
         appState.currentUser.addedChannels = channels;
         localStorage.setItem('shubhzone_addedChannels', JSON.stringify(channels));
         alert(`Channel "${channelDetails.name}" has been added to your list.`);
 
-        // यदि मित्र स्क्रीन पर है तो सूची को ताज़ा करें
         if (appState.currentScreen === 'friends-screen') {
             renderMyChannelsList();
         }
@@ -2300,83 +2024,15 @@ function removeChannelFromList(event, channelId) {
 // ★★★ ADDED CHANNELS LOGIC - END ★★★
 // =======================================================
 
-function startAppTimeTracker() {
-    if (appState.appTimeTrackerInterval) clearInterval(appState.appTimeTrackerInterval);
-    // यह फ़ंक्शन अब केवल एक प्लेसहोल्डर है क्योंकि ट्रैकिंग तर्क हटा दिया गया है
-    appState.appTimeTrackerInterval = setInterval(() => {}, 60000); 
+function provideHapticFeedback() { if (hapticFeedbackEnabled && navigator.vibrate) navigator.vibrate(50); }
+function loadHapticPreference() {
+    hapticFeedbackEnabled = (localStorage.getItem('hapticFeedbackEnabled') !== 'false');
 }
-
-// =======================================================
-// ★★★ REPORT & CREDIT LOGIC - START ★★★
-// =======================================================
-function initializeReportScreen() {
-    const screen = document.getElementById('report-screen');
-    if (!screen) return;
-    screen.innerHTML = `
-        <div class="screen-header">
-            <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-            <span class="header-title">Submit a Report</span>
-        </div>
-        <div id="report-content">
-            <div class="form-group">
-                <label for="report-text">Describe your issue</label>
-                <textarea id="report-text" rows="10" placeholder="Please provide as much detail as possible..."></textarea>
-            </div>
-            <button class="continue-btn haptic-trigger" onclick="submitReport()">Submit Report</button>
-        </div>
-    `;
-}
-
-async function submitReport() {
-    const reportText = document.getElementById('report-text').value.trim();
-    if (!reportText) { alert("Please describe the issue before submitting."); return; }
-    const button = document.querySelector('#report-content .continue-btn');
-    button.disabled = true;
-    button.textContent = "Submitting...";
-    try {
-        await db.collection('reports').add({
-            reporterUid: appState.currentUser.uid, 
-            reporterName: appState.currentUser.name,
-            reportText: reportText,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: 'new'
-        });
-        alert("Report submitted successfully. We will look into it shortly.");
-        navigateBack();
-    } catch (error) {
-        console.error("Error submitting report:", error);
-        alert("Failed to submit report. Please try again. Error: " + error.message);
-    } finally {
-        button.disabled = false;
-        button.textContent = "Submit Report";
-    }
-}
-
-async function initializeCreditScreen(videoId) {
-    // This screen is now deprecated in favor of the 'Add Channel' button.
-    // If navigated to, just go back.
-    navigateBack();
-}
-// =======================================================
-// ★★★ REPORT & CREDIT LOGIC - END ★★★
-// =======================================================
 
 // ★★★ IMAGE ENLARGE LOGIC - START ★★★
 function showEnlargedImage(imageUrl) {
     let modal = document.getElementById('image-enlarge-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'image-enlarge-modal';
-        modal.className = 'modal-overlay';
-        modal.style.zIndex = '3000';
-        modal.innerHTML = `
-            <div class="enlarged-image-content" style="max-width: 90vw; max-height: 90vh;">
-                <img id="enlarged-image-src" src="" style="width: 100%; height: 100%; object-fit: contain;">
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.addEventListener('click', () => modal.classList.remove('active'));
-    }
+    if (!modal) return;
     
     const imgElement = document.getElementById('enlarged-image-src');
     if(imgElement) {
@@ -2388,89 +2044,37 @@ function showEnlargedImage(imageUrl) {
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // होम नेविगेशन आइटम को पूरी तरह से छिपा दिया गया है
-    document.querySelectorAll('.nav-item[data-nav="new-home"]').forEach(item => {
-        item.style.display = 'none';
-    });
-    
-    // साइडबार से हटाए गए सुविधाओं के लिए बटन हटाएं
-    const sidebar = document.getElementById('main-sidebar');
-    if(sidebar) {
-        const buttonsToRemove = ['navigate-to-payment-btn', 'navigate-to-advertisement-btn', 'navigate-to-earnsure-btn'];
-        buttonsToRemove.forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn) btn.remove();
-        });
-    }
-
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
+    document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.add('haptic-trigger');
         item.addEventListener('click', () => {
             const targetNav = item.getAttribute('data-nav');
             if(item.style.display === 'none') return;
             
             let targetScreen = `${targetNav}-screen`;
-            if (targetNav === 'shorts') {
-                targetScreen = 'home-screen';
-            }
+            if (targetNav === 'shorts') targetScreen = 'home-screen';
             
-            if (appState.currentScreen !== targetScreen) {
-                navigateTo(targetScreen);
-                updateNavActiveState(targetNav);
-            }
+            navigateTo(targetScreen);
+            updateNavActiveState(targetNav);
         });
     });
 
+    document.querySelector('#creator-page-screen .header-icon-left')?.addEventListener('click', () => navigateBack());
 
-    document.querySelectorAll('.header-icon-left').forEach(btn => {
-        if (!btn.closest('#history-top-bar') && !btn.closest('#creator-page-screen .screen-header')) {
-            btn.onclick = () => navigateBack();
-        }
-    });
-    const creatorBackBtn = document.querySelector('#creator-page-screen .header-icon-left');
-    if (creatorBackBtn) creatorBackBtn.onclick = () => navigateBack();
-
-    // साइडबार में रिपोर्ट बटन जोड़ना
-    if (sidebar) {
-        let reportButton = document.getElementById('navigate-to-report-btn');
-        if (!reportButton) {
-            reportButton = document.createElement('button');
-            reportButton.id = 'navigate-to-report-btn';
-            reportButton.className = 'sidebar-option haptic-trigger';
-            reportButton.innerHTML = `<i class="fas fa-flag" style="margin-right: 10px;"></i>Report`;
-            reportButton.onclick = () => {
-                document.getElementById('main-sidebar').classList.remove('open');
-                document.getElementById('sidebar-overlay').classList.remove('open');
-                navigateTo('report-screen');
-            };
-            sidebar.appendChild(reportButton);
-        }
-    }
-    
     initializeApp();
 
-    const getStartedBtn = document.getElementById('get-started-btn');
-    if (getStartedBtn) {
-        getStartedBtn.classList.add('haptic-trigger');
-        getStartedBtn.addEventListener('click', () => {
-            userHasInteracted = true;
-            startAppLogic();
-        });
-    }
+    document.getElementById('get-started-btn')?.addEventListener('click', () => {
+        userHasInteracted = true;
+        startAppLogic();
+    });
 
-    if (appContainer) {
-        appContainer.addEventListener('click', (event) => { 
-            if (!userHasInteracted) userHasInteracted = true; 
-            if (event.target.closest('.haptic-trigger')) provideHapticFeedback(); 
-        });
-    }
+    appContainer.addEventListener('click', (event) => { 
+        if (!userHasInteracted) userHasInteracted = true; 
+        if (event.target.closest('.haptic-trigger')) provideHapticFeedback(); 
+    });
 
     initializeMessagingInterface();
     document.getElementById('add-friend-search-btn')?.addEventListener('click', searchUser);
-    document.getElementById('add-friend-search-input')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') searchUser();
-    });
+    document.getElementById('add-friend-search-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchUser(); });
 
     document.getElementById('home-menu-icon')?.addEventListener('click', () => {
         document.getElementById('main-sidebar').classList.add('open');
@@ -2490,25 +2094,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('send-comment-btn')?.addEventListener('click', postComment);
-    document.getElementById('comment-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') postComment(); });
-    document.getElementById('audio-issue-ok-btn')?.addEventListener('click', closeAudioIssuePopup);
-    document.getElementById('close-description-btn')?.addEventListener('click', closeDescriptionModal);
-
+    
     document.getElementById('long-video-search-btn')?.addEventListener('click', performLongVideoSearch);
     document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') performLongVideoSearch(); });
     document.getElementById('long-video-history-btn')?.addEventListener('click', () => navigateTo('history-screen'));
     document.getElementById('back-from-history-btn')?.addEventListener('click', () => navigateBack());
     
-    document.getElementById('haptic-toggle-input')?.addEventListener('change', (e) => saveHapticPreference(e.target.checked));
-    document.getElementById('profile-your-zone-btn')?.addEventListener('click', () => navigateTo('your-zone-screen'));
+    document.getElementById('profile-your-zone-btn')?.addEventListener('click', () => navigateTo('information-screen')); // सीधे प्रोफ़ाइल संपादन पर भेजें
     document.getElementById('profile-show-shorts-btn')?.addEventListener('click', () => toggleProfileVideoView('short'));
     document.getElementById('profile-show-longs-btn')?.addEventListener('click', () => toggleProfileVideoView('long'));
     
-    document.getElementById('more-function-btn')?.addEventListener('click', () => {
-        document.getElementById('more-function-menu').classList.toggle('open');
-    });
-    document.getElementById('more-videos-btn')?.addEventListener('click', toggleCreatorVideoList);
+    const enlargeModal = document.getElementById('image-enlarge-modal');
+    if (enlargeModal) enlargeModal.addEventListener('click', () => enlargeModal.classList.remove('active'));
 
     loadHapticPreference();
-    renderCategoriesInBar();
 });
