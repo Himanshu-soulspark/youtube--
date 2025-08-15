@@ -24,7 +24,7 @@
         <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
     </div>
     
-    <!-- ★ नया: साइडबार में प्रोफ़ाइल बटन जोड़ा गया -->
+    <!-- साइडबार में प्रोफ़ाइल बटन -->
     <div id="sidebar-profile-btn" class="sidebar-option haptic-trigger">
         <i class="fas fa-user" style="margin-right: 15px;"></i>
         <span>Profile</span>
@@ -42,7 +42,6 @@
 
 
 <!-- === ALL MODALS START === -->
-<!-- यह मोडल अब उपयोग में नहीं है, लेकिन स्क्रिप्ट में इसके संदर्भों के कारण इसे हटाया नहीं गया है -->
 <div id="upload-details-modal" class="modal-overlay"></div>
 
 <div id="comments-modal" class="comments-modal-overlay">
@@ -208,8 +207,8 @@
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <!-- ★ बदलाव: प्रोफ़ाइल आइकन अब JS द्वारा छिपा दिया जाएगा, लेकिन HTML में बना हुआ है -->
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
+            <!-- ★ नया: रिवॉर्ड आइकन जोड़ा गया -->
+            <div class="nav-item" data-nav="rewards"><i class="fas fa-gift"></i>Rewards</div>
         </div>
     </div>
     
@@ -226,7 +225,7 @@
                 <div id="long-video-carousel-wrapper"></div>
             </div>
             <div class="long-video-search-container">
-                <input type="text" id="long-video-search-input" placeholder="Search for videos...">
+                <input type="text" id="long-video-search-input" placeholder="Search for videos or paste YouTube link...">
                 <button id="long-video-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
                 <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
             </div>
@@ -237,7 +236,8 @@
             <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
+            <!-- ★ नया: रिवॉर्ड आइकन जोड़ा गया -->
+            <div class="nav-item" data-nav="rewards"><i class="fas fa-gift"></i>Rewards</div>
         </div>
     </div>
 
@@ -260,31 +260,25 @@
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
+            <!-- ★ नया: रिवॉर्ड आइकन जोड़ा गया -->
+            <div class="nav-item" data-nav="rewards"><i class="fas fa-gift"></i>Rewards</div>
         </div>
-    </div>
-
-    <!-- === UPLOAD SCREEN (Deprecated) === -->
-    <div id="upload-screen" class="screen">
-        <!-- This screen is no longer in use. -->
     </div>
 
     <!-- === FRIENDS SCREEN === -->
     <div id="friends-screen" class="screen">
         <div class="friends-top-bar">
-            <!-- ★ बदलाव: "My Channels" टैब जोड़ा गया और डिफ़ॉल्ट रूप से सक्रिय है -->
+            <!-- ★ बदलाव: "My Channels" टैब हटा दिया गया, "Add Friends" अब डिफ़ॉल्ट है -->
             <div class="tab-bar">
-                <button class="tab-button active" data-tab="my-channels">My Channels</button>
-                <button class="tab-button" data-tab="add">Add Friends</button>
+                <button class="tab-button active" data-tab="add">Add Friends</button>
                 <button class="tab-button" data-tab="requests">Requests</button>
                 <button class="tab-button" data-tab="members">Members</button>
             </div>
         </div>
 
         <main class="content-area">
-            <!-- ★ बदलाव: "My Channels" कंटेंट कंटेनर जोड़ा गया और डिफ़ॉल्ट रूप से दृश्यमान है -->
-            <div class="tab-content" id="my-channels-content"></div>
-            <div class="tab-content hidden" id="add-content">
+            <!-- ★ बदलाव: "My Channels" कंटेंट कंटेनर हटा दिया गया -->
+            <div class="tab-content" id="add-content">
                 <div class="add-friend-search-container">
                     <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID">
                     <button id="add-friend-search-btn" class="haptic-trigger">Search</button>
@@ -312,7 +306,8 @@
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             <div class="nav-item active" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
+            <!-- ★ नया: रिवॉर्ड आइकन जोड़ा गया -->
+            <div class="nav-item" data-nav="rewards"><i class="fas fa-gift"></i>Rewards</div>
         </div>
     </div>
 
@@ -337,25 +332,41 @@
             <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
             <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
-            <div class="nav-item active" data-nav="profile"><i class="fas fa-user"></i>Profile</div>
+            <!-- ★ नया: रिवॉर्ड आइकन जोड़ा गया -->
+            <div class="nav-item" data-nav="rewards"><i class="fas fa-gift"></i>Rewards</div>
         </div>
     </div>
 
-    <!-- === CREATOR PAGE SCREEN (REWORKED & FIXED) === -->
-    <!-- ★ बदलाव: क्रिएटर पेज की संरचना को सरल बनाया गया है ताकि JS इसे नियंत्रित कर सके -->
+    <!-- === CREATOR PAGE SCREEN === -->
     <div id="creator-page-screen" class="screen">
         <div class="screen-header">
             <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-            <!-- Tabs (Home, Videos, Shorts, Playlists) will be dynamically generated by script.js -->
             <div id="creator-page-tabs"></div>
         </div>
-        <!-- Content (video grid, playlists, or player) will be injected here by the script -->
         <div id="creator-page-content" class="content-area">
-            <!-- Loader/Content/Player will be injected here by the script -->
+            <!-- Content will be injected here by the script -->
+        </div>
+    </div>
+    
+    <!-- === ★ नया: REWARDS SCREEN === -->
+    <div id="rewards-screen" class="screen">
+        <!-- Content will be injected by script.js -->
+        <div class="bottom-nav">
+            <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
+            <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
+            <div class="nav-item active" data-nav="rewards"><i class="fas fa-gift"></i>Rewards</div>
         </div>
     </div>
 
+    <!-- === ★ नया: WALLET SCREEN === -->
+    <div id="wallet-screen" class="screen">
+        <!-- Content will be injected by script.js -->
+    </div>
+
+
     <!-- === DEPRECATED SCREENS (kept for script compatibility) === -->
+    <div id="upload-screen" class="screen"></div>
     <div id="payment-screen" class="screen"></div>
     <div id="your-zone-screen" class="screen"></div>
     <div id="earnsure-screen" class="screen"></div>
