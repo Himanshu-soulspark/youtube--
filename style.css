@@ -1,7 +1,7 @@
 /* ================================================= */
-/* === Shubhzone App Styles (Code 2) - FINAL v5.17 === */
+/* === Shubhzone App Styles (Code 2) - FINAL v6.0 === */
 /* === MODIFIED AS PER USER REQUEST - AUG 2025    === */
-/* === SOLVED: CSS for Reworked Creator Page      === */
+/* === FEATURE: Rewards, Wallet & UI Cleanup      === */
 /* ================================================= */
 
 /* Design Style Guide */
@@ -28,7 +28,6 @@
 /* Legacy/Mapped variables (prefer new explicit ones) */
 --dark-grey: var(--secondary-background); /* Mapped to secondary background */
 --light-grey: var(--text-secondary); /* Mapped to secondary text for general UI use */
-
 }
 
 html {
@@ -61,10 +60,10 @@ position: relative;
 overflow: hidden;
 background-color: var(--background);
 isolation: isolate;
-transition: all 0.3s ease-in-out; /* ★ नया: रोटेशन के लिए स्मूथ ट्रांज़िशन */
+transition: all 0.3s ease-in-out;
 }
 
-/* ★ नया: फ़ुलस्क्रीन रोटेशन के लिए कंटेनर स्टाइल */
+/* फ़ुलस्क्रीन रोटेशन के लिए कंटेनर स्टाइल */
 .app-container.fullscreen-active {
     position: fixed;
     top: 0;
@@ -617,13 +616,8 @@ padding-bottom: 70px;
 display: grid;
 gap: 5px;
 width: 100%;
-}
-
-#user-short-video-grid,
-#user-long-video-grid {
 grid-template-columns: 1fr; /* सिंगल कॉलम में स्टेटिक संदेश प्रदर्शित करने के लिए */
 }
-
 
 .modal-overlay {
 position: absolute;
@@ -693,64 +687,10 @@ transform: translateY(-50%);
 .header-icon-left { left: 20px; }
 .header-icon-right { right: 20px; }
 
-.video-actions-overlay {
-position: absolute;
-bottom: 80px;
-right: 10px;
-z-index: 15;
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 20px;
-transition: bottom 0.4s ease;
-}
-.action-icon-container {
-display: flex;
-flex-direction: column;
-align-items: center;
-cursor: pointer;
-color: var(--text-primary);
-text-align: center;
-}
-.action-icon-container .icon {
-font-size: 2.2em;
-text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.action-icon-container[data-action="creator"] .icon {
-color: var(--text-primary);
-}
-.action-icon-container[data-action="creator"] .count {
-font-size: 0.8em;
-}
-.action-icon-container[data-action="comment"] .icon { color: var(--primary-neon); }
-.action-icon-container:hover .icon {
-transform: scale(1.1);
-}
-.action-icon-container .count {
-font-size: 0.9em;
-font-weight: 700;
-margin-top: 4px;
-}
-
+/* वीडियो प्लेयर से एक्शन आइकन हटा दिए गए */
+.video-actions-overlay,
 .like-heart-popup {
-position: absolute;
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%) scale(0);
-font-size: 8em;
-color: rgba(var(--primary-neon-rgb), 0.8);
-z-index: 20;
-opacity: 0;
-pointer-events: none;
-text-shadow: 0 0 15px rgba(0,0,0,0.4);
-}
-
-@keyframes scale-and-fade {
-0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.9; }
-100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+    display: none !important;
 }
 
 .home-top-bar {
@@ -849,57 +789,13 @@ margin-bottom: 10px;
 text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
 }
 
-/* ★ नया: "Add Channel" बटन के लिए स्टाइल */
+/* "Add Channel" बटन हटा दिया गया */
 .add-channel-btn {
-pointer-events: auto; /* यह सुनिश्चित करने के लिए कि बटन क्लिक करने योग्य है */
-background-color: rgba(var(--secondary-background-rgb), 0.7);
-color: var(--primary-neon);
-border: 1px solid var(--primary-neon);
-padding: 6px 15px;
-border-radius: 20px;
-font-size: 0.8em;
-font-weight: 700;
-cursor: pointer;
-transition: all 0.2s ease;
-display: flex;
-align-items: center;
-gap: 5px;
-}
-.add-channel-btn:hover {
-background-color: var(--primary-neon);
-color: var(--background);
-}
-.add-channel-btn i {
-font-size: 0.9em;
+    display: none !important;
 }
 
 .add-channel-btn-long-grid {
-position: absolute;
-bottom: 10px;
-right: 10px;
-background-color: rgba(0,0,0,0.6);
-color: var(--primary-neon);
-border: 1px solid var(--primary-neon);
-padding: 8px 15px;
-border-radius: 20px;
-font-size: 0.9em;
-font-weight: 700;
-cursor: pointer;
-transition: all 0.2s ease;
-z-index: 5;
-opacity: 0;
-display: flex;
-align-items: center;
-gap: 5px;
-}
-
-.long-video-card:hover .add-channel-btn-long-grid {
-opacity: 1;
-}
-
-.add-channel-btn-long-grid:hover {
-background-color: var(--primary-neon);
-color: var(--background);
+    display: none !important;
 }
 
 .comments-modal-overlay {
@@ -1471,7 +1367,7 @@ border: 1px solid rgba(var(--primary-neon-rgb), 0.2);
 background-color: transparent;
 border-radius: 12px;
 font-family: 'Roboto', sans-serif;
-font-size: 14px; /* Adjust font size for 4 tabs */
+font-size: 14px;
 font-weight: 700;
 color: var(--text-secondary);
 cursor: pointer;
@@ -1610,13 +1506,13 @@ background: var(--secondary-background);
 color: var(--text-secondary);
 cursor: not-allowed;
 }
-.request-actions, .channel-actions {
+.request-actions {
 display: flex;
 align-items: center;
 gap: 8px;
 flex-shrink: 0;
 }
-.request-actions button, .channel-actions button {
+.request-actions button {
 padding: 8px 12px;
 border: none;
 border-radius: 20px;
@@ -1625,21 +1521,13 @@ font-weight: 700;
 cursor: pointer;
 transition: all 0.2s ease;
 }
-.request-actions .accept-button, .channel-actions .open-button {
+.request-actions .accept-button {
 background-color: var(--success-green);
 color: var(--background);
 }
-.request-actions .reject-button, .channel-actions .reject-button {
+.request-actions .reject-button {
 background-color: var(--error-red);
 color: var(--text-primary);
-}
-.channel-actions .reject-button {
-    padding: 8px;
-    width: 35px;
-    height: 35px;
-}
-.channel-actions .reject-button i {
-    font-size: 1em;
 }
 
 #friends-screen .hidden {
@@ -1804,12 +1692,10 @@ display: flex;
 flex-direction: column;
 }
 
-/* ★ नया: प्लेयर व्यू में कंटेंट एरिया को पूरी ऊंचाई लेने दें */
 #creator-page-screen .content-area.player-active {
     height: 100%;
     padding-top: 0;
 }
-
 
 #creator-page-screen .screen-header {
 justify-content: center; 
@@ -1821,7 +1707,7 @@ backdrop-filter: blur(10px);
 #creator-page-tabs {
 display: flex;
 justify-content: center;
-gap: 5px; /* Adjust gap for more tabs */
+gap: 5px;
 background-color: rgba(var(--secondary-background-rgb), 0.5);
 padding: 5px;
 border-radius: 20px;
@@ -1830,7 +1716,7 @@ margin: 0 auto;
 }
 
 .creator-page-tab-btn {
-padding: 6px 15px; /* Adjust padding for more tabs */
+padding: 6px 15px;
 border: none;
 background-color: transparent;
 color: var(--text-secondary);
@@ -1848,7 +1734,6 @@ color: var(--background);
 font-weight: 700;
 }
 
-/* ★ नया: क्रिएटर पेज पर वीडियो और प्लेलिस्ट ग्रिड के लिए स्टाइल */
 .creator-video-grid, .creator-playlist-list {
     height: 100%;
     overflow-y: auto;
@@ -1861,7 +1746,6 @@ font-weight: 700;
     gap: 15px;
 }
 
-/* लंबे वीडियो के लिए एक कॉलम ग्रिड */
 .creator-video-grid.long-video-list {
     grid-template-columns: 1fr;
 }
@@ -1869,19 +1753,15 @@ font-weight: 700;
     margin-bottom: 0;
 }
 
-
-/* शॉर्ट्स के लिए 3-कॉलम ग्रिड */
 .creator-video-grid.short-video-list {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
 }
 
 .creator-video-grid.short-video-list .history-short-card {
-    width: 100%; /* ग्रिड सेल की पूरी चौड़ाई लें */
+    width: 100%;
 }
 
-
-/* ★ नया: प्लेयर व्यू और रोटेशन के लिए स्टाइल */
 #creator-page-player-container {
     width: 100%;
     height: 100%;
@@ -1905,7 +1785,6 @@ font-weight: 700;
     height: 100%;
 }
 
-/* फुलस्क्रीन मोड में प्लेयर का रैपर */
 .fullscreen-active #creator-page-player-container .player-wrapper {
     width: 100%;
     height: 100%;
@@ -1939,14 +1818,286 @@ font-weight: 700;
     transform: rotate(90deg);
 }
 
+/* प्लेयर के ऊपर बैक बटन के लिए स्टाइल */
+.player-back-button {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 20;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+}
+
 /* ======================================================= */
 /* ★★★ CREATOR PAGE STYLES (REWORKED) - END ★★★ */
 /* ======================================================= */
 
 
+/* ======================================================= */
+/* ★★★ REWARDS & WALLET STYLES - START ★★★ */
+/* ======================================================= */
+
+#rewards-screen {
+    justify-content: flex-start;
+    padding: 0;
+    overflow: hidden;
+}
+
+.rewards-top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    background-color: transparent;
+    z-index: 50;
+}
+
+.rewards-top-bar .header-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+#rewards-timer-container {
+    position: absolute;
+    right: 20px;
+    font-size: 1.1em;
+    font-weight: 500;
+    color: var(--primary-neon);
+    background-color: rgba(var(--secondary-background-rgb), 0.5);
+    padding: 5px 12px;
+    border-radius: 20px;
+}
+
+#rewards-content-area {
+    width: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 20px; /* top and bottom padding */
+    overflow-y: auto;
+}
+
+.scratch-card-container {
+    width: 100%;
+    max-width: 300px;
+    aspect-ratio: 16 / 9;
+    padding: 10px;
+    background: linear-gradient(135deg, var(--secondary-background), #333);
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.scratch-card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    cursor: pointer;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.scratch-card-cover {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--primary-neon);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--background);
+    transition: opacity 0.5s ease;
+    z-index: 2;
+}
+
+.scratch-card.revealed .scratch-card-cover {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.scratch-card-reward {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-size: 2em;
+    font-weight: bold;
+    color: var(--text-primary);
+    background-color: var(--secondary-background);
+}
+
+.reward-claim-info {
+    margin-top: 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 320px;
+}
+
+.multi-lang-p {
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-size: 0.9em;
+}
+
+.multi-lang-p.small {
+    font-size: 0.8em;
+    opacity: 0.8;
+}
+
+#offer-expiry-timer {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: var(--error-red);
+    margin: 10px 0;
+}
+
+.referral-link-container {
+    display: flex;
+    margin: 15px 0;
+}
+.referral-link-container input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid var(--text-secondary);
+    background-color: var(--secondary-background);
+    color: var(--text-primary);
+    border-radius: 8px 0 0 8px;
+    font-size: 1em;
+    text-align: center;
+}
+.referral-link-container button {
+    padding: 10px 15px;
+    border: none;
+    background-color: var(--primary-neon);
+    color: var(--background);
+    border-radius: 0 8px 8px 0;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#wallet-button-container {
+    width: 100%;
+    padding: 15px;
+    position: absolute;
+    bottom: 60px; /* Above nav bar */
+    left: 0;
+    z-index: 30;
+}
+
+.wallet-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: 700;
+    background-color: var(--primary-neon);
+    color: var(--background);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(var(--primary-neon-rgb), 0.5);
+}
+.wallet-btn i {
+    margin-right: 10px;
+}
+
+#wallet-screen .wallet-content {
+    width: 100%;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 80px 20px 20px 20px;
+}
+.balance-card {
+    background: linear-gradient(45deg, var(--primary-neon), #00AABF);
+    color: var(--background);
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 30px;
+}
+.balance-card span {
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+.balance-card h2 {
+    font-size: 3em;
+    margin: 10px 0 0 0;
+    font-weight: 700;
+}
+.withdrawal-form {
+    background-color: var(--secondary-background);
+    padding: 20px;
+    border-radius: 15px;
+}
+.withdrawal-form h3 {
+    margin-top: 0;
+    color: var(--primary-neon);
+}
+.withdrawal-form p {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    margin-bottom: 20px;
+}
+.withdrawal-form .input-group {
+    margin-bottom: 15px;
+}
+.withdrawal-form label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--text-secondary);
+}
+.withdrawal-form input {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--background);
+    border: 1px solid var(--text-secondary);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1.1em;
+}
+#withdraw-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    font-size: 1.1em;
+}
+#withdraw-btn:disabled {
+    background-color: var(--text-disabled);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+/* ======================================================= */
+/* ★★★ REWARDS & WALLET STYLES - END ★★★ */
+/* ======================================================= */
+
+
+/* ADVERTISEMENT STYLES */
 .long-video-grid-ad,
-.friend-list-ad,
-#upload-screen-ad-container {
+.friend-list-ad {
 width: 100%;
 display: flex;
 justify-content: center;
@@ -2039,6 +2190,6 @@ background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     margin: auto;
 }
 .app-container.fullscreen-active {
-    height: 100vh; /* ★ बदलाव: डेस्कटॉप पर भी पूरी ऊंचाई लें */
+    height: 100vh;
 }
 }
