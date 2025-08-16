@@ -341,6 +341,10 @@ let appState = {
         channelShorts: null,
         channelPlaylists: null,
     },
+    longVideoSearchContext: { // ★ नया: चैनल सर्च को याद रखने के लिए
+        type: 'query', // 'query' or 'channel'
+        value: null
+    },
     uploadDetails: {
         category: null,
         audience: 'all',
@@ -524,10 +528,7 @@ async function loadMoreLongVideos() {
     loadMoreBtn.disabled = true;
     loadMoreBtn.textContent = "Loading...";
 
-    const activeCategoryChip = document.querySelector('#long-video-category-scroller .category-chip.active');
-    const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
-    const searchInput = document.getElementById('long-video-search-input').value.trim();
-
+    const { type, value } = appState.longVideoSearchContext;
     let data;
     const params = {
         pageToken: appState.youtubeNextPageTokens.long,
@@ -535,12 +536,10 @@ async function loadMoreLongVideos() {
         type: 'video'
     };
 
-    if (searchInput) {
-        params.q = searchInput;
-    } else if (category.toLowerCase() === 'trending') {
-        params.q = 'trending videos';
-    } else {
-        params.q = category.toLowerCase() === 'all' ? getRandomTopic() : category;
+    if (type === 'channel') {
+        params.channelId = value;
+    } else { // 'query' or default
+        params.q = value;
     }
 
     data = await fetchFromYouTubeAPI('search', params);
@@ -906,6 +905,7 @@ const startAppLogic = async () => {
         return;
     }
     appStartLogicHasRun = true;
+    console.log("Starting main app logic...");
 
     setupAdTimers();
 
@@ -1340,6 +1340,9 @@ async function populateLongVideoGrid(category = 'All') {
     } else {
         query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
     }
+    
+    // ★ बदलाव: सर्च कॉन्टेक्स्ट को अपडेट करें
+    appState.longVideoSearchContext = { type: 'query', value: query };
 
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
@@ -1381,30 +1384,65 @@ async function renderTrendingCarousel() {
 }
 
 
+// ★★★ FIX: चैनल के नाम से लॉन्ग वीडियो सर्च करने के लिए फंक्शन को पूरी तरह से बदल दिया गया है ★★★
 async function performLongVideoSearch() {
     const input = document.getElementById('long-video-search-input');
     let query = input.value.trim();
     if (!query) return;
 
+    // अगर यूजर ने यूट्यूब लिंक पेस्ट किया है तो सीधे वीडियो चलाएं
     const videoIdFromUrl = extractYouTubeId(query);
     if (videoIdFromUrl) {
         playYouTubeVideoFromCard(videoIdFromUrl);
         return;
     }
 
+    // कैटेगरी चिप्स को डीसेलेक्ट करें
     document.querySelectorAll('#long-video-category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
 
     const grid = document.getElementById('long-video-grid');
     if (!grid) return;
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
-    const data = await fetchFromYouTubeAPI('search', {
-        q: query,
-        videoDuration: 'long',
-        type: 'video'
-    });
-    appState.youtubeNextPageTokens.long = data.nextPageToken || null;
-    renderYouTubeLongVideos(data.items || [], false);
+    let searchParams = { videoDuration: 'long', type: 'video' };
+    let finalData;
+
+    // 1. पहले चैनल ढूंढने की कोशिश करें
+    try {
+        const channelData = await fetchFromYouTubeAPI('search', { q: query, type: 'channel', maxResults: 1 });
+        let channelId = null;
+        if (channelData.items && channelData.items.length > 0) {
+            // यह सुनिश्चित करने के लिए कि सही चैनल मिला है, टाइटल की जाँच करें
+            const channelTitle = channelData.items[0].snippet.title.toLowerCase();
+            const queryLower = query.toLowerCase();
+            // सिंपल जाँच: अगर चैनल के नाम में सर्च किया गया टेक्स्ट है
+            if (channelTitle.includes(queryLower)) {
+                channelId = channelData.items[0].id.channelId;
+            }
+        }
+
+        if (channelId) {
+            // 2. अगर चैनल मिला, तो उस चैनल के वीडियो सर्च करें
+            console.log(`Channel found: ${channelId}. Searching for videos in this channel.`);
+            searchParams.channelId = channelId;
+            appState.longVideoSearchContext = { type: 'channel', value: channelId };
+        } else {
+            // 3. अगर चैनल नहीं मिला, तो सामान्य टेक्स्ट सर्च करें
+            console.log(`No specific channel found. Performing general search for: ${query}`);
+            searchParams.q = query;
+            appState.longVideoSearchContext = { type: 'query', value: query };
+        }
+
+        finalData = await fetchFromYouTubeAPI('search', searchParams);
+
+    } catch (error) {
+        console.error("Error during search process:", error);
+        finalData = { items: [], nextPageToken: null };
+        grid.innerHTML = '<p class="static-message">An error occurred during search.</p>';
+    }
+
+    appState.youtubeNextPageTokens.long = finalData.nextPageToken || null;
+    renderYouTubeLongVideos(finalData.items || [], false);
 }
 
 
@@ -1586,6 +1624,7 @@ function renderCreatorVideoList(container, videos, type) { /* Unchanged */ }
 function renderCreatorPlaylistList(container, playlists, payload) { /* Unchanged */ }
 
 
+// ★★★ FIX: ज़ूम बटनों के साथ नया वीडियो प्लेयर व्यू ★★★
 function showCreatorPlayerView(videoId) {
     appState.creatorPage.currentView = 'player';
     const creatorPageScreen = document.getElementById('creator-page-screen');
@@ -1594,21 +1633,54 @@ function showCreatorPlayerView(videoId) {
     creatorPageScreen.querySelector('.screen-header').style.display = 'none';
     contentArea.classList.add('player-active');
 
+    // HTML में ज़ूम इन और ज़ूम आउट बटन जोड़े गए
     contentArea.innerHTML = `
         <div id="creator-page-player-container">
-            <div class="player-back-button haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-            <div class="player-wrapper">
+             <div class="player-controls-header" style="position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 30;">
+                <div class="player-back-button haptic-trigger" onclick="navigateBack()" style="color: white; background-color: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2em; cursor: pointer;">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div class="player-zoom-controls" style="display: flex; gap: 10px;">
+                    <button id="player-zoom-out-btn" class="haptic-trigger" style="color: white; background-color: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 1.2em; cursor: pointer;">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button id="player-zoom-in-btn" class="haptic-trigger" style="color: white; background-color: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 1.2em; cursor: pointer;">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                </div>
+                <button id="player-rotate-btn" class="haptic-trigger" style="color: white; background-color: rgba(0,0,0,0.5); width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 1.2em; cursor: pointer;">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="player-wrapper" style="transition: transform 0.3s ease;">
                 <div id="creator-page-player-long"></div>
             </div>
-            <button id="player-rotate-btn" class="haptic-trigger"><i class="fas fa-sync-alt"></i> Rotate</button>
         </div>
     `;
 
     initializeCreatorPagePlayer(videoId, 'creator-page-player-long', 'long');
+
     document.getElementById('player-rotate-btn').addEventListener('click', () => {
         document.getElementById('app-container').classList.toggle('fullscreen-active');
     });
+
+    // ज़ूम बटनों के लिए इवेंट लिस्नर
+    let currentZoom = 1.0;
+    const playerWrapper = contentArea.querySelector('.player-wrapper');
+    const zoomInBtn = document.getElementById('player-zoom-in-btn');
+    const zoomOutBtn = document.getElementById('player-zoom-out-btn');
+
+    zoomInBtn.addEventListener('click', () => {
+        currentZoom = Math.min(2.5, currentZoom + 0.1); // अधिकतम ज़ूम 2.5x
+        playerWrapper.style.transform = `scale(${currentZoom})`;
+    });
+
+    zoomOutBtn.addEventListener('click', () => {
+        currentZoom = Math.max(0.5, currentZoom - 0.1); // न्यूनतम ज़ूम 0.5x
+        playerWrapper.style.transform = `scale(${currentZoom})`;
+    });
 }
+
 
 function initializeCreatorPagePlayer(videoId, containerId, type) {
     if (appState.creatorPagePlayers[type]) {
@@ -1656,10 +1728,11 @@ function initializeRewardScreen() {
 
 function updateRewardUI() {
     const screen = document.getElementById('reward-screen');
-    const { initialRewardClaimed, lastRewardTimestamp } = appState.currentUser;
-    const { timerInterval, secondsRemaining, isEligible } = appState.rewardState;
+    const { secondsRemaining, isEligible } = appState.rewardState;
 
-    if (timerInterval) clearInterval(timerInterval);
+    if (appState.rewardState.timerInterval) {
+        clearInterval(appState.rewardState.timerInterval);
+    }
 
     let contentHTML = '';
 
@@ -1683,7 +1756,9 @@ function updateRewardUI() {
                 <div class="reward-timer" id="reward-timer-display">${timeToShow}</div>
             </div>
         `;
-        startCountdownTimer('reward-timer-display', secondsRemaining, startRewardTimerCheck);
+        if(secondsRemaining > 0) {
+            startCountdownTimer('reward-timer-display', secondsRemaining, startRewardTimerCheck);
+        }
     }
 
     screen.querySelector('.content-area').innerHTML = contentHTML;
@@ -1698,8 +1773,9 @@ function startRewardTimerCheck() {
     const now = new Date();
     
     if (!initialRewardClaimed) {
-        appState.rewardState.secondsRemaining = 60;
+        // ★ FIX: पहली बार उपयोगकर्ता के लिए 60 सेकंड का टाइमर
         appState.rewardState.isEligible = false;
+        appState.rewardState.secondsRemaining = 60;
     } else {
         const sixtyMinutes = 60 * 60 * 1000;
         const lastRewardTime = lastRewardTimestamp ? lastRewardTimestamp.toDate() : new Date(0);
@@ -1717,7 +1793,9 @@ function startRewardTimerCheck() {
 }
 
 function startCountdownTimer(elementId, durationInSeconds, onComplete) {
-    if (appState.rewardState.timerInterval) clearInterval(appState.rewardState.timerInterval);
+    if (appState.rewardState.timerInterval) {
+        clearInterval(appState.rewardState.timerInterval);
+    }
     
     let timer = durationInSeconds;
     const timerDisplay = document.getElementById(elementId);
@@ -1733,6 +1811,7 @@ function startCountdownTimer(elementId, durationInSeconds, onComplete) {
 
         if (--timer < 0) {
             clearInterval(appState.rewardState.timerInterval);
+            appState.rewardState.timerInterval = null;
             if(onComplete) onComplete();
         }
     }, 1000);
@@ -1760,45 +1839,65 @@ function setupScratchCard() {
         if (!isScratching) return;
         e.preventDefault();
         
-        overlay.style.opacity = Math.max(0, parseFloat(overlay.style.opacity || 1) - 0.05);
+        const currentOpacity = parseFloat(overlay.style.opacity || 1);
+        const newOpacity = Math.max(0, currentOpacity - 0.05);
+        overlay.style.opacity = newOpacity;
 
-        if(parseFloat(overlay.style.opacity) < 0.1) {
+        if (newOpacity < 0.1) {
             overlay.style.display = 'none';
+            window.removeEventListener('mouseup', stopScratching);
+            window.removeEventListener('touchend', stopScratching);
             handleRewardRevealed(rewardValue, rewardText);
         }
     };
 
-    overlay.addEventListener('mousedown', () => isScratching = true);
-    overlay.addEventListener('touchstart', () => isScratching = true);
-    window.addEventListener('mouseup', () => isScratching = false);
-    window.addEventListener('touchend', () => isScratching = false);
+    const startScratching = () => isScratching = true;
+    const stopScratching = () => isScratching = false;
+
+    overlay.addEventListener('mousedown', startScratching);
+    overlay.addEventListener('touchstart', startScratching, { passive: true });
+    window.addEventListener('mouseup', stopScratching);
+    window.addEventListener('touchend', stopScratching);
     overlay.addEventListener('mousemove', scratch);
-    overlay.addEventListener('touchmove', scratch);
+    overlay.addEventListener('touchmove', scratch, { passive: true });
 }
 
 async function handleRewardRevealed(amount, text) {
+    const userRef = db.collection('users').doc(appState.currentUser.uid);
+    try {
+        await userRef.update({
+            initialRewardClaimed: true,
+            lastRewardTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // स्थानीय स्थिति को तुरंत अपडेट करें
+        appState.currentUser.initialRewardClaimed = true;
+        appState.currentUser.lastRewardTimestamp = { toDate: () => new Date() };
+    } catch (error) {
+        console.error("Error updating user reward status:", error);
+    }
+    
     if (amount > 0) {
         const container = document.getElementById('scratch-card-container');
-        container.innerHTML += `
-            <div class="claim-offer-section">
-                <p>इस ऑफर को पाने के लिए, अपने किसी दोस्त को 24 मिनट के अंदर इनवाइट करें।</p>
-                <p>(To claim this offer, invite a friend within 24 minutes.)</p>
-                <div id="claim-timer" class="reward-timer">24:00</div>
-                <button class="continue-btn" onclick="copyToClipboard(appState.currentUser.referralCode, event)">Copy Referral ID</button>
-            </div>
-        `;
-        startCountdownTimer('claim-timer', 24 * 60, () => {
-             document.querySelector('.claim-offer-section').innerHTML = "<p>Offer Expired!</p>";
-        });
+        if(container) {
+            container.innerHTML += `
+                <div class="claim-offer-section">
+                    <p>इस ऑफर को पाने के लिए, अपने किसी दोस्त को 24 मिनट के अंदर इनवाइट करें।</p>
+                    <p>(To claim this offer, invite a friend within 24 minutes.)</p>
+                    <div id="claim-timer" class="reward-timer">24:00</div>
+                    <button class="continue-btn" onclick="copyToClipboard(appState.currentUser.referralCode, event)">Copy Referral ID</button>
+                </div>
+            `;
+            startCountdownTimer('claim-timer', 24 * 60, () => {
+                 const claimSection = document.querySelector('.claim-offer-section');
+                 if(claimSection) claimSection.innerHTML = "<p>Offer Expired!</p>";
+            });
+        }
     }
 
-    const userRef = db.collection('users').doc(appState.currentUser.uid);
-    await userRef.update({
-        initialRewardClaimed: true,
-        lastRewardTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    appState.currentUser.initialRewardClaimed = true;
-    appState.currentUser.lastRewardTimestamp = { toDate: () => new Date() };
+    // ★ FIX: कुछ सेकंड के बाद टाइमर शुरू करने के लिए रीचेक करें
+    setTimeout(() => {
+        startRewardTimerCheck();
+    }, 5000); 
 }
 
 async function processReferral(referralCode, newUserId) {
