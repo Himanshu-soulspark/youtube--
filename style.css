@@ -1982,6 +1982,7 @@ body {
     width: 100%;
 }
 
+/* ★★★ NEW & MODIFIED: नए वीडियो प्लेयर पेज के लिए स्टाइल ★★★ */
 #creator-page-player-container {
     width: 100%;
     height: 100%;
@@ -1994,13 +1995,26 @@ body {
     flex-grow: 1;
 }
 
-.player-back-button {
+.player-controls-header {
     position: absolute;
     top: 15px;
-    left: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
     z-index: 30;
+    pointer-events: none; /* ताकि बटन के अलावा कहीं और क्लिक करने पर वीडियो पर क्लिक हो */
+}
+
+.player-controls-header > * {
+    pointer-events: auto; /* बटनों को क्लिक करने योग्य बनाएं */
+}
+
+/* MODIFIED: पुरानी स्टाइल हटाई गई, क्योंकि अब यह फ्लेक्स आइटम है */
+.player-back-button {
     color: var(--text-primary);
-    background-color: rgba(var(--secondary-background-rgb), 0.7);
+    background-color: rgba(0,0,0,0.5);
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -2009,13 +2023,53 @@ body {
     justify-content: center;
     font-size: 1.2em;
     cursor: pointer;
-    backdrop-filter: blur(5px);
 }
 
+/* NEW: ज़ूम कंट्रोल कंटेनर के लिए स्टाइल */
+.player-zoom-controls {
+    display: flex;
+    gap: 10px;
+}
+
+/* NEW: प्लेयर हेडर में सभी बटनों के लिए सामान्य स्टाइल */
+.player-controls-header button {
+    color: var(--text-primary);
+    background-color: rgba(0,0,0,0.5);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.player-controls-header button:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+/* MODIFIED: पुरानी स्टाइल हटाई गई */
+#player-rotate-btn {
+    /* अब सामान्य बटन स्टाइल का उपयोग करेगा */
+}
+
+#player-rotate-btn i {
+    transition: transform 0.3s ease;
+}
+
+.fullscreen-active #player-rotate-btn i {
+    transform: rotate(90deg);
+}
+
+/* MODIFIED: ज़ूम इफ़ेक्ट के लिए ट्रांजीशन जोड़ा गया */
 .player-wrapper {
     width: 100%;
     aspect-ratio: 16 / 9;
     background-color: #000;
+    transition: transform 0.3s ease; /* स्मूथ ज़ूम के लिए */
 }
 
 #creator-page-player-long {
@@ -2027,33 +2081,6 @@ body {
     width: 100%;
     height: 100%;
     aspect-ratio: auto;
-}
-
-#player-rotate-btn {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background-color: rgba(var(--secondary-background-rgb), 0.7);
-    color: var(--primary-neon);
-    border: 1px solid var(--primary-neon);
-    padding: 10px 15px;
-    border-radius: 20px;
-    font-size: 1em;
-    font-weight: 700;
-    cursor: pointer;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    backdrop-filter: blur(5px);
-}
-
-#player-rotate-btn i {
-    transition: transform 0.3s ease;
-}
-
-.fullscreen-active #player-rotate-btn i {
-    transform: rotate(90deg);
 }
 
 #reward-screen, #wallet-screen {
