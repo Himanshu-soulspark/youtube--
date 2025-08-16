@@ -398,6 +398,11 @@ let appState = {
     watchTimeInterval: null,
     videoWatchTrackers: {},
     specialVideoPlayer: null,
+    // ★ नया: वीडियो प्लेयर स्क्रीन के लिए स्टेट
+    videoPlayerState: {
+        player: null,
+        currentScale: 1.0,
+    }
 };
 
 
@@ -559,6 +564,8 @@ async function loadMoreLongVideos() {
     }
 }
 
+// ★★★ बदला हुआ फंक्शन ★★★
+// अब यह क्रिएटर पेज के बजाय नए वीडियो प्लेयर स्क्रीन पर नेविगेट करेगा।
 async function playYouTubeVideoFromCard(videoId) {
     let video = currentVideoCache.get(videoId);
     if (!video) {
@@ -574,14 +581,8 @@ async function playYouTubeVideoFromCard(videoId) {
             return;
         }
     }
-
-    const channelId = video.snippet.channelId;
-
-    navigateTo('creator-page-screen', {
-        creatorId: channelId,
-        startWith: 'play',
-        videoId: videoId
-    });
+    // नए वीडियो प्लेयर स्क्रीन पर वीडियो आईडी के साथ नेविगेट करें
+    navigateTo('video-player-screen', { videoId: videoId });
 }
 
 // =============================================================================
@@ -643,16 +644,14 @@ function activateScreen(screenId) {
 }
 
 function navigateTo(nextScreenId, payload = null) {
+    // Creator पेज पर रहते हुए उसी पेज पर दोबारा नेविगेट करने की अनुमति दें (लेकिन पेलोड के साथ)
     if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && nextScreenId !== 'creator-page-screen') return;
 
     if (nextScreenId !== 'splash-screen' && nextScreenId !== 'information-screen') {
         localStorage.setItem('shubhzone_lastScreen', nextScreenId);
     }
 
-    if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
-        appState.navigationStack.push(nextScreenId);
-    }
-
+    // मौजूदा स्क्रीन से प्लेयर को डिस्ट्रॉय करें
     if (appState.currentScreen === 'home-screen' && activePlayerId && players[activePlayerId]) {
         pauseActivePlayer();
     }
@@ -664,18 +663,35 @@ function navigateTo(nextScreenId, payload = null) {
         document.getElementById('creator-page-content').innerHTML = '';
         document.getElementById('app-container').classList.remove('fullscreen-active');
     }
+    // ★ नया: वीडियो प्लेयर स्क्रीन से बाहर जाते समय प्लेयर को डिस्ट्रॉय करें
+    if (appState.currentScreen === 'video-player-screen') {
+        if (appState.videoPlayerState.player) {
+            appState.videoPlayerState.player.destroy();
+            appState.videoPlayerState.player = null;
+        }
+        document.getElementById('app-container').classList.remove('fullscreen-active');
+        document.getElementById('video-player-screen').innerHTML = ''; // सामग्री साफ़ करें
+    }
     activePlayerId = null;
+
+    if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
+        appState.navigationStack.push(nextScreenId);
+    }
 
     appState.currentScreenPayload = payload;
     activateScreen(nextScreenId);
 
-    // Initialize screen-specific logic
+    // स्क्रीन-स्पेसिफिक लॉजिक को इनिशियलाइज़ करें
     if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase();
     if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
     if (nextScreenId === 'history-screen') initializeHistoryScreen();
     if (nextScreenId === 'home-screen') setupShortsScreen();
     if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
         initializeCreatorPage(payload);
+    }
+    // ★ नया: वीडियो प्लेयर स्क्रीन को इनिशियलाइज़ करें
+    if (nextScreenId === 'video-player-screen' && payload && payload.videoId) {
+        initializeVideoPlayerScreen(payload.videoId);
     }
     if (nextScreenId === 'friends-screen') {
         populateAddFriendsList();
@@ -690,7 +706,9 @@ function navigateTo(nextScreenId, payload = null) {
     }
 }
 
+
 function navigateBack() {
+    // मौजूदा स्क्रीन से प्लेयर को डिस्ट्रॉय करें
     if (appState.currentScreen === 'creator-page-screen') {
         if (appState.creatorPagePlayers.long) {
             appState.creatorPagePlayers.long.destroy();
@@ -698,6 +716,16 @@ function navigateBack() {
         }
         document.getElementById('app-container').classList.remove('fullscreen-active');
     }
+    // ★ नया: वीडियो प्लेयर स्क्रीन से बाहर जाते समय प्लेयर को डिस्ट्रॉय करें
+    if (appState.currentScreen === 'video-player-screen') {
+        if (appState.videoPlayerState.player) {
+            appState.videoPlayerState.player.destroy();
+            appState.videoPlayerState.player = null;
+        }
+        document.getElementById('app-container').classList.remove('fullscreen-active');
+        document.getElementById('video-player-screen').innerHTML = ''; // सामग्री साफ़ करें
+    }
+
 
     if (appState.navigationStack.length <= 1) {
         navigateTo('long-video-screen'); 
@@ -708,8 +736,10 @@ function navigateBack() {
     
     const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'long-video-screen';
     
+    // वापस जाते समय पेलोड साफ़ करें
     navigateTo(previousScreenId, null);
 }
+
 
 async function checkUserProfileAndProceed(user) {
     if (!user) return;
@@ -1380,18 +1410,21 @@ async function renderTrendingCarousel() {
     }
 }
 
-
+// ★★★ बदला हुआ फंक्शन ★★★
+// यह सुनिश्चित करेगा कि खोज हमेशा 'लॉन्ग' वीडियो के लिए हो।
 async function performLongVideoSearch() {
     const input = document.getElementById('long-video-search-input');
     let query = input.value.trim();
     if (!query) return;
 
+    // यदि यह एक URL है, तो वीडियो आईडी निकालें और उसे सीधे चलाएं
     const videoIdFromUrl = extractYouTubeId(query);
     if (videoIdFromUrl) {
         playYouTubeVideoFromCard(videoIdFromUrl);
         return;
     }
 
+    // कैटेगरी चिप्स को डीसेलेक्ट करें
     document.querySelectorAll('#long-video-category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
 
     const grid = document.getElementById('long-video-grid');
@@ -1400,7 +1433,7 @@ async function performLongVideoSearch() {
 
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
-        videoDuration: 'long',
+        videoDuration: 'long', // ★ फिक्स: हमेशा लॉन्ग वीडियो के लिए खोजें
         type: 'video'
     });
     appState.youtubeNextPageTokens.long = data.nextPageToken || null;
@@ -1518,10 +1551,11 @@ async function initializeCreatorPage(payload) {
     const { creatorId, startWith = 'home', videoId } = payload;
     appState.creatorPage.currentChannelId = creatorId;
 
-    if (startWith === 'play' && videoId) {
-        showCreatorPlayerView(videoId);
-        return;
-    }
+    // ★★★ महत्वपूर्ण बदलाव: यह अब उपयोग नहीं किया जाएगा, क्योंकि वीडियो एक समर्पित स्क्रीन पर चलेंगे।
+    // if (startWith === 'play' && videoId) {
+    //     showCreatorPlayerView(videoId);
+    //     return;
+    // }
 
     appState.creatorPage.currentView = 'channel';
     const creatorPageHeader = document.getElementById('creator-page-screen').querySelector('.screen-header');
@@ -1586,60 +1620,115 @@ function renderCreatorVideoList(container, videos, type) { /* Unchanged */ }
 function renderCreatorPlaylistList(container, playlists, payload) { /* Unchanged */ }
 
 
-function showCreatorPlayerView(videoId) {
-    appState.creatorPage.currentView = 'player';
-    const creatorPageScreen = document.getElementById('creator-page-screen');
-    const contentArea = document.getElementById('creator-page-content');
+// ★★★ हटा दिया गया फंक्शन ★★★
+// इस लॉजिक को नए initializeVideoPlayerScreen द्वारा प्रतिस्थापित किया गया है
+// function showCreatorPlayerView(videoId) { ... }
+// function initializeCreatorPagePlayer(videoId, containerId, type) { ... }
+function handleCreatorPlayerStateChange(event) { /* Unchanged */ }
 
-    creatorPageScreen.querySelector('.screen-header').style.display = 'none';
-    contentArea.classList.add('player-active');
+// =======================================================
+// ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
+// =======================================================
 
-    contentArea.innerHTML = `
-        <div id="creator-page-player-container">
-            <div class="player-back-button haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-            <div class="player-wrapper">
-                <div id="creator-page-player-long"></div>
+// ===========================================================
+// ★★★ नया: वीडियो प्लेयर स्क्रीन लॉजिक - START ★★★
+// ===========================================================
+
+function initializeVideoPlayerScreen(videoId) {
+    const screen = document.getElementById('video-player-screen');
+    if (!screen) return;
+
+    appState.videoPlayerState.currentScale = 1.0; // स्केल रीसेट करें
+
+    // स्क्रीन के लिए HTML संरचना बनाएं
+    screen.innerHTML = `
+        <div class="video-player-container">
+            <div class="player-header-transparent">
+                <button class="player-control-btn haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></button>
+                <div class="zoom-controls">
+                    <button class="player-control-btn haptic-trigger" onclick="adjustPlayerZoom(-0.1)"><i class="fas fa-search-minus"></i></button>
+                    <button class="player-control-btn haptic-trigger" onclick="adjustPlayerZoom(0.1)"><i class="fas fa-search-plus"></i></button>
+                </div>
+                <button class="player-control-btn haptic-trigger" onclick="togglePlayerRotation()"><i class="fas fa-sync-alt"></i></button>
             </div>
-            <button id="player-rotate-btn" class="haptic-trigger"><i class="fas fa-sync-alt"></i> Rotate</button>
+            <div id="main-video-player-card">
+                <div id="main-video-player-instance"></div>
+            </div>
         </div>
     `;
 
-    initializeCreatorPagePlayer(videoId, 'creator-page-player-long', 'long');
-    document.getElementById('player-rotate-btn').addEventListener('click', () => {
-        document.getElementById('app-container').classList.toggle('fullscreen-active');
-    });
+    // YouTube प्लेयर को इनिशियलाइज़ करें
+    if (isYouTubeApiReady) {
+        createMainYouTubePlayer(videoId);
+    } else {
+        // यदि API तैयार नहीं है, तो एक छोटा विलंब दें
+        setTimeout(() => createMainYouTubePlayer(videoId), 500);
+    }
 }
 
-function initializeCreatorPagePlayer(videoId, containerId, type) {
-    if (appState.creatorPagePlayers[type]) {
-        appState.creatorPagePlayers[type].destroy();
+function createMainYouTubePlayer(videoId) {
+    if (appState.videoPlayerState.player) {
+        appState.videoPlayerState.player.destroy();
     }
-    const playerContainer = document.getElementById(containerId);
-    if (!playerContainer || !isYouTubeApiReady) return;
 
-    appState.creatorPagePlayers[type] = new YT.Player(containerId, {
+    appState.videoPlayerState.player = new YT.Player('main-video-player-instance', {
         height: '100%',
         width: '100%',
         videoId: videoId,
-        playerVars: { 'autoplay': 1, 'controls': 1, 'rel': 0, 'showinfo': 0, 'mute': 0, 'modestbranding': 1, 'fs': 0, 'origin': window.location.origin, 'iv_load_policy': 3 },
+        playerVars: {
+            'autoplay': 1,
+            'controls': 1,
+            'rel': 0,
+            'showinfo': 0,
+            'modestbranding': 1,
+            'fs': 1, // फ़ुलस्क्रीन बटन सक्षम करें
+            'origin': window.location.origin,
+            'iv_load_policy': 3,
+            'mute': userHasInteracted ? 0 : 1,
+        },
         events: {
             'onReady': (event) => {
                 event.target.playVideo();
-                event.target.unMute();
+                if (userHasInteracted) {
+                    event.target.unMute();
+                }
                 const videoData = currentVideoCache.get(videoId);
                 if (videoData) {
                     addLongVideoToHistory(videoData);
                 }
             },
-            'onStateChange': handleCreatorPlayerStateChange
+            'onStateChange': (event) => {
+                // भविष्य के उपयोग के लिए
+            }
         }
     });
 }
 
-function handleCreatorPlayerStateChange(event) { /* Unchanged */ }
+function togglePlayerRotation() {
+    const appContainer = document.getElementById('app-container');
+    appContainer.classList.toggle('fullscreen-active');
+    // सुनिश्चित करें कि haptic फ़ीडबैक ट्रिगर हो
+    provideHapticFeedback();
+}
+
+function adjustPlayerZoom(amount) {
+    const playerCard = document.getElementById('main-video-player-card');
+    if (!playerCard) return;
+
+    // वर्तमान स्केल को 0.5 और 2.0 के बीच सीमित करें
+    let newScale = appState.videoPlayerState.currentScale + amount;
+    newScale = Math.max(0.5, Math.min(newScale, 2.0));
+    
+    appState.videoPlayerState.currentScale = newScale;
+    playerCard.style.transform = `scale(${newScale})`;
+    
+    // सुनिश्चित करें कि haptic फ़ीडबैक ट्रिगर हो
+    provideHapticFeedback();
+}
+
 
 // =======================================================
-// ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
+// ★★★ नया: वीडियो प्लेयर स्क्रीन लॉजिक - END ★★★
 // =======================================================
 
 
@@ -1928,12 +2017,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!userHasInteracted) {
             userHasInteracted = true;
             Object.values(players).forEach(p => p && typeof p.unMute === 'function' && p.unMute());
-            if (appState.creatorPagePlayers.long && typeof appState.creatorPagePlayers.long.unMute === 'function') {
-                appState.creatorPagePlayers.long.unMute();
-            }
+            // अनम्यूट लॉजिक अब मुख्य प्लेयर के onReady इवेंट में नियंत्रित होता है
         }
         if (event.target.closest('.haptic-trigger')) provideHapticFeedback();
     });
+
 
     document.getElementById('long-video-search-btn')?.addEventListener('click', performLongVideoSearch);
     document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') performLongVideoSearch(); });
@@ -2018,6 +2106,20 @@ function toggleProfileVideoView(view) {
     const shortGrid = document.getElementById('user-short-video-grid');
     const longGrid = document.getElementById('user-long-video-grid');
 
+    if (!showShortsBtn || !showLongsBtn || !shortGrid || !longGrid) return;
+
+    if (view === 'short') {
+        showShortsBtn.classList.add('active');
+        showLongsBtn.classList.remove('active');
+        shortGrid.style.display = 'grid';
+        longGrid.style.display = 'none';
+    } else {
+        showShortsBtn.classList.remove('active');
+        showLongsBtn.classList.add('active');
+        shortGrid.style.display = 'none';
+        longGrid.style.display = 'grid';
+    }
+}
     if (!showShortsBtn || !showLongsBtn || !shortGrid || !longGrid) return;
 
     if (view === 'short') {
