@@ -184,7 +184,7 @@
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-                <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
                 <div class="nav-item" data-nav="reward"><i class="fas fa-gift"></i>Reward</div>
                 <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
                 <div class="nav-item" data-nav="profile" style="display: none;"><i class="fas fa-user"></i>Profile</div>
@@ -248,16 +248,16 @@
         <div id="friends-screen" class="screen">
             <div class="friends-top-bar">
                 <div class="tab-bar">
-                    <button class="tab-button active" data-tab="my-channels">My Channels</button>
-                    <button class="tab-button" data-tab="add">Add Friends</button>
+                    <!-- ★★★ FIX: "My Channels" टैब हटा दिया गया ★★★ -->
+                    <button class="tab-button active" data-tab="add">Add Friends</button>
                     <button class="tab-button" data-tab="requests">Requests</button>
                     <button class="tab-button" data-tab="members">Members</button>
                 </div>
             </div>
 
             <main class="content-area">
-                <div class="tab-content" id="my-channels-content"></div>
-                <div class="tab-content hidden" id="add-content">
+                <!-- ★★★ FIX: "Add Friends" को डिफ़ॉल्ट रूप से दृश्यमान बनाने के लिए "hidden" क्लास हटा दी गई ★★★ -->
+                <div class="tab-content" id="add-content">
                     <div class="add-friend-search-container">
                         <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID">
                         <button id="add-friend-search-btn" class="haptic-trigger">Search</button>
