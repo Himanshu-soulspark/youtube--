@@ -1,5 +1,3 @@
-
-
 /* ================================================= /
 / === Shubhzone App Styles (Code 2) - FINAL v6.0 === /
 / === MODIFIED AS PER USER REQUEST - AUG 2025    === /
@@ -740,7 +738,6 @@ body {
     right: 20px;
 }
 
-/* Styles for video action icons are kept for potential future use, though JS removed them from shorts */
 .video-actions-overlay {
     position: absolute;
     bottom: 80px;
@@ -887,7 +884,6 @@ body {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
 }
 
-/* "Add Channel" बटन के लिए स्टाइल */
 .add-channel-btn {
     pointer-events: auto;
     background-color: rgba(var(--secondary-background-rgb), 0.7);
@@ -1548,7 +1544,6 @@ body {
     border-radius: 12px;
     font-family: 'Roboto', sans-serif;
     font-size: 14px;
-    /* Adjust font size for 4 tabs */
     font-weight: 700;
     color: var(--text-secondary);
     cursor: pointer;
@@ -1908,10 +1903,6 @@ body {
     padding: 40px 0;
 }
 
-/* ======================================================= /
-/ ★★★ CREATOR PAGE STYLES (REWORKED) - START ★★★ /
-/ ======================================================= */
-
 #creator-page-screen .content-area {
     overflow: hidden;
     height: calc(100% - 60px); /* Adjust for header */
@@ -2005,7 +1996,6 @@ body {
     flex-grow: 1;
 }
 
-/* ★ नया: प्लेयर व्यू पर बैक बटन */
 .player-back-button {
     position: absolute;
     top: 15px;
@@ -2067,14 +2057,6 @@ body {
 .fullscreen-active #player-rotate-btn i {
     transform: rotate(90deg);
 }
-
-/* ======================================================= /
-/ ★★★ CREATOR PAGE STYLES (REWORKED) - END ★★★ /
-/ ======================================================= */
-
-/* ======================================================= /
-/ ★★★ REWARD & WALLET SCREEN STYLES - START ★★★ /
-/ ======================================================= */
 
 #reward-screen, #wallet-screen {
     justify-content: flex-start;
@@ -2196,7 +2178,6 @@ body {
     margin-bottom: 15px;
 }
 
-/* Wallet Screen Specifics */
 .wallet-balance-display {
     width: 100%;
     padding: 20px;
@@ -2257,11 +2238,6 @@ body {
     background-color: var(--text-disabled);
     cursor: not-allowed;
 }
-
-/* ======================================================= /
-/ ★★★ REWARD & WALLET SCREEN STYLES - END ★★★ /
-/ ======================================================= */
-
 
 .long-video-grid-ad,
 .friend-list-ad,
