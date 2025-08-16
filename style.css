@@ -7,22 +7,14 @@
 /* Design Style Guide */
 :root {
     /* Core Color Palette */
-    --background: #121212;
-    /* Deep Dark Gray/Black */
-    --secondary-background: #1A1A1A;
-    /* Slightly Lighter Dark Gray for cards, modals */
-    --primary-neon: #00FFFF;
-    /* Pure Cyan - Your signature Neon color */
-    --text-primary: #EEEEEE;
-    /* Light Gray for main text */
-    --text-secondary: #AAAAAA;
-    /* Medium Gray for subheadings, timestamps, helpers */
-    --text-disabled: #666666;
-    /* Darker Gray for inactive elements */
-    --error-red: #FF0000;
-    /* Bright Red for danger/errors */
-    --success-green: #00FF00;
-    /* Bright Green for success */
+    --background: #121212; /* Deep Dark Gray/Black */
+    --secondary-background: #1A1A1A; /* Slightly Lighter Dark Gray for cards, modals */
+    --primary-neon: #00FFFF; /* Pure Cyan - Your signature Neon color */
+    --text-primary: #EEEEEE; /* Light Gray for main text */
+    --text-secondary: #AAAAAA; /* Medium Gray for subheadings, timestamps, helpers */
+    --text-disabled: #666666; /* Darker Gray for inactive elements */
+    --error-red: #FF0000; /* Bright Red for danger/errors */
+    --success-green: #00FF00; /* Bright Green for success */
 
     /* RGB values for transparent uses in JS or CSS */
     --primary-neon-rgb: 0, 255, 255;
@@ -34,10 +26,8 @@
     --success-green-rgb: 0, 255, 0;
 
     /* Legacy/Mapped variables (prefer new explicit ones) */
-    --dark-grey: var(--secondary-background);
-    /* Mapped to secondary background */
-    --light-grey: var(--text-secondary);
-    /* Mapped to secondary text for general UI use */
+    --dark-grey: var(--secondary-background); /* Mapped to secondary background */
+    --light-grey: var(--text-secondary); /* Mapped to secondary text for general UI use */
 }
 
 html {
@@ -47,8 +37,7 @@ html {
 *,
 *:before,
 *:after {
-    box-sizing: inherit;
-    /* Apply box-sizing to all elements */
+    box-sizing: inherit; /* Apply box-sizing to all elements */
 }
 
 body {
@@ -76,7 +65,7 @@ body {
     transition: all 0.3s ease-in-out;
 }
 
-/* ★ नया: फ़ुलस्क्रीन रोटेशन के लिए कंटेनर स्टाइल */
+/* ★★★ FIX: फ़ुलस्क्रीन रोटेशन के लिए कंटेनर स्टाइल ★★★ */
 .app-container.fullscreen-active {
     position: fixed;
     top: 0;
@@ -671,7 +660,6 @@ body {
 #user-short-video-grid,
 #user-long-video-grid {
     grid-template-columns: 1fr;
-    /* सिंगल कॉलम में स्टेटिक संदेश प्रदर्शित करने के लिए */
 }
 
 .modal-overlay {
@@ -1180,7 +1168,6 @@ body {
     display: flex;
     flex-direction: column;
     padding-bottom: 60px;
-    /* Make space for nav bar */
 }
 
 #long-video-top-bar,
@@ -1292,10 +1279,7 @@ body {
     transition: background-color 0.2s ease;
 }
 
-#long-video-search-btn:hover {
-    background-color: var(--primary-neon);
-}
-
+#long-video-search-btn:hover,
 #long-video-history-btn:hover {
     background-color: var(--primary-neon);
 }
@@ -1317,6 +1301,7 @@ body {
     cursor: pointer;
 }
 
+/* ★★★ FIX: वीडियो कार्ड को 16:9 का अनुपात दिया गया ★★★ */
 .long-video-thumbnail {
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -1919,9 +1904,7 @@ body {
 #creator-page-screen .content-area {
     overflow: hidden;
     height: calc(100% - 60px);
-    /* Adjust for header */
     padding: 60px 0 0 0;
-    /* Make space for header, remove other padding */
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -1943,7 +1926,6 @@ body {
     display: flex;
     justify-content: center;
     gap: 5px;
-    /* Adjust gap for more tabs */
     background-color: rgba(var(--secondary-background-rgb), 0.5);
     padding: 5px;
     border-radius: 20px;
@@ -1953,7 +1935,6 @@ body {
 
 .creator-page-tab-btn {
     padding: 6px 15px;
-    /* Adjust padding for more tabs */
     border: none;
     background-color: transparent;
     color: var(--text-secondary);
@@ -2010,95 +1991,31 @@ body {
     align-items: center;
     background-color: #000;
     position: relative;
-    overflow: hidden;
-    /* Zoom के लिए महत्वपूर्ण */
-}
-
-.player-header-transparent {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    z-index: 30;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent);
-    transition: opacity 0.3s ease;
+    flex-grow: 1;
 }
 
 .player-back-button {
-    position: relative;
-    top: auto;
-    left: auto;
-    background-color: rgba(var(--secondary-background-rgb), 0.7);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2em;
-    cursor: pointer;
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 30;
     color: var(--text-primary);
-    border: none;
-}
-
-.player-zoom-controls {
-    display: flex;
-    gap: 10px;
-    background-color: rgba(var(--secondary-background-rgb), 0.7);
-    padding: 5px 10px;
-    border-radius: 20px;
-}
-
-#player-rotate-btn,
-#player-zoom-in-btn,
-#player-zoom-out-btn {
-    position: relative;
-    bottom: auto;
-    right: auto;
-    background-color: transparent;
-    color: var(--primary-neon);
-    border: none;
-    padding: 5px;
-    border-radius: 50%;
-    font-size: 1.2em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease;
-}
-
-#player-rotate-btn:active,
-#player-zoom-in-btn:active,
-#player-zoom-out-btn:active {
-    transform: scale(0.9);
-}
-
-#player-rotate-btn {
     background-color: rgba(var(--secondary-background-rgb), 0.7);
     width: 40px;
     height: 40px;
     border-radius: 50%;
-}
-
-#player-rotate-btn i {
-    transition: transform 0.3s ease;
-}
-
-.fullscreen-active #player-rotate-btn i {
-    transform: rotate(90deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2em;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
 }
 
 .player-wrapper {
     width: 100%;
     aspect-ratio: 16 / 9;
     background-color: #000;
-    transition: transform 0.3s ease-in-out;
-    transform-origin: center center;
 }
 
 #creator-page-player-long {
@@ -2110,19 +2027,42 @@ body {
     width: 100%;
     height: 100%;
     aspect-ratio: auto;
-    transform: none !important;
-    /* फ़ुलस्क्रीन में ज़ूम रीसेट करें */
 }
 
-#reward-screen,
-#wallet-screen {
+#player-rotate-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(var(--secondary-background-rgb), 0.7);
+    color: var(--primary-neon);
+    border: 1px solid var(--primary-neon);
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-size: 1em;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(5px);
+}
+
+#player-rotate-btn i {
+    transition: transform 0.3s ease;
+}
+
+.fullscreen-active #player-rotate-btn i {
+    transform: rotate(90deg);
+}
+
+#reward-screen, #wallet-screen {
     justify-content: flex-start;
     padding: 0;
     color: var(--text-primary);
 }
 
-#reward-screen .content-area,
-#wallet-screen .content-area {
+#reward-screen .content-area, #wallet-screen .content-area {
     padding: 75px 20px 80px 20px;
     width: 100%;
     height: 100%;
@@ -2231,7 +2171,6 @@ body {
     font-size: 0.9em;
     color: var(--text-secondary);
 }
-
 .claim-offer-section .reward-timer {
     font-size: 1.5em;
     margin-bottom: 15px;
