@@ -412,6 +412,8 @@ let activePlayerId = null;
 let userHasInteracted = false;
 let hasShownAudioPopup = false;
 let hapticFeedbackEnabled = true;
+// ★ नया: प्लेयर बनाने के अनुरोधों को पंक्ति में लगाने के लिए
+let youtubePlayerQueue = [];
 
 // =============================================================================
 // ★★★ YOUTUBE API INTEGRATION (REFACTORED & WITH FIREBASE CACHING) - START ★★★
@@ -463,7 +465,7 @@ async function fetchFromYouTubeAPI(type, params) {
                 }
             });
         }
-        
+
         cacheRef.set({
             data: data,
             retrievedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -528,7 +530,10 @@ async function loadMoreLongVideos() {
     loadMoreBtn.disabled = true;
     loadMoreBtn.textContent = "Loading...";
 
-    const { type, value } = appState.longVideoSearchContext;
+    const {
+        type,
+        value
+    } = appState.longVideoSearchContext;
     let data;
     const params = {
         pageToken: appState.youtubeNextPageTokens.long,
@@ -548,7 +553,7 @@ async function loadMoreLongVideos() {
     if (data.items) {
         renderYouTubeLongVideos(data.items, true);
     }
-    
+
     if (loadMoreBtn) {
         loadMoreBtn.disabled = false;
         loadMoreBtn.textContent = "Load More";
@@ -699,14 +704,14 @@ function navigateBack() {
     }
 
     if (appState.navigationStack.length <= 1) {
-        navigateTo('long-video-screen'); 
+        navigateTo('long-video-screen');
         return;
     }
 
     appState.navigationStack.pop();
-    
+
     const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'long-video-screen';
-    
+
     navigateTo(previousScreenId, null);
 }
 
@@ -727,7 +732,9 @@ async function checkUserProfileAndProceed(user) {
         userData.lastRewardTimestamp = userData.lastRewardTimestamp || null;
         userData.initialRewardClaimed = userData.initialRewardClaimed || false;
 
-        appState.currentUser = { ...appState.currentUser, ...userData };
+        appState.currentUser = { ...appState.currentUser,
+            ...userData
+        };
 
         const savedChannels = localStorage.getItem('shubhzone_addedChannels');
         appState.currentUser.addedChannels = savedChannels ? JSON.parse(savedChannels) : [];
@@ -759,13 +766,16 @@ async function checkUserProfileAndProceed(user) {
             isReferred: false,
         };
         await userRef.set(initialData);
-        appState.currentUser = { ...appState.currentUser, ...initialData };
+        appState.currentUser = { ...appState.currentUser,
+            ...initialData
+        };
         updateProfileUI();
         navigateTo('information-screen');
     }
 }
 
 let appInitializationComplete = false;
+
 function initializeApp() {
     if (appInitializationComplete) return;
     appInitializationComplete = true;
@@ -872,7 +882,9 @@ async function saveAndContinue() {
         }
 
         const refreshedUserData = (await db.collection('users').doc(appState.currentUser.uid).get()).data();
-        appState.currentUser = { ...appState.currentUser, ...refreshedUserData };
+        appState.currentUser = { ...appState.currentUser,
+            ...refreshedUserData
+        };
 
         updateProfileUI();
         await startAppLogic();
@@ -888,7 +900,7 @@ async function saveAndContinue() {
 function updateProfileUI() {
     const profileHeaderAvatar = document.getElementById('profile-header-avatar');
     if (profileHeaderAvatar) profileHeaderAvatar.src = appState.currentUser.avatar || "https://via.placeholder.com/50/222/FFFFFF?text=+";
-    
+
     profileImagePreview.src = appState.currentUser.avatar || "https://via.placeholder.com/120/222/FFFFFF?text=+";
     document.getElementById('info-name').value = appState.currentUser.name || '';
     document.getElementById('info-mobile').value = appState.currentUser.mobile || '';
@@ -1012,13 +1024,51 @@ function renderVideoSwiper(videos, append = false) {
     }
 }
 
+// ★ नया: प्लेयर में त्रुटि होने पर यह फ़ंक्शन कॉल होगा
+function onPlayerError(event) {
+    const videoId = event.target.getVideoData().video_id;
+    console.error(`[YT Player Error] Video ID: ${videoId}, Error Code: ${event.data}`);
+    // त्रुटि कोड दस्तावेज़: https://developers.google.com/youtube/iframe_api_reference#onError
+    // 2 – अमान्य पैरामीटर। (गलत वीडियो आईडी)
+    // 5 – HTML5 प्लेयर त्रुटि।
+    // 100 – वीडियो नहीं मिला (हटा दिया गया या निजी है)।
+    // 101 या 150 – वीडियो के मालिक ने एम्बेडेड प्लेबैक की अनुमति नहीं दी है।
 
-function onYouTubeIframeAPIReady() {
-    isYouTubeApiReady = true;
+    // उपयोगकर्ता को UI पर सूचित करने का प्रयास करें
+    const iframe = event.target.getIframe();
+    if (iframe && iframe.parentElement) {
+        const container = iframe.parentElement;
+        container.innerHTML = `<div style="color:white; text-align:center; padding: 20px; font-size: 1.1em; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%;">
+            <p>Could Not Play Video</p>
+            <p style="font-size:0.8em; color: #aaa;">(Error Code: ${event.data})</p>
+        </div>`;
+    }
 }
+
+// ★ संशोधित: अब यह प्लेयर बनाने के अनुरोधों को पंक्तिबद्ध करेगा
+function onYouTubeIframeAPIReady() {
+    console.log("[YT API] YouTube IFrame API is ready.");
+    isYouTubeApiReady = true;
+
+    // API तैयार होने से पहले पंक्तिबद्ध किए गए किसी भी प्लेयर निर्माण अनुरोध को संसाधित करें
+    console.log(`[YT API] Processing ${youtubePlayerQueue.length} queued player requests.`);
+    youtubePlayerQueue.forEach(request => {
+        console.log(`[YT API] Creating queued player for container: ${request.containerId}`);
+        if (request.type === 'shorts') {
+            createPlayerForSlide(request.slide, true); // कतार से बचने के लिए एक ध्वज पास करें
+        } else if (request.type === 'long') {
+            initializeCreatorPagePlayer(request.videoId, request.containerId, 'long', true); // एक ध्वज पास करें
+        }
+    });
+    // कतार साफ़ करें
+    youtubePlayerQueue = [];
+}
+
 
 function onPlayerReady(event) {
     const iframe = event.target.getIframe();
+    const videoId = event.target.getVideoData().video_id;
+    console.log(`[YT Player] Player ready for video ID: ${videoId}`);
     const slide = iframe.closest('.video-slide');
     if (slide) {
         const preloader = slide.querySelector('.video-preloader');
@@ -1123,11 +1173,28 @@ function pauseActivePlayer() {
     }
 }
 
-
-function createPlayerForSlide(slide) {
+// ★ संशोधित: अब यह प्लेयर बनाने के अनुरोध को पंक्तिबद्ध करेगा यदि API तैयार नहीं है
+function createPlayerForSlide(slide, forceCreation = false) {
     const videoId = slide.dataset.videoId;
-    if (players[videoId] || !isYouTubeApiReady) {
-        if (players[videoId] && typeof players[videoId].playVideo === 'function') {
+
+    if (!isYouTubeApiReady && !forceCreation) {
+        // API तैयार नहीं है, इस अनुरोध को पंक्तिबद्ध करें
+        console.log(`[YT Player] API not ready. Queuing player for video ID: ${videoId}`);
+        // डुप्लिकेट कतार से बचें
+        if (!youtubePlayerQueue.some(item => item.videoId === videoId)) {
+            youtubePlayerQueue.push({
+                type: 'shorts',
+                slide: slide,
+                videoId: videoId
+            });
+        }
+        return;
+    }
+
+
+    if (players[videoId]) {
+        if (typeof players[videoId].playVideo === 'function') {
+            console.log(`[YT Player] Player for ${videoId} already exists. Playing.`);
             playActivePlayer(videoId);
         }
         return;
@@ -1137,6 +1204,7 @@ function createPlayerForSlide(slide) {
     const playerElement = document.getElementById(playerId);
     if (!playerElement || playerElement.tagName === 'IFRAME') return;
 
+    console.log(`[YT Player] Creating new shorts player for video ID: ${videoId}`);
     players[videoId] = new YT.Player(playerId, {
         height: '100%',
         width: '100%',
@@ -1157,11 +1225,14 @@ function createPlayerForSlide(slide) {
         events: {
             'onReady': (event) => {
                 onPlayerReady(event);
-                if (slide.getBoundingClientRect().top >= 0 && slide.getBoundingClientRect().bottom <= window.innerHeight) {
+                const slideRect = slide.getBoundingClientRect();
+                const isInView = slideRect.top >= 0 && slideRect.bottom <= window.innerHeight;
+                if (isInView) {
                     playActivePlayer(videoId);
                 }
             },
-            'onStateChange': onPlayerStateChange
+            'onStateChange': onPlayerStateChange,
+            'onError': onPlayerError // त्रुटि हैंडलर जोड़ा गया
         }
     });
 }
@@ -1340,9 +1411,12 @@ async function populateLongVideoGrid(category = 'All') {
     } else {
         query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
     }
-    
+
     // ★ बदलाव: सर्च कॉन्टेक्स्ट को अपडेट करें
-    appState.longVideoSearchContext = { type: 'query', value: query };
+    appState.longVideoSearchContext = {
+        type: 'query',
+        value: query
+    };
 
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
@@ -1404,12 +1478,19 @@ async function performLongVideoSearch() {
     if (!grid) return;
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
-    let searchParams = { videoDuration: 'long', type: 'video' };
+    let searchParams = {
+        videoDuration: 'long',
+        type: 'video'
+    };
     let finalData;
 
     // 1. पहले चैनल ढूंढने की कोशिश करें
     try {
-        const channelData = await fetchFromYouTubeAPI('search', { q: query, type: 'channel', maxResults: 1 });
+        const channelData = await fetchFromYouTubeAPI('search', {
+            q: query,
+            type: 'channel',
+            maxResults: 1
+        });
         let channelId = null;
         if (channelData.items && channelData.items.length > 0) {
             // यह सुनिश्चित करने के लिए कि सही चैनल मिला है, टाइटल की जाँच करें
@@ -1425,19 +1506,28 @@ async function performLongVideoSearch() {
             // 2. अगर चैनल मिला, तो उस चैनल के वीडियो सर्च करें
             console.log(`Channel found: ${channelId}. Searching for videos in this channel.`);
             searchParams.channelId = channelId;
-            appState.longVideoSearchContext = { type: 'channel', value: channelId };
+            appState.longVideoSearchContext = {
+                type: 'channel',
+                value: channelId
+            };
         } else {
             // 3. अगर चैनल नहीं मिला, तो सामान्य टेक्स्ट सर्च करें
             console.log(`No specific channel found. Performing general search for: ${query}`);
             searchParams.q = query;
-            appState.longVideoSearchContext = { type: 'query', value: query };
+            appState.longVideoSearchContext = {
+                type: 'query',
+                value: query
+            };
         }
 
         finalData = await fetchFromYouTubeAPI('search', searchParams);
 
     } catch (error) {
         console.error("Error during search process:", error);
-        finalData = { items: [], nextPageToken: null };
+        finalData = {
+            items: [],
+            nextPageToken: null
+        };
         grid.innerHTML = '<p class="static-message">An error occurred during search.</p>';
     }
 
@@ -1484,9 +1574,13 @@ function initializeHistoryScreen() {
     renderHistoryShortsScroller();
     renderHistoryLongVideoList();
 }
+
 function renderHistoryShortsScroller() { /* Unchanged */ }
+
 function renderHistoryLongVideoList() { /* Unchanged */ }
+
 function clearAllHistory() { /* Unchanged */ }
+
 function deleteFromHistory(videoId) { /* Unchanged */ }
 
 
@@ -1545,6 +1639,7 @@ async function rejectFriendRequest(event, requestId) { /* Unchanged */ }
 async function populateMembersList() { /* Unchanged */ }
 async function startChat(friendId, friendName, friendAvatar) { /* Unchanged */ }
 async function sendMessage() { /* Unchanged */ }
+
 function loadChatMessages(chatId) { /* Unchanged */ }
 
 
@@ -1553,7 +1648,11 @@ function loadChatMessages(chatId) { /* Unchanged */ }
 // =======================================================
 
 async function initializeCreatorPage(payload) {
-    const { creatorId, startWith = 'home', videoId } = payload;
+    const {
+        creatorId,
+        startWith = 'home',
+        videoId
+    } = payload;
     appState.creatorPage.currentChannelId = creatorId;
 
     if (startWith === 'play' && videoId) {
@@ -1582,7 +1681,10 @@ async function initializeCreatorPage(payload) {
         tab.addEventListener('click', () => {
             creatorPageTabsContainer.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            loadCreatorPageContent({ ...payload, startWith: tab.dataset.type, videoId: null });
+            loadCreatorPageContent({ ...payload,
+                startWith: tab.dataset.type,
+                videoId: null
+            });
         });
     });
 
@@ -1590,37 +1692,58 @@ async function initializeCreatorPage(payload) {
     const initialTab = creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="${effectiveStartWith}"]`) || creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="home"]`);
     if (initialTab) initialTab.classList.add('active');
 
-    await loadCreatorPageContent({ ...payload, startWith: effectiveStartWith });
+    await loadCreatorPageContent({ ...payload,
+        startWith: effectiveStartWith
+    });
 }
 
 async function loadCreatorPageContent(payload) {
-    const { creatorId, startWith, playlistId } = payload;
+    const {
+        creatorId,
+        startWith,
+        playlistId
+    } = payload;
     const contentArea = document.getElementById('creator-page-content');
     contentArea.innerHTML = '<div class="loader-container" style="height: 100%;"><div class="loader"></div></div>';
 
     let data;
-    switch(startWith) {
+    switch (startWith) {
         case 'home':
         case 'videos':
-            data = await fetchFromYouTubeAPI('search', { channelId: creatorId, order: 'date', videoDuration: 'long', type: 'video' });
+            data = await fetchFromYouTubeAPI('search', {
+                channelId: creatorId,
+                order: 'date',
+                videoDuration: 'long',
+                type: 'video'
+            });
             renderCreatorVideoList(contentArea, data.items || [], 'long');
             break;
         case 'shorts':
-            data = await fetchFromYouTubeAPI('search', { channelId: creatorId, videoDuration: 'short', order: 'date', type: 'video' });
+            data = await fetchFromYouTubeAPI('search', {
+                channelId: creatorId,
+                videoDuration: 'short',
+                order: 'date',
+                type: 'video'
+            });
             renderCreatorVideoList(contentArea, data.items || [], 'short');
             break;
         case 'playlists':
-             data = await fetchFromYouTubeAPI('playlists', { channelId: creatorId });
-             renderCreatorPlaylistList(contentArea, data.items || [], payload);
-             break;
+            data = await fetchFromYouTubeAPI('playlists', {
+                channelId: creatorId
+            });
+            renderCreatorPlaylistList(contentArea, data.items || [], payload);
+            break;
         case 'playlistItems':
-             data = await fetchFromYouTubeAPI('playlistItems', { playlistId: playlistId });
-             renderCreatorVideoList(contentArea, data.items || [], 'long');
+            data = await fetchFromYouTubeAPI('playlistItems', {
+                playlistId: playlistId
+            });
+            renderCreatorVideoList(contentArea, data.items || [], 'long');
             break;
     }
 }
 
 function renderCreatorVideoList(container, videos, type) { /* Unchanged */ }
+
 function renderCreatorPlaylistList(container, playlists, payload) { /* Unchanged */ }
 
 
@@ -1681,21 +1804,50 @@ function showCreatorPlayerView(videoId) {
     });
 }
 
-
-function initializeCreatorPagePlayer(videoId, containerId, type) {
+// ★ संशोधित: अब यह प्लेयर बनाने के अनुरोध को पंक्तिबद्ध करेगा यदि API तैयार नहीं है
+function initializeCreatorPagePlayer(videoId, containerId, type, forceCreation = false) {
     if (appState.creatorPagePlayers[type]) {
+        console.log(`[YT Player] Destroying existing creator player of type: ${type}`);
         appState.creatorPagePlayers[type].destroy();
+        appState.creatorPagePlayers[type] = null;
     }
-    const playerContainer = document.getElementById(containerId);
-    if (!playerContainer || !isYouTubeApiReady) return;
 
+    const playerContainer = document.getElementById(containerId);
+
+    if (!isYouTubeApiReady && !forceCreation) {
+        console.log(`[YT Player] API not ready. Queuing creator player for video ID: ${videoId}`);
+        youtubePlayerQueue.push({
+            type: 'long',
+            videoId: videoId,
+            containerId: containerId
+        });
+        return;
+    }
+
+    if (!playerContainer) {
+        console.error(`[YT Player] Player container #${containerId} not found in DOM.`);
+        return;
+    }
+
+    console.log(`[YT Player] Creating new creator player for video ID: ${videoId} in container: #${containerId}`);
     appState.creatorPagePlayers[type] = new YT.Player(containerId, {
         height: '100%',
         width: '100%',
         videoId: videoId,
-        playerVars: { 'autoplay': 1, 'controls': 1, 'rel': 0, 'showinfo': 0, 'mute': 0, 'modestbranding': 1, 'fs': 0, 'origin': window.location.origin, 'iv_load_policy': 3 },
+        playerVars: {
+            'autoplay': 1,
+            'controls': 1,
+            'rel': 0,
+            'showinfo': 0,
+            'mute': 0,
+            'modestbranding': 1,
+            'fs': 0,
+            'origin': window.location.origin,
+            'iv_load_policy': 3
+        },
         events: {
             'onReady': (event) => {
+                console.log(`[YT Player] Creator player ready for video ID: ${videoId}`);
                 event.target.playVideo();
                 event.target.unMute();
                 const videoData = currentVideoCache.get(videoId);
@@ -1703,10 +1855,12 @@ function initializeCreatorPagePlayer(videoId, containerId, type) {
                     addLongVideoToHistory(videoData);
                 }
             },
-            'onStateChange': handleCreatorPlayerStateChange
+            'onStateChange': handleCreatorPlayerStateChange,
+            'onError': onPlayerError // त्रुटि हैंडलर जोड़ा गया
         }
     });
 }
+
 
 function handleCreatorPlayerStateChange(event) { /* Unchanged */ }
 
@@ -1728,7 +1882,10 @@ function initializeRewardScreen() {
 
 function updateRewardUI() {
     const screen = document.getElementById('reward-screen');
-    const { secondsRemaining, isEligible } = appState.rewardState;
+    const {
+        secondsRemaining,
+        isEligible
+    } = appState.rewardState;
 
     if (appState.rewardState.timerInterval) {
         clearInterval(appState.rewardState.timerInterval);
@@ -1756,22 +1913,25 @@ function updateRewardUI() {
                 <div class="reward-timer" id="reward-timer-display">${timeToShow}</div>
             </div>
         `;
-        if(secondsRemaining > 0) {
+        if (secondsRemaining > 0) {
             startCountdownTimer('reward-timer-display', secondsRemaining, startRewardTimerCheck);
         }
     }
 
     screen.querySelector('.content-area').innerHTML = contentHTML;
-    
-    if(isEligible) {
+
+    if (isEligible) {
         setupScratchCard();
     }
 }
 
 function startRewardTimerCheck() {
-    const { initialRewardClaimed, lastRewardTimestamp } = appState.currentUser;
+    const {
+        initialRewardClaimed,
+        lastRewardTimestamp
+    } = appState.currentUser;
     const now = new Date();
-    
+
     if (!initialRewardClaimed) {
         // ★ FIX: पहली बार उपयोगकर्ता के लिए 60 सेकंड का टाइमर
         appState.rewardState.isEligible = false;
@@ -1796,7 +1956,7 @@ function startCountdownTimer(elementId, durationInSeconds, onComplete) {
     if (appState.rewardState.timerInterval) {
         clearInterval(appState.rewardState.timerInterval);
     }
-    
+
     let timer = durationInSeconds;
     const timerDisplay = document.getElementById(elementId);
 
@@ -1804,15 +1964,15 @@ function startCountdownTimer(elementId, durationInSeconds, onComplete) {
         const hours = Math.floor(timer / 3600);
         const minutes = Math.floor((timer % 3600) / 60);
         const seconds = timer % 60;
-        
-        if(timerDisplay) {
+
+        if (timerDisplay) {
             timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
 
         if (--timer < 0) {
             clearInterval(appState.rewardState.timerInterval);
             appState.rewardState.timerInterval = null;
-            if(onComplete) onComplete();
+            if (onComplete) onComplete();
         }
     }, 1000);
 }
@@ -1838,7 +1998,7 @@ function setupScratchCard() {
     const scratch = (e) => {
         if (!isScratching) return;
         e.preventDefault();
-        
+
         const currentOpacity = parseFloat(overlay.style.opacity || 1);
         const newOpacity = Math.max(0, currentOpacity - 0.05);
         overlay.style.opacity = newOpacity;
@@ -1855,11 +2015,15 @@ function setupScratchCard() {
     const stopScratching = () => isScratching = false;
 
     overlay.addEventListener('mousedown', startScratching);
-    overlay.addEventListener('touchstart', startScratching, { passive: true });
+    overlay.addEventListener('touchstart', startScratching, {
+        passive: true
+    });
     window.addEventListener('mouseup', stopScratching);
     window.addEventListener('touchend', stopScratching);
     overlay.addEventListener('mousemove', scratch);
-    overlay.addEventListener('touchmove', scratch, { passive: true });
+    overlay.addEventListener('touchmove', scratch, {
+        passive: true
+    });
 }
 
 async function handleRewardRevealed(amount, text) {
@@ -1871,14 +2035,16 @@ async function handleRewardRevealed(amount, text) {
         });
         // स्थानीय स्थिति को तुरंत अपडेट करें
         appState.currentUser.initialRewardClaimed = true;
-        appState.currentUser.lastRewardTimestamp = { toDate: () => new Date() };
+        appState.currentUser.lastRewardTimestamp = {
+            toDate: () => new Date()
+        };
     } catch (error) {
         console.error("Error updating user reward status:", error);
     }
-    
+
     if (amount > 0) {
         const container = document.getElementById('scratch-card-container');
-        if(container) {
+        if (container) {
             container.innerHTML += `
                 <div class="claim-offer-section">
                     <p>इस ऑफर को पाने के लिए, अपने किसी दोस्त को 24 मिनट के अंदर इनवाइट करें।</p>
@@ -1888,8 +2054,8 @@ async function handleRewardRevealed(amount, text) {
                 </div>
             `;
             startCountdownTimer('claim-timer', 24 * 60, () => {
-                 const claimSection = document.querySelector('.claim-offer-section');
-                 if(claimSection) claimSection.innerHTML = "<p>Offer Expired!</p>";
+                const claimSection = document.querySelector('.claim-offer-section');
+                if (claimSection) claimSection.innerHTML = "<p>Offer Expired!</p>";
             });
         }
     }
@@ -1897,7 +2063,7 @@ async function handleRewardRevealed(amount, text) {
     // ★ FIX: कुछ सेकंड के बाद टाइमर शुरू करने के लिए रीचेक करें
     setTimeout(() => {
         startRewardTimerCheck();
-    }, 5000); 
+    }, 5000);
 }
 
 async function processReferral(referralCode, newUserId) {
@@ -1911,14 +2077,16 @@ async function processReferral(referralCode, newUserId) {
         console.warn("User tried to refer themselves.");
         return null;
     }
-    
+
     const rewardAmount = Math.random() > 0.95 ? 10 : (Math.random() > 0.5 ? 2 : 1);
-    
+
     await db.collection('users').doc(referringUserId).update({
         walletBalance: firebase.firestore.FieldValue.increment(rewardAmount)
     });
 
-    return { uid: referringUserId };
+    return {
+        uid: referringUserId
+    };
 }
 
 
@@ -1943,7 +2111,7 @@ async function submitWithdrawalRequest() {
         alert("Please enter both UPI ID and Mobile Number.");
         return;
     }
-    
+
     const message = `
         Shubhzone Withdrawal Request:
         --------------------------
@@ -1953,14 +2121,16 @@ async function submitWithdrawalRequest() {
         Mobile No: ${mobileNo}
         --------------------------
     `;
-    
+
     const whatsappUrl = `https://wa.me/917390928912?text=${encodeURIComponent(message)}`;
-    
+
     const userRef = db.collection('users').doc(appState.currentUser.uid);
     const withdrawalRef = db.collection('withdrawals').doc();
 
     const batch = db.batch();
-    batch.update(userRef, { walletBalance: 0 });
+    batch.update(userRef, {
+        walletBalance: 0
+    });
     batch.set(withdrawalRef, {
         userId: appState.currentUser.uid,
         amount: amount,
@@ -1976,7 +2146,7 @@ async function submitWithdrawalRequest() {
         alert("Withdrawal request submitted! It will be processed soon. You are now being redirected to WhatsApp.");
         window.open(whatsappUrl, '_blank');
         initializeWalletScreen();
-    } catch(error) {
+    } catch (error) {
         console.error("Error submitting withdrawal request:", error);
         alert("There was an error submitting your request. Please try again.");
     }
@@ -1989,10 +2159,15 @@ async function submitWithdrawalRequest() {
 
 
 async function addChannelToList(event, channelId) { /* Unchanged */ }
+
 function renderMyChannelsList() { /* Unchanged */ }
+
 function removeChannelFromList(event, channelId) { /* Unchanged */ }
+
 function provideHapticFeedback() { /* Unchanged */ }
+
 function loadHapticPreference() { /* Unchanged */ }
+
 function showEnlargedImage(imageUrl) { /* Unchanged */ }
 
 
@@ -2004,11 +2179,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item.style.display === 'none') return;
 
             let targetScreen;
-            switch(targetNav) {
-                case 'shorts': targetScreen = 'home-screen'; break;
-                case 'reward': targetScreen = 'reward-screen'; break;
-                case 'wallet': targetScreen = 'wallet-screen'; break;
-                default: targetScreen = `${targetNav}-screen`;
+            switch (targetNav) {
+                case 'shorts':
+                    targetScreen = 'home-screen';
+                    break;
+                case 'reward':
+                    targetScreen = 'reward-screen';
+                    break;
+                case 'wallet':
+                    targetScreen = 'wallet-screen';
+                    break;
+                default:
+                    targetScreen = `${targetNav}-screen`;
             }
 
             navigateTo(targetScreen);
@@ -2017,7 +2199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initializeApp();
-    
+
     document.getElementById('get-started-btn')?.addEventListener('click', () => {
         userHasInteracted = true;
         startAppLogic();
@@ -2035,22 +2217,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('long-video-search-btn')?.addEventListener('click', performLongVideoSearch);
-    document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') performLongVideoSearch(); });
+    document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') performLongVideoSearch();
+    });
     document.getElementById('wallet-icon-button')?.addEventListener('click', () => navigateTo('wallet-screen'));
     document.getElementById('withdraw-btn')?.addEventListener('click', submitWithdrawalRequest);
 
     document.querySelector('#creator-page-screen .header-icon-left')?.addEventListener('click', () => navigateBack());
     initializeMessagingInterface();
     document.getElementById('add-friend-search-btn')?.addEventListener('click', searchUser);
-    document.getElementById('add-friend-search-input')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') searchUser(); });
-    
+    document.getElementById('add-friend-search-input')?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchUser();
+    });
+
     const openSidebar = () => {
         document.getElementById('main-sidebar').classList.add('open');
         document.getElementById('sidebar-overlay').classList.add('open');
     };
     document.getElementById('home-menu-icon')?.addEventListener('click', openSidebar);
     document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
-    
+
     const profileSidebarBtn = document.getElementById('sidebar-profile-btn');
     if (profileSidebarBtn) {
         profileSidebarBtn.addEventListener('click', () => {
@@ -2068,18 +2254,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('main-sidebar').classList.remove('open');
         document.getElementById('sidebar-overlay').classList.remove('open');
     });
-    
+
     document.getElementById('long-video-history-btn')?.addEventListener('click', () => navigateTo('history-screen'));
     document.getElementById('back-from-history-btn')?.addEventListener('click', () => navigateBack());
     document.getElementById('profile-your-zone-btn')?.addEventListener('click', () => navigateTo('information-screen'));
     document.getElementById('profile-show-shorts-btn')?.addEventListener('click', () => toggleProfileVideoView('short'));
     document.getElementById('profile-show-longs-btn')?.addEventListener('click', () => toggleProfileVideoView('long'));
-    
+
     const enlargeModal = document.getElementById('image-enlarge-modal');
     if (enlargeModal) enlargeModal.addEventListener('click', () => enlargeModal.classList.remove('active'));
 
     loadHapticPreference();
-    
+
     document.querySelectorAll('#friends-screen .tab-button').forEach(button => {
         button.addEventListener('click', () => {
             const tabId = button.dataset.tab;
@@ -2101,7 +2287,9 @@ function initializeMessagingInterface() {
     const inputField = chatScreen.querySelector('.input-field');
 
     sendButton?.addEventListener('click', sendMessage);
-    inputField?.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+    inputField?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
     inputField?.addEventListener('input', () => {
         if (inputField.value.trim().length > 0) {
             sendButton.classList.add('active');
