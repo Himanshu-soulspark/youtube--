@@ -20,56 +20,55 @@
 
 <body>
 
-    <div id="app-container" class="app-container">
-
-        <!-- === SIDEBAR START === -->
-        <div id="sidebar-overlay" class="sidebar-overlay"></div>
-        <div id="main-sidebar" class="main-sidebar">
-            <div class="sidebar-header">
-                <h3>Menu</h3>
-                <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
-            </div>
-
-            <!-- ★ बदलाव: साइडबार में प्रोफ़ाइल बटन जोड़ा गया -->
-            <div id="sidebar-profile-btn" class="sidebar-option haptic-trigger">
-                <i class="fas fa-user" style="margin-right: 15px;"></i>
-                <span>Profile</span>
-            </div>
-
-            <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer"
-                class="premium-features-card haptic-trigger">
-                <div class="premium-image-wrapper">
-                    <img src="https://i.ibb.co/0RF4GmTZ/Flux-Dev-A-futuristic-social-media-interface-named-Shubhzone-g-1.jpg"
-                        alt="Premium Features Image">
-                </div>
-                <span>Premium Features</span>
-            </a>
-        </div>
-        <!-- === SIDEBAR END === -->
-
-        <!-- === ALL MODALS START === -->
-        <div id="comments-modal" class="comments-modal-overlay">
-            <div class="comments-modal-content">
-                <div class="comments-header">
-                    <h4>Comments</h4>
-                    <span class="close-comments-btn haptic-trigger" onclick="closeCommentsModal()">×</span>
-                </div>
-                <ul id="comments-list"></ul>
-                <div class="comment-input-container">
-                    <input type="text" id="comment-input" placeholder="Commenting is disabled." disabled>
-                    <button id="send-comment-btn" class="haptic-trigger" disabled><i
-                            class="fas fa-paper-plane"></i></button>
-                </div>
-            </div>
+    <!-- === SIDEBAR START === -->
+    <div id="main-sidebar" class="main-sidebar">
+        <div class="sidebar-header">
+            <h3>Menu</h3>
+            <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
         </div>
 
-        <div id="image-enlarge-modal" class="modal-overlay">
-            <div class="enlarged-image-content">
-                <img id="enlarged-image-src" src="" alt="Enlarged View">
+        <!-- ★ बदलाव: साइडबार में प्रोफ़ाइल बटन जोड़ा गया -->
+        <div id="sidebar-profile-btn" class="sidebar-option haptic-trigger">
+            <i class="fas fa-user" style="margin-right: 15px;"></i>
+            <span>Profile</span>
+        </div>
+
+        <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer"
+            class="premium-features-card haptic-trigger">
+            <div class="premium-image-wrapper">
+                <img src="https://i.ibb.co/0RF4GmTZ/Flux-Dev-A-futuristic-social-media-interface-named-Shubhzone-g-1.jpg"
+                    alt="Premium Features Image">
+            </div>
+            <span>Premium Features</span>
+        </a>
+    </div>
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    <!-- === SIDEBAR END === -->
+
+    <!-- === ALL MODALS START === -->
+    <div id="comments-modal" class="comments-modal-overlay">
+        <div class="comments-modal-content">
+            <div class="comments-header">
+                <h4>Comments</h4>
+                <span class="close-comments-btn haptic-trigger" onclick="closeCommentsModal()">×</span>
+            </div>
+            <ul id="comments-list"></ul>
+            <div class="comment-input-container">
+                <input type="text" id="comment-input" placeholder="Commenting is disabled." disabled>
+                <button id="send-comment-btn" class="haptic-trigger" disabled><i
+                        class="fas fa-paper-plane"></i></button>
             </div>
         </div>
-        <!-- === ALL MODALS END === -->
+    </div>
 
+    <div id="image-enlarge-modal" class="modal-overlay">
+        <div class="enlarged-image-content">
+            <img id="enlarged-image-src" src="" alt="Enlarged View">
+        </div>
+    </div>
+    <!-- === ALL MODALS END === -->
+
+    <div class="app-container" id="app-container">
 
         <!-- === SPLASH SCREEN === -->
         <div id="splash-screen" class="screen active">
@@ -249,6 +248,7 @@
         <div id="friends-screen" class="screen">
             <div class="friends-top-bar">
                 <div class="tab-bar">
+                    <!-- ★★★ FIX: "My Channels" टैब हटा दिया गया है ★★★ -->
                     <button class="tab-button active" data-tab="add">Add Friends</button>
                     <button class="tab-button" data-tab="requests">Requests</button>
                     <button class="tab-button" data-tab="members">Members</button>
@@ -256,6 +256,7 @@
             </div>
 
             <main class="content-area">
+                <!-- ★★★ FIX: "Add Friends" को डिफ़ॉल्ट रूप से दिखाने के लिए 'hidden' क्लास हटा दी गई ★★★ -->
                 <div class="tab-content" id="add-content">
                     <div class="add-friend-search-container">
                         <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID">
@@ -362,8 +363,10 @@
                 </div>
                 <button id="withdraw-btn" class="haptic-trigger">Withdraw (Min ₹50)</button>
             </div>
-            <!-- No nav bar here as it's a deep-link screen -->
+             <!-- No nav bar here as it's a deep-link screen -->
         </div>
+
+
     </div> <!-- End of .app-container -->
 
     <!-- === SCRIPTS (MUST BE AT THE END) === -->
@@ -372,9 +375,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
-
     <script src="https://www.youtube.com/iframe_api"></script>
-
     <!-- JavaScript फ़ाइल को यहाँ लिंक किया गया है -->
     <script src="script.js"></script> <!-- Replace with your JS file name -->
 
