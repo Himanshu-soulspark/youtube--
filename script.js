@@ -1348,7 +1348,6 @@ async function setupShortsScreen(category = 'All') {
         homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div> Loading shorts...';
     }
 
-    // ★ FIX ★ यह सुनिश्चित करता है कि केवल शॉर्ट वीडियो ही मंगाए जाएं
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
         videoDuration: 'short',
@@ -1367,7 +1366,6 @@ async function loadMoreShorts() {
     const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
     const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
 
-    // ★ FIX ★ यह सुनिश्चित करता है कि केवल शॉर्ट वीडियो ही लोड हों
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
         videoDuration: 'short',
@@ -1394,9 +1392,7 @@ async function setupLongVideoScreen() {
         loadMoreBtn.id = 'long-video-load-more-btn';
         loadMoreBtn.className = 'continue-btn haptic-trigger';
         loadMoreBtn.textContent = 'Load More';
-        loadMoreBtn.style.margin = '20px auto'; // Center the button
-        loadMoreBtn.style.width = 'auto'; // Let content define width
-        loadMoreBtn.style.padding = '10px 30px'; // Adjust padding
+        loadMoreBtn.style.margin = '20px';
         loadMoreBtn.style.display = 'none';
         loadMoreBtn.onclick = loadMoreLongVideos;
         gridContainer.appendChild(loadMoreBtn);
@@ -1421,10 +1417,9 @@ async function populateLongVideoGrid(category = 'All') {
         value: query
     };
 
-    // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
-        videoDuration: 'long',
+        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
         type: 'video'
     });
 
@@ -1438,10 +1433,9 @@ async function renderTrendingCarousel() {
     if (!carouselWrapper) return;
     carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
 
-    // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
     const data = await fetchFromYouTubeAPI('search', {
         q: 'latest trending videos',
-        videoDuration: 'long',
+        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
         type: 'video',
         limit: 10
     });
@@ -1479,10 +1473,9 @@ async function performLongVideoSearch() {
     const grid = document.getElementById('long-video-grid');
     if (!grid) return;
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-    
-    // ★ FIX ★ यह सुनिश्चित करता है कि सर्च में केवल लंबे वीडियो आएं
+
     let searchParams = {
-        videoDuration: 'long',
+        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि सर्च में केवल लंबे वीडियो आएं
         type: 'video'
     };
     let finalData;
@@ -1878,7 +1871,6 @@ function initializeRewardScreen() {
     startRewardTimerCheck();
 }
 
-// ★★★ FIX: टाइमर शुरू करने के लॉजिक को ठीक किया गया ★★★
 function updateRewardUI() {
     const screen = document.getElementById('reward-screen');
     const {
@@ -1912,18 +1904,15 @@ function updateRewardUI() {
                 <div class="reward-timer" id="reward-timer-display">${timeToShow}</div>
             </div>
         `;
-    }
-
-    // पहले HTML को DOM में इंजेक्ट करें
-    screen.querySelector('.content-area').innerHTML = contentHTML;
-
-    // अब, यदि आवश्यक हो, तो टाइमर या स्क्रैच कार्ड शुरू करें
-    if (isEligible) {
-        setupScratchCard();
-    } else {
         if (secondsRemaining > 0) {
             startCountdownTimer('reward-timer-display', secondsRemaining, startRewardTimerCheck);
         }
+    }
+
+    screen.querySelector('.content-area').innerHTML = contentHTML;
+
+    if (isEligible) {
+        setupScratchCard();
     }
 }
 
@@ -1935,6 +1924,7 @@ function startRewardTimerCheck() {
     const now = new Date();
 
     if (!initialRewardClaimed) {
+        // ★ FIX: पहली बार उपयोगकर्ता के लिए 60 सेकंड का टाइमर
         appState.rewardState.isEligible = false;
         appState.rewardState.secondsRemaining = 60;
     } else {
@@ -1960,19 +1950,15 @@ function startCountdownTimer(elementId, durationInSeconds, onComplete) {
 
     let timer = durationInSeconds;
     const timerDisplay = document.getElementById(elementId);
-    
-    // यदि एलिमेंट मौजूद नहीं है, तो कुछ भी न करें
-    if (!timerDisplay) {
-        console.warn(`Timer element #${elementId} not found.`);
-        return;
-    }
 
     appState.rewardState.timerInterval = setInterval(() => {
         const hours = Math.floor(timer / 3600);
         const minutes = Math.floor((timer % 3600) / 60);
         const seconds = timer % 60;
 
-        timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        if (timerDisplay) {
+            timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
 
         if (--timer < 0) {
             clearInterval(appState.rewardState.timerInterval);
@@ -2065,6 +2051,7 @@ async function handleRewardRevealed(amount, text) {
         }
     }
 
+    // ★ FIX: कुछ सेकंड के बाद टाइमर शुरू करने के लिए रीचेक करें
     setTimeout(() => {
         startRewardTimerCheck();
     }, 5000);
