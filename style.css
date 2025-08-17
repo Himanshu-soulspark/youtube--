@@ -420,8 +420,8 @@ body {
     gap: 15px;
 }
 
-#information-screen .continue-btn,
-#long-video-load-more-btn {
+/* ★★★ FIX: बटन के स्टाइल को अलग किया गया ★★★ */
+#information-screen .continue-btn {
     background-color: var(--primary-neon);
     color: var(--background);
     font-weight: 700;
@@ -434,11 +434,35 @@ body {
     font-size: 1.1em;
 }
 
+#long-video-load-more-btn {
+    display: block;
+    margin: 20px auto;
+    width: auto;
+    padding: 10px 30px;
+    background-color: var(--primary-neon);
+    color: var(--background);
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 50px; /* गोलाकार बटन */
+    font-size: 1em;
+    box-shadow: 0 0 15px rgba(var(--primary-neon-rgb), 0.5);
+}
+
+#long-video-load-more-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(var(--primary-neon-rgb), 0.7);
+}
+
+
 #information-screen .continue-btn:disabled,
 #long-video-load-more-btn:disabled {
     background-color: var(--text-disabled);
     cursor: not-allowed;
+    box-shadow: none;
 }
+
 
 #information-screen .logout-btn {
     background-color: var(--error-red);
@@ -1304,7 +1328,6 @@ body {
     cursor: pointer;
 }
 
-/* ★★★ FIX: वीडियो कार्ड को 16:9 का अनुपात दिया गया ★★★ */
 .long-video-thumbnail {
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -1985,7 +2008,6 @@ body {
     width: 100%;
 }
 
-/* ★★★ NEW & MODIFIED: नए वीडियो प्लेयर पेज के लिए स्टाइल ★★★ */
 #creator-page-player-container {
     width: 100%;
     height: 100%;
@@ -2007,14 +2029,13 @@ body {
     align-items: center;
     padding: 0 15px;
     z-index: 30;
-    pointer-events: none; /* ताकि बटन के अलावा कहीं और क्लिक करने पर वीडियो पर क्लिक हो */
+    pointer-events: none;
 }
 
 .player-controls-header > * {
-    pointer-events: auto; /* बटनों को क्लिक करने योग्य बनाएं */
+    pointer-events: auto;
 }
 
-/* MODIFIED: पुरानी स्टाइल हटाई गई, क्योंकि अब यह फ्लेक्स आइटम है */
 .player-back-button {
     color: var(--text-primary);
     background-color: rgba(0,0,0,0.5);
@@ -2028,13 +2049,11 @@ body {
     cursor: pointer;
 }
 
-/* NEW: ज़ूम कंट्रोल कंटेनर के लिए स्टाइल */
 .player-zoom-controls {
     display: flex;
     gap: 10px;
 }
 
-/* NEW: प्लेयर हेडर में सभी बटनों के लिए सामान्य स्टाइल */
 .player-controls-header button {
     color: var(--text-primary);
     background-color: rgba(0,0,0,0.5);
@@ -2054,9 +2073,8 @@ body {
     background-color: rgba(255,255,255,0.2);
 }
 
-/* MODIFIED: पुरानी स्टाइल हटाई गई */
 #player-rotate-btn {
-    /* अब सामान्य बटन स्टाइल का उपयोग करेगा */
+    /* No custom styles needed, uses general button style */
 }
 
 #player-rotate-btn i {
@@ -2067,12 +2085,11 @@ body {
     transform: rotate(90deg);
 }
 
-/* MODIFIED: ज़ूम इफ़ेक्ट के लिए ट्रांजीशन जोड़ा गया */
 .player-wrapper {
     width: 100%;
     aspect-ratio: 16 / 9;
     background-color: #000;
-    transition: transform 0.3s ease; /* स्मूथ ज़ूम के लिए */
+    transition: transform 0.3s ease;
 }
 
 #creator-page-player-long {
