@@ -457,6 +457,15 @@ body {
     background-color: rgb(204, 0, 0);
 }
 
+/* ★★★ FIX: "Load More" बटन के लिए बेहतर स्टाइल ★★★ */
+#long-video-load-more-btn {
+    width: auto; /* पूरी चौड़ाई वाले डिफ़ॉल्ट को ओवरराइड करें */
+    padding: 12px 35px; /* बटन को थोड़ा बड़ा और क्लिक करने योग्य बनाएं */
+    margin: 20px auto; /* बटन को स्क्रीन के केंद्र में लाएं */
+    display: block; /* मार्जिन: ऑटो को काम करने में सक्षम बनाता है */
+    max-width: 250px; /* यह सुनिश्चित करें कि यह बहुत चौड़ा न हो */
+}
+
 #home-screen {
     padding: 0;
     overflow: hidden;
