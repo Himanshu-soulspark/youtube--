@@ -537,7 +537,7 @@ async function loadMoreLongVideos() {
     let data;
     const params = {
         pageToken: appState.youtubeNextPageTokens.long,
-        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही लोड हों
+        videoDuration: 'long', // यह सुनिश्चित करता है कि केवल लंबे वीडियो ही लोड हों
         type: 'video'
     };
 
@@ -1008,7 +1008,6 @@ function renderVideoSwiper(videos, append = false) {
         adSlotContainer.className = 'ad-slot-container';
         adSlide.innerHTML = `<div class="ad-slide-wrapper"><p style="color: var(--text-secondary); font-size: 0.9em; text-align: center; margin-bottom: 10px;">Advertisement</p></div>`;
         adSlide.querySelector('.ad-slide-wrapper').appendChild(adSlotContainer);
-        videoSwiper.appendChild(adSlide);
         setTimeout(() => injectBannerAd(adSlotContainer), 200);
     }
 
@@ -1419,7 +1418,7 @@ async function populateLongVideoGrid(category = 'All') {
 
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
-        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
+        videoDuration: 'long', // यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
         type: 'video'
     });
 
@@ -1435,7 +1434,7 @@ async function renderTrendingCarousel() {
 
     const data = await fetchFromYouTubeAPI('search', {
         q: 'latest trending videos',
-        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
+        videoDuration: 'long', // यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
         type: 'video',
         limit: 10
     });
@@ -1475,7 +1474,7 @@ async function performLongVideoSearch() {
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
     let searchParams = {
-        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि सर्च में केवल लंबे वीडियो आएं
+        videoDuration: 'long', // यह सुनिश्चित करता है कि सर्च में केवल लंबे वीडियो आएं
         type: 'video'
     };
     let finalData;
@@ -1871,6 +1870,7 @@ function initializeRewardScreen() {
     startRewardTimerCheck();
 }
 
+// ★★★ MODIFIED: टाइमर शुरू करने वाले लॉजिक को ठीक किया गया ★★★
 function updateRewardUI() {
     const screen = document.getElementById('reward-screen');
     const {
@@ -1904,15 +1904,18 @@ function updateRewardUI() {
                 <div class="reward-timer" id="reward-timer-display">${timeToShow}</div>
             </div>
         `;
+    }
+
+    // पहले HTML को पेज में डालें
+    screen.querySelector('.content-area').innerHTML = contentHTML;
+
+    // अब जब HTML पेज में है, तब टाइमर या स्क्रैच कार्ड को शुरू करें
+    if (isEligible) {
+        setupScratchCard();
+    } else {
         if (secondsRemaining > 0) {
             startCountdownTimer('reward-timer-display', secondsRemaining, startRewardTimerCheck);
         }
-    }
-
-    screen.querySelector('.content-area').innerHTML = contentHTML;
-
-    if (isEligible) {
-        setupScratchCard();
     }
 }
 
@@ -1924,7 +1927,7 @@ function startRewardTimerCheck() {
     const now = new Date();
 
     if (!initialRewardClaimed) {
-        // ★ FIX: पहली बार उपयोगकर्ता के लिए 60 सेकंड का टाइमर
+        // पहली बार उपयोगकर्ता के लिए 60 सेकंड का टाइमर
         appState.rewardState.isEligible = false;
         appState.rewardState.secondsRemaining = 60;
     } else {
@@ -1951,14 +1954,18 @@ function startCountdownTimer(elementId, durationInSeconds, onComplete) {
     let timer = durationInSeconds;
     const timerDisplay = document.getElementById(elementId);
 
+    // यदि तत्व नहीं मिलता है तो त्रुटि को रोकें
+    if (!timerDisplay) {
+        console.error(`Timer display element with ID "${elementId}" not found.`);
+        return;
+    }
+
     appState.rewardState.timerInterval = setInterval(() => {
         const hours = Math.floor(timer / 3600);
         const minutes = Math.floor((timer % 3600) / 60);
         const seconds = timer % 60;
 
-        if (timerDisplay) {
-            timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
+        timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
         if (--timer < 0) {
             clearInterval(appState.rewardState.timerInterval);
@@ -2051,7 +2058,7 @@ async function handleRewardRevealed(amount, text) {
         }
     }
 
-    // ★ FIX: कुछ सेकंड के बाद टाइमर शुरू करने के लिए रीचेक करें
+    // कुछ सेकंड के बाद टाइमर शुरू करने के लिए रीचेक करें
     setTimeout(() => {
         startRewardTimerCheck();
     }, 5000);
