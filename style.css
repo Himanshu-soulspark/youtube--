@@ -65,19 +65,22 @@ body {
     transition: all 0.3s ease-in-out;
 }
 
-/* ★★★ FIX: फ़ुलस्क्रीन रोटेशन के लिए कंटेनर स्टाइल ★★★ */
+/* ★★★ FIX: फ़ुलस्क्रीन रोटेशन के लिए कंटेनर स्टाइल (REWORKED) ★★★ */
 .app-container.fullscreen-active {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 50%;
+    left: 50%;
+    width: 100vh; /* चौड़ाई को स्क्रीन की ऊंचाई के बराबर करें */
+    height: 100vw; /* ऊंचाई को स्क्रीन की चौड़ाई के बराबर करें */
     max-width: none;
     z-index: 5000;
     border-radius: 0;
     border: none;
     box-shadow: none;
+    transform-origin: center center;
+    transform: translate(-50%, -50%) rotate(90deg); /* बीच में रखकर 90 डिग्री घुमाएं */
 }
+
 
 .app-container::before {
     content: '';
