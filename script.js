@@ -537,7 +537,7 @@ async function loadMoreLongVideos() {
     let data;
     const params = {
         pageToken: appState.youtubeNextPageTokens.long,
-        videoDuration: 'long',
+        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही लोड हों
         type: 'video'
     };
 
@@ -1412,7 +1412,6 @@ async function populateLongVideoGrid(category = 'All') {
         query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
     }
 
-    // ★ बदलाव: सर्च कॉन्टेक्स्ट को अपडेट करें
     appState.longVideoSearchContext = {
         type: 'query',
         value: query
@@ -1420,7 +1419,7 @@ async function populateLongVideoGrid(category = 'All') {
 
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
-        videoDuration: 'long',
+        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
         type: 'video'
     });
 
@@ -1436,7 +1435,7 @@ async function renderTrendingCarousel() {
 
     const data = await fetchFromYouTubeAPI('search', {
         q: 'latest trending videos',
-        videoDuration: 'long',
+        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि केवल लंबे वीडियो ही मंगाए जाएं
         type: 'video',
         limit: 10
     });
@@ -1458,20 +1457,17 @@ async function renderTrendingCarousel() {
 }
 
 
-// ★★★ FIX: चैनल के नाम से लॉन्ग वीडियो सर्च करने के लिए फंक्शन को पूरी तरह से बदल दिया गया है ★★★
 async function performLongVideoSearch() {
     const input = document.getElementById('long-video-search-input');
     let query = input.value.trim();
     if (!query) return;
 
-    // अगर यूजर ने यूट्यूब लिंक पेस्ट किया है तो सीधे वीडियो चलाएं
     const videoIdFromUrl = extractYouTubeId(query);
     if (videoIdFromUrl) {
         playYouTubeVideoFromCard(videoIdFromUrl);
         return;
     }
 
-    // कैटेगरी चिप्स को डीसेलेक्ट करें
     document.querySelectorAll('#long-video-category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
 
     const grid = document.getElementById('long-video-grid');
@@ -1479,12 +1475,11 @@ async function performLongVideoSearch() {
     grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
     let searchParams = {
-        videoDuration: 'long',
+        videoDuration: 'long', // ★ FIX ★ यह सुनिश्चित करता है कि सर्च में केवल लंबे वीडियो आएं
         type: 'video'
     };
     let finalData;
 
-    // 1. पहले चैनल ढूंढने की कोशिश करें
     try {
         const channelData = await fetchFromYouTubeAPI('search', {
             q: query,
@@ -1493,17 +1488,14 @@ async function performLongVideoSearch() {
         });
         let channelId = null;
         if (channelData.items && channelData.items.length > 0) {
-            // यह सुनिश्चित करने के लिए कि सही चैनल मिला है, टाइटल की जाँच करें
             const channelTitle = channelData.items[0].snippet.title.toLowerCase();
             const queryLower = query.toLowerCase();
-            // सिंपल जाँच: अगर चैनल के नाम में सर्च किया गया टेक्स्ट है
             if (channelTitle.includes(queryLower)) {
                 channelId = channelData.items[0].id.channelId;
             }
         }
 
         if (channelId) {
-            // 2. अगर चैनल मिला, तो उस चैनल के वीडियो सर्च करें
             console.log(`Channel found: ${channelId}. Searching for videos in this channel.`);
             searchParams.channelId = channelId;
             appState.longVideoSearchContext = {
@@ -1511,7 +1503,6 @@ async function performLongVideoSearch() {
                 value: channelId
             };
         } else {
-            // 3. अगर चैनल नहीं मिला, तो सामान्य टेक्स्ट सर्च करें
             console.log(`No specific channel found. Performing general search for: ${query}`);
             searchParams.q = query;
             appState.longVideoSearchContext = {
