@@ -1,3 +1,4 @@
+
 /* ================================================= /
 / === Shubhzone App Script (Code 2) - FINAL v6.0 === /
 / === MODIFIED AS PER USER REQUEST - AUG 2025    === /
@@ -326,9 +327,7 @@ let appState = {
         likedVideos: [],
         friends: [],
         addedChannels: [],
-        walletBalance: 0,
-        lastRewardTimestamp: null,
-        initialRewardClaimed: false,
+        walletBalance: 0, // This will be managed by the new reward system
     },
     currentScreen: 'splash-screen',
     navigationStack: ['splash-screen'],
@@ -393,18 +392,19 @@ let appState = {
             currentIndex: 0
         },
     },
-    rewardState: {
+    // NEW REWARD SYSTEM STATE
+    rewardSystem: {
+        state: 'loading', // loading, timer, scratch, offer
+        timerValue: 500,
         timerInterval: null,
-        claimTimerInterval: null,
-        secondsRemaining: 0,
-        claimSecondsRemaining: 0,
-        isEligible: false,
+        isTimerActive: false,
+        currentOffer: null,
+        offerHistory: [],
+        isFirstLogin: true,
     },
-    appTimeTrackerInterval: null,
-    watchTimeInterval: null,
-    videoWatchTrackers: {},
     specialVideoPlayer: null,
 };
+
 
 let isYouTubeApiReady = false;
 let players = {};
@@ -670,6 +670,14 @@ function navigateTo(nextScreenId, payload = null) {
     appState.currentScreenPayload = payload;
     activateScreen(nextScreenId);
 
+    // Stop reward timer if navigating away from the app's core video screens
+    if (nextScreenId !== 'home-screen' && nextScreenId !== 'long-video-screen' && nextScreenId !== 'reward-screen') {
+        pauseRewardTimer();
+    } else {
+        resumeRewardTimer();
+    }
+
+
     // Initialize screen-specific logic
     if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase();
     if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
@@ -686,9 +694,20 @@ function navigateTo(nextScreenId, payload = null) {
     if (nextScreenId === 'reward-screen') {
         initializeRewardScreen();
     }
-    if (nextScreenId === 'wallet-screen') {
-        initializeWalletScreen();
+    // NEW SCREENS for REWARD SYSTEM
+    if (nextScreenId === 'reward-withdrawal-screen') {
+        initializeWithdrawalScreen();
     }
+    if (nextScreenId === 'reward-cashback-screen') {
+        initializeCashbackScreen(payload);
+    }
+    if (nextScreenId === 'reward-history-screen') {
+        initializeRewardHistoryScreen();
+    }
+    if (nextScreenId === 'reward-admin-screen') {
+        initializeRewardAdminScreen();
+    }
+
 
 }
 
@@ -726,10 +745,6 @@ async function checkUserProfileAndProceed(user) {
             userData.referralCode = await generateAndSaveReferralCode(user.uid, userData.name);
         }
         userData.friends = userData.friends || [];
-        userData.walletBalance = userData.walletBalance || 0;
-        userData.lastRewardTimestamp = userData.lastRewardTimestamp || null;
-        userData.initialRewardClaimed = userData.initialRewardClaimed || false;
-
         appState.currentUser = { ...appState.currentUser,
             ...userData
         };
@@ -758,9 +773,6 @@ async function checkUserProfileAndProceed(user) {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             friends: [],
             referralCode: await generateAndSaveReferralCode(user.uid, user.displayName || 'user'),
-            walletBalance: 0,
-            lastRewardTimestamp: null,
-            initialRewardClaimed: false,
             isReferred: false,
         };
         await userRef.set(initialData);
@@ -807,7 +819,7 @@ profileImageInput.addEventListener('change', function() {
     if (this.files[0]) {
         const reader = new FileReader();
         reader.onload = e => profileImagePreview.src = e.target.result;
-        reader.readAsDataURL(this.files[0]);
+        reader.readasdataurl(this.files[0]);
     }
 });
 
@@ -847,9 +859,6 @@ async function saveAndContinue() {
         if (referringUser) {
             userData.isReferred = true;
             userData.referredBy = referringUser.uid;
-            // ★ बदलाव: नए यूज़र को रेफ़रल बोनस दिया गया
-            const rewardAmount = Math.random() > 0.5 ? 2 : 1;
-            userData.walletBalance = rewardAmount;
         } else {
             alert("Invalid referral code. Continuing without it.");
         }
@@ -916,6 +925,9 @@ const startAppLogic = async () => {
     appStartLogicHasRun = true;
     console.log("Starting main app logic...");
     setupAdTimers();
+    // Initialize the new reward system logic
+    await initializeUserRewardState();
+
 
     const getStartedBtn = document.getElementById('get-started-btn');
     const loadingContainer = document.getElementById('loading-container');
@@ -1003,7 +1015,6 @@ function renderVideoSwiper(videos, append = false) {
         adSlotContainer.className = 'ad-slot-container';
         adSlide.innerHTML = `<div class="ad-slide-wrapper"><p style="color: var(--text-secondary); font-size: 0.9em; text-align: center; margin-bottom: 10px;">Advertisement</p></div>`;
         adSlide.querySelector('.ad-slide-wrapper').appendChild(adSlotContainer);
-        videoSwiper.appendChild(adSlide);
         setTimeout(() => injectBannerAd(adSlotContainer), 200);
     }
 
@@ -1832,296 +1843,712 @@ function handleCreatorPlayerStateChange(event) { /* Unchanged */ }
 // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
 // =======================================================
 
+
 // =======================================================
-// ★★★ REWARD SYSTEM LOGIC - START ★★★
+// ★★★ NEW REWARD SYSTEM (V2) - START ★★★
 // =======================================================
 
-function initializeRewardScreen() {
+/**
+ * Initializes the user's reward state from Firestore or creates a new one.
+ */
+async function initializeUserRewardState() {
+    if (!appState.currentUser.uid) return;
+    const userRewardRef = db.collection('userRewards').doc(appState.currentUser.uid);
+    const doc = await userRewardRef.get();
+
+    if (doc.exists) {
+        const data = doc.data();
+        appState.rewardSystem = { ...appState.rewardSystem,
+            ...data
+        };
+        console.log("User reward state loaded from Firestore.", appState.rewardSystem);
+    } else {
+        // New user, create initial state
+        const initialState = {
+            state: 'timer',
+            timerValue: 500, // 500 seconds for first login
+            isFirstLogin: true,
+            offerHistory: [],
+            walletBalance: 0,
+            totalUsers: (await db.collection('userRewards').get()).size
+        };
+        // Logic to determine if user is eligible for money reward
+        initialState.eligibleForMoneyReward = initialState.totalUsers < 500;
+
+        await userRewardRef.set(initialState);
+        appState.rewardSystem = { ...appState.rewardSystem,
+            ...initialState
+        };
+        console.log("New user reward state created.", appState.rewardSystem);
+    }
+    resumeRewardTimer();
+}
+
+
+/**
+ * Saves the current reward state to Firestore.
+ */
+async function saveUserRewardState() {
+    if (!appState.currentUser.uid) return;
+    const userRewardRef = db.collection('userRewards').doc(appState.currentUser.uid);
+    // Only save essential, changing data
+    const stateToSave = {
+        state: appState.rewardSystem.state,
+        timerValue: appState.rewardSystem.timerValue,
+        isFirstLogin: appState.rewardSystem.isFirstLogin,
+        offerHistory: appState.rewardSystem.offerHistory,
+        walletBalance: appState.rewardSystem.walletBalance,
+        eligibleForMoneyReward: appState.rewardSystem.eligibleForMoneyReward,
+    };
+    try {
+        await userRewardRef.set(stateToSave, {
+            merge: true
+        });
+        console.log("Reward state saved.");
+    } catch (error) {
+        console.error("Error saving reward state:", error);
+    }
+}
+
+/**
+ * Handles the timer countdown logic.
+ */
+function handleRewardTimer() {
+    if (!appState.rewardSystem.isTimerActive || appState.rewardSystem.timerValue <= 0) {
+        return;
+    }
+
+    appState.rewardSystem.timerValue--;
+
+    // Update UI if on reward screen
+    if (appState.currentScreen === 'reward-screen') {
+        const timerDisplay = document.getElementById('reward-timer-display');
+        if (timerDisplay) {
+            const minutes = Math.floor(appState.rewardSystem.timerValue / 60);
+            const seconds = appState.rewardSystem.timerValue % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+    }
+
+    // Save progress every 15 seconds
+    if (appState.rewardSystem.timerValue % 15 === 0) {
+        saveUserRewardState();
+    }
+
+    if (appState.rewardSystem.timerValue <= 0) {
+        clearInterval(appState.rewardSystem.timerInterval);
+        appState.rewardSystem.isTimerActive = false;
+        // Determine next state
+        if (appState.rewardSystem.isFirstLogin && appState.rewardSystem.eligibleForMoneyReward) {
+            appState.rewardSystem.state = 'scratch';
+        } else {
+            appState.rewardSystem.state = 'offer';
+        }
+        saveUserRewardState();
+        // Refresh UI if on reward screen
+        if (appState.currentScreen === 'reward-screen') {
+            initializeRewardScreen();
+        }
+    }
+}
+
+function pauseRewardTimer() {
+    if (appState.rewardSystem.timerInterval) {
+        clearInterval(appState.rewardSystem.timerInterval);
+        appState.rewardSystem.isTimerActive = false;
+        console.log("Reward timer paused.");
+        saveUserRewardState(); // Save state on pause
+    }
+}
+
+function resumeRewardTimer() {
+    if (appState.rewardSystem.timerValue > 0 && !appState.rewardSystem.isTimerActive && appState.currentUser.uid) {
+        appState.rewardSystem.isTimerActive = true;
+        appState.rewardSystem.timerInterval = setInterval(handleRewardTimer, 1000);
+        console.log("Reward timer resumed.");
+    }
+}
+
+/**
+ * Main function to set up the reward screen UI.
+ */
+async function initializeRewardScreen() {
     const screen = document.getElementById('reward-screen');
     if (!screen) return;
-    updateRewardUI();
-    startRewardTimerCheck();
-}
 
-function updateRewardUI() {
-    const screen = document.getElementById('reward-screen');
-    const {
-        secondsRemaining,
-        isEligible
-    } = appState.rewardState;
-    if (appState.rewardState.timerInterval) {
-        clearInterval(appState.rewardState.timerInterval);
-    }
-
-    let contentHTML = '';
-
-    if (isEligible) {
-        contentHTML = `
-            <div class="reward-status-container">
-                <h2>Congratulations!</h2>
-                <p>You have earned a new scratch card.</p>
-                <div class="scratch-card-container" id="scratch-card-container">
-                    <div class="scratch-card-overlay" id="scratch-overlay">Scratch Here</div>
-                    <div class="scratch-card-reward" id="scratch-reward"></div>
-                </div>
-            </div>
-        `;
-    } else {
-        const timeToShow = new Date(secondsRemaining * 1000).toISOString().substr(11, 8);
-        contentHTML = `
-            <div class="reward-status-container">
-                <h2>Next Reward</h2>
-                <p>You can earn a new reward after the timer ends.</p>
-                <div class="reward-timer" id="reward-timer-display">${timeToShow}</div>
-            </div>
-        `;
-        if (secondsRemaining > 0) {
-            startCountdownTimer('reward-timer-display', secondsRemaining, startRewardTimerCheck);
-        }
-    }
+    // Create a consistent header for the reward screen
+    const headerHTML = `
+        <div class="reward-header" style="background-color: rgba(var(--background-rgb), 0.7); backdrop-filter: blur(10px);">
+            <div id="reward-timer-display" class="reward-timer" style="font-size: 1.5em; border: none;">--:--</div>
+            <div class="header-title">Reward <span class="haptic-trigger" onclick="openRewardAdminPanel()">🎁</span></div>
+            <button class="wallet-icon-button haptic-trigger" onclick="navigateTo('reward-history-screen')"><i class="fas fa-history"></i></button>
+        </div>
+    `;
 
     const contentArea = screen.querySelector('.content-area');
-    if (contentArea) contentArea.innerHTML = contentHTML;
+    contentArea.innerHTML = headerHTML + '<div id="reward-main-content"></div>';
+    const mainContent = document.getElementById('reward-main-content');
+    mainContent.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
-    if (isEligible) {
-        setupScratchCard();
+    // Update timer display immediately
+    const timerDisplay = document.getElementById('reward-timer-display');
+    if (timerDisplay && appState.rewardSystem.timerValue > 0) {
+        const minutes = Math.floor(appState.rewardSystem.timerValue / 60);
+        const seconds = appState.rewardSystem.timerValue % 60;
+        timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    } else if (timerDisplay) {
+        timerDisplay.textContent = 'Claim!';
+    }
+
+
+    switch (appState.rewardSystem.state) {
+        case 'timer':
+            mainContent.innerHTML = '<p class="static-message">Watch videos to make the timer go down!</p>';
+            break;
+        case 'scratch':
+            renderScratchCardUI(mainContent);
+            break;
+        case 'offer':
+            // Fetch the latest offer
+            const offerSnapshot = await db.collection('rewards').orderBy('createdAt', 'desc').limit(1).get();
+            if (!offerSnapshot.empty) {
+                const offerData = {
+                    id: offerSnapshot.docs[0].id,
+                    ...offerSnapshot.docs[0].data()
+                };
+                appState.rewardSystem.currentOffer = offerData;
+                renderProductOfferUI(mainContent, offerData);
+            } else {
+                mainContent.innerHTML = '<p class="static-message">No offers available right now. Check back later!</p>';
+            }
+            break;
+        default:
+            mainContent.innerHTML = '<p class="static-message">Loading your rewards...</p>';
     }
 }
 
-function startRewardTimerCheck() {
-    const {
-        initialRewardClaimed,
-        lastRewardTimestamp
-    } = appState.currentUser;
-    const now = new Date();
 
-    // ★ बदलाव: टाइमर को हमेशा 60 सेकंड का कर दिया गया है
-    const sixtySeconds = 60 * 1000;
-    const lastRewardTime = lastRewardTimestamp ? lastRewardTimestamp.toDate() : new Date(0);
-    const timePassed = now.getTime() - lastRewardTime.getTime();
-
-    if (timePassed >= sixtySeconds) {
-        appState.rewardState.isEligible = true;
-        appState.rewardState.secondsRemaining = 0;
-    } else {
-        appState.rewardState.isEligible = false;
-        appState.rewardState.secondsRemaining = Math.round((sixtySeconds - timePassed) / 1000);
-    }
-
-    updateRewardUI();
-}
-
-function startCountdownTimer(elementId, durationInSeconds, onComplete) {
-    if (appState.rewardState.timerInterval) {
-        clearInterval(appState.rewardState.timerInterval);
-    }
-    let timer = durationInSeconds;
-    const timerDisplay = document.getElementById(elementId);
-
-    appState.rewardState.timerInterval = setInterval(() => {
-        const hours = Math.floor(timer / 3600);
-        const minutes = Math.floor((timer % 3600) / 60);
-        const seconds = timer % 60;
-
-        if (timerDisplay) {
-            timerDisplay.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
-
-        if (--timer < 0) {
-            clearInterval(appState.rewardState.timerInterval);
-            appState.rewardState.timerInterval = null;
-            if (onComplete) onComplete();
-        }
-    }, 1000);
+function renderScratchCardUI(container) {
+    container.innerHTML = `
+        <div class="reward-status-container">
+            <h2>Congratulations!</h2>
+            <p style="padding: 5px 10px; border: 1px dashed var(--text-secondary); border-radius: 8px;">
+                You can win anything from ₹1 to ₹100. Scratch to find out!
+            </p>
+            <div class="scratch-card-container" id="scratch-card-container" style="aspect-ratio: 16/9; max-width: 320px;">
+                <canvas id="scratch-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2;"></canvas>
+                <div class="scratch-card-reward" id="scratch-reward" style="z-index: 1;"></div>
+            </div>
+        </div>
+    `;
+    setupScratchCard();
 }
 
 function setupScratchCard() {
-    const overlay = document.getElementById('scratch-overlay');
+    const container = document.getElementById('scratch-card-container');
+    const canvas = document.getElementById('scratch-canvas');
     const rewardElem = document.getElementById('scratch-reward');
-    if (!overlay || !rewardElem) return;
+    if (!canvas || !rewardElem || !container) return;
 
-    let isScratching = false;
+    const ctx = canvas.getContext('2d');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
 
-    const random = Math.random();
-    let rewardText;
-    let rewardValue = 0;
-    if (random < 0.2) {
-        rewardText = "Try Again Next Time!";
-    } else {
-        // ★ इनाम 1 से 10 रुपये के बीच रहेगा
-        rewardValue = Math.floor(Math.random() * 10) + 1;
-        rewardText = `You Won ₹${rewardValue}!`;
-    }
-    rewardElem.textContent = rewardText;
+    // Generate winning amount
+    const winningAmount = Math.floor(Math.random() * 10) + 1;
+    rewardElem.innerHTML = `You Won<br>₹${winningAmount}!`;
+    rewardElem.style.color = 'var(--success-green)';
+
+    // Fill the canvas
+    ctx.fillStyle = '#AAAAAA';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#121212';
+    ctx.font = 'bold 24px Roboto';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Scratch Here', canvas.width / 2, canvas.height / 2);
+
+    let isDrawing = false;
+    ctx.globalCompositeOperation = 'destination-out';
 
     const scratch = (e) => {
-        if (!isScratching) return;
-        e.preventDefault();
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX || e.touches[0].clientX) - rect.left;
+        const y = (e.clientY || e.touches[0].clientY) - rect.top;
 
-        const currentOpacity = parseFloat(overlay.style.opacity || 1);
-        const newOpacity = Math.max(0, currentOpacity - 0.05);
-        overlay.style.opacity = newOpacity;
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.fill();
 
-        if (newOpacity < 0.1) {
-            overlay.style.display = 'none';
-            window.removeEventListener('mouseup', stopScratching);
-            window.removeEventListener('touchend', stopScratching);
-            handleRewardRevealed(rewardValue, rewardText);
+        // Check completion
+        const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let transparent = 0;
+        for (let i = 3; i < pixels.data.length; i += 4) {
+            if (pixels.data[i] === 0) transparent++;
+        }
+        if (transparent / (pixels.data.length / 4) > 0.7) {
+            canvas.style.opacity = 0;
+            setTimeout(() => {
+                handleScratchWin(winningAmount);
+            }, 300);
         }
     };
 
-    const startScratching = () => isScratching = true;
-    const stopScratching = () => isScratching = false;
-
-    overlay.addEventListener('mousedown', startScratching);
-    overlay.addEventListener('touchstart', startScratching, {
+    canvas.addEventListener('mousedown', () => isDrawing = true);
+    canvas.addEventListener('touchstart', () => isDrawing = true, {
         passive: true
     });
-    window.addEventListener('mouseup', stopScratching);
-    window.addEventListener('touchend', stopScratching);
-    overlay.addEventListener('mousemove', scratch);
-    overlay.addEventListener('touchmove', scratch, {
+    canvas.addEventListener('mouseup', () => isDrawing = false);
+    canvas.addEventListener('touchend', () => isDrawing = false);
+    canvas.addEventListener('mousemove', scratch);
+    canvas.addEventListener('touchmove', scratch, {
         passive: true
     });
 }
 
-async function handleRewardRevealed(amount, text) {
-    const userRef = db.collection('users').doc(appState.currentUser.uid);
-    try {
-        const updates = {
-            initialRewardClaimed: true,
-            lastRewardTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-        // अगर इनाम मिला है तो वॉलेट बैलेंस भी अपडेट करें
-        if (amount > 0) {
-            updates.walletBalance = firebase.firestore.FieldValue.increment(amount);
-        }
+async function handleScratchWin(amount) {
+    console.log(`User won ${amount}`);
+    appState.rewardSystem.isFirstLogin = false; // Mark first reward as claimed
+    appState.rewardSystem.walletBalance += amount;
+    appState.rewardSystem.state = 'timer';
+    appState.rewardSystem.timerValue = 200 * 60; // Set next timer to 200 minutes
 
-        await userRef.update(updates);
+    await saveUserRewardState();
 
-        // स्थानीय स्थिति को तुरंत अपडेट करें
-        appState.currentUser.initialRewardClaimed = true;
-        appState.currentUser.lastRewardTimestamp = {
-            toDate: () => new Date()
-        };
-        if (amount > 0) {
-            appState.currentUser.walletBalance += amount;
-        }
-
-    } catch (error) {
-        console.error("Error updating user reward status:", error);
+    const container = document.getElementById('scratch-card-container');
+    if (container) {
+        container.innerHTML += `
+            <div class="claim-offer-section" style="margin-top: 20px;">
+                <p>₹${amount} has been added to your wallet!</p>
+                <button class="continue-btn haptic-trigger" onclick="navigateTo('reward-withdrawal-screen')">Withdraw</button>
+            </div>
+        `;
     }
+}
 
-    if (amount > 0) {
-        const container = document.getElementById('scratch-card-container');
-        if (container) {
-            container.innerHTML += `
-                <div class="claim-offer-section">
-                    <p>इस ऑफर को पाने के लिए, अपने किसी दोस्त को 20 मिनट के अंदर इनवाइट करें।</p>
-                    <p>(To claim this offer, invite a friend within 20 minutes.)</p>
-                    <div id="claim-timer" class="reward-timer">20:00</div>
-                    <button class="continue-btn" onclick="copyToClipboard(appState.currentUser.referralCode, event)">Copy Referral ID</button>
+function renderProductOfferUI(container, offerData) {
+    container.innerHTML = `
+        <div class="product-offer-card" style="width: 100%; max-width: 350px; background-color: var(--secondary-background); border-radius: 12px; padding: 15px; border: 1px solid var(--text-secondary);">
+            <div class="product-image-container" style="width: 100%; aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; margin-bottom: 15px;">
+                <img src="${offerData.imageLink}" alt="Product Offer" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div class="product-pricing" style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 15px;">
+                <div>
+                    <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">Price</p>
+                    <p style="margin: 5px 0 0 0; font-size: 1.2em; text-decoration: line-through;">₹${offerData.price}</p>
                 </div>
-            `;
-            // ★ बदलाव: टाइमर को 20 मिनट का कर दिया गया है
-            startCountdownTimer('claim-timer', 20 * 60, () => {
-                const claimSection = document.querySelector('.claim-offer-section');
-                if (claimSection) claimSection.innerHTML = "<p>Offer Expired!</p>";
-            });
+                 <div>
+                    <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">Offer Price</p>
+                    <p style="margin: 5px 0 0 0; font-size: 1.2em; color: var(--success-green); font-weight: 700;">₹${offerData.offerPrice}</p>
+                </div>
+                 <div>
+                    <p style="margin: 0; font-size: 0.9em; color: var(--text-secondary);">Shubhzone Cashback</p>
+                    <p style="margin: 5px 0 0 0; font-size: 1.2em; color: var(--primary-neon);">₹${offerData.shubhzoneMoney}</p>
+                </div>
+            </div>
+            <button class="continue-btn haptic-trigger" style="width: 100%; margin-bottom: 10px;" onclick="handleExploreOffer('${offerData.productLink}', '${offerData.id}')">Explore</button>
+            <button class="continue-btn haptic-trigger" style="width: 100%; background-color: var(--primary-neon-rgb);_ " onclick="navigateTo('reward-cashback-screen', { offer: ${JSON.stringify(offerData)} })">Claim Shubhzone Cashback</button>
+        </div>
+    `;
+}
+
+async function handleExploreOffer(url, offerId) {
+    window.open(url, '_blank');
+    // Set next timer
+    appState.rewardSystem.state = 'timer';
+    appState.rewardSystem.timerValue = 200 * 60; // 200 minutes
+    // Add to history
+    if (appState.rewardSystem.currentOffer) {
+        appState.rewardSystem.offerHistory.unshift(appState.rewardSystem.currentOffer);
+        if (appState.rewardSystem.offerHistory.length > 20) {
+            appState.rewardSystem.offerHistory.pop();
         }
     }
-
-    // कुछ सेकंड के बाद टाइमर शुरू करने के लिए रीचेक करें
-    setTimeout(() => {
-        startRewardTimerCheck();
-    }, 5000);
+    await saveUserRewardState();
+    initializeRewardScreen();
 }
 
-async function processReferral(referralCode, newUserId) {
-    const querySnapshot = await db.collection('users').where('referralCode', '==', referralCode).limit(1).get();
-    if (querySnapshot.empty) return null;
 
-    const referringUserDoc = querySnapshot.docs[0];
-    const referringUserId = referringUserDoc.id;
+function initializeWithdrawalScreen() {
+    const screen = document.getElementById('reward-withdrawal-screen');
+    if (!screen) return;
 
-    if (referringUserId === newUserId) {
-        console.warn("User tried to refer themselves.");
-        return null;
-    }
-
-    // ★ बदलाव: इस फ़ंक्शन से इनाम देने का लॉजिक हटा दिया गया है।
-    // यह अब saveAndContinue में हैंडल किया जाएगा।
-    // यह फ़ंक्शन सिर्फ रेफ़रल कोड को वेरिफ़ाई करेगा।
-
-    return {
-        uid: referringUserId
-    };
-}
-
-function initializeWalletScreen() {
-    const screen = document.getElementById('wallet-screen');
-    const balanceElem = document.getElementById('wallet-balance');
-    if (screen && balanceElem) {
-        balanceElem.textContent = `₹${appState.currentUser.walletBalance.toFixed(2)}`;
-    }
+    screen.innerHTML = `
+        <div class="screen-header">
+            <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+            <span class="header-title">Withdrawal</span>
+        </div>
+        <div class="content-area" style="padding: 80px 20px;">
+             <div class="wallet-balance-display">
+                <p>Current Balance</p>
+                <h2 id="withdrawal-balance">₹${appState.rewardSystem.walletBalance.toFixed(2)}</h2>
+            </div>
+            <div class="input-group">
+                <label>Name</label>
+                <input type="text" id="withdrawal-name" placeholder="Enter your full name" value="${appState.currentUser.name || ''}">
+            </div>
+            <div class="input-group">
+                <label>Address</label>
+                <input type="text" id="withdrawal-address" placeholder="Enter your address" value="${appState.currentUser.address || ''}">
+            </div>
+            <div class="input-group">
+                <label>Mobile No.</label>
+                <input type="tel" id="withdrawal-mobile" placeholder="Enter your mobile number" value="${appState.currentUser.mobile || ''}">
+            </div>
+             <div class="input-group">
+                <label>UPI ID</label>
+                <input type="text" id="withdrawal-upi" placeholder="Enter your UPI ID">
+            </div>
+            <button id="submit-withdrawal-btn" class="continue-btn haptic-trigger" onclick="submitWithdrawalRequest()">Request Withdrawal</button>
+        </div>
+    `;
 }
 
 async function submitWithdrawalRequest() {
-    const upiId = document.getElementById('upi-id-input').value.trim();
-    const mobileNo = document.getElementById('mobile-no-input').value.trim();
-    const amount = appState.currentUser.walletBalance;
-    if (amount < 50) {
-        alert("Minimum withdrawal amount is ₹50.");
+    const name = document.getElementById('withdrawal-name').value.trim();
+    const address = document.getElementById('withdrawal-address').value.trim();
+    const mobile = document.getElementById('withdrawal-mobile').value.trim();
+    const upi = document.getElementById('withdrawal-upi').value.trim();
+    const amount = appState.rewardSystem.walletBalance;
+
+    if (!name || !address || !mobile || !upi) {
+        alert("Please fill all the details.");
         return;
     }
-    if (!upiId || !mobileNo) {
-        alert("Please enter both UPI ID and Mobile Number.");
-        return;
-    }
+
+    const button = document.getElementById('submit-withdrawal-btn');
+    button.disabled = true;
+    button.textContent = "Submitting...";
 
     const message = `
-        Shubhzone Withdrawal Request:
-        --------------------------
+        --- Shubhzone Withdrawal Request ---
+        User Name: ${name}
         User UID: ${appState.currentUser.uid}
         Amount: ₹${amount.toFixed(2)}
-        UPI ID: ${upiId}
-        Mobile No: ${mobileNo}
-        --------------------------
+        UPI ID: ${upi}
+        Mobile: ${mobile}
+        Address: ${address}
+        ---------------------------------
     `;
 
-    const whatsappUrl = `https://wa.me/917390928912?text=${encodeURIComponent(message)}`;
-
-    const userRef = db.collection('users').doc(appState.currentUser.uid);
-    const withdrawalRef = db.collection('withdrawals').doc();
-
-    const batch = db.batch();
-    batch.update(userRef, {
-        walletBalance: 0
-    });
-    batch.set(withdrawalRef, {
-        userId: appState.currentUser.uid,
-        amount: amount,
-        upiId: upiId,
-        mobile: mobileNo,
-        status: 'pending',
-        requestedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
     try {
-        await batch.commit();
-        appState.currentUser.walletBalance = 0;
-        alert("Withdrawal request submitted! It will be processed soon. You are now being redirected to WhatsApp.");
+        // Save request to Firestore for tracking
+        await db.collection('withdrawalRequests').add({
+            userId: appState.currentUser.uid,
+            name,
+            address,
+            mobile,
+            upi,
+            amount,
+            status: 'pending',
+            requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Reset user's balance
+        appState.rewardSystem.walletBalance = 0;
+        await saveUserRewardState();
+
+        alert("Request submitted! You will now be redirected to WhatsApp to notify the admin.");
+        const whatsappUrl = `https://wa.me/917390928912?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
-        initializeWalletScreen();
+        navigateBack();
+
     } catch (error) {
         console.error("Error submitting withdrawal request:", error);
-        alert("There was an error submitting your request. Please try again.");
+        alert("An error occurred. Please try again.");
+        button.disabled = false;
+        button.textContent = "Request Withdrawal";
     }
 }
 
+
+function initializeCashbackScreen(payload) {
+    const screen = document.getElementById('reward-cashback-screen');
+    const offer = payload.offer;
+    if (!screen || !offer) {
+        navigateBack();
+        return;
+    };
+
+    screen.innerHTML = `
+         <div class="screen-header">
+            <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+            <span class="header-title">Claim Cashback</span>
+        </div>
+        <div class="content-area" style="padding: 80px 20px; text-align: left;">
+            <p style="text-align: center; margin-bottom: 20px;">You are claiming ₹${offer.shubhzoneMoney} cashback for the product.</p>
+            <div class="input-group">
+                <label>Name</label>
+                <input type="text" id="cashback-name" placeholder="Enter your full name" value="${appState.currentUser.name || ''}">
+            </div>
+            <div class="input-group">
+                <label>Address</label>
+                <input type="text" id="cashback-address" placeholder="Enter your shipping address" value="${appState.currentUser.address || ''}">
+            </div>
+             <div class="input-group">
+                <label>UPI ID</label>
+                <input type="text" id="cashback-upi" placeholder="Enter your UPI ID to receive cashback">
+            </div>
+            <div class="input-group">
+                <label>Upload Proof of Purchase</label>
+                <p style="font-size: 0.8em; color: var(--text-secondary); margin-top: 0;">Upload a screenshot of your order confirmation.</p>
+                <input type="file" id="cashback-proof-input" accept="image/*" style="color: var(--text-primary);">
+            </div>
+            <button id="submit-cashback-btn" class="continue-btn haptic-trigger" onclick="submitCashbackRequest()">Submit Claim</button>
+        </div>
+    `;
+}
+
+async function submitCashbackRequest() {
+    const name = document.getElementById('cashback-name').value.trim();
+    const address = document.getElementById('cashback-address').value.trim();
+    const upi = document.getElementById('cashback-upi').value.trim();
+    const proofFile = document.getElementById('cashback-proof-input').files[0];
+    const offer = appState.rewardSystem.currentOffer;
+
+    if (!name || !address || !upi || !proofFile) {
+        alert("Please fill all details and upload the proof of purchase.");
+        return;
+    }
+
+    const button = document.getElementById('submit-cashback-btn');
+    button.disabled = true;
+    button.textContent = "Uploading...";
+
+    try {
+        // Upload image proof to Firebase Storage
+        const filePath = `cashback_proofs/${appState.currentUser.uid}/${new Date().getTime()}_${proofFile.name}`;
+        const storageRef = storage.ref(filePath);
+        const snapshot = await storageRef.put(proofFile);
+        const proofImageUrl = await snapshot.ref.getDownloadURL();
+
+        // Save request data to Firestore
+        await db.collection('cashbackRequests').add({
+            userId: appState.currentUser.uid,
+            name,
+            address,
+            upi,
+            offerId: offer.id,
+            offerDetails: offer,
+            proofImageUrl: proofImageUrl,
+            status: 'pending',
+            requestedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const message = `
+            --- Shubhzone Cashback Claim ---
+            User Name: ${name}
+            User UID: ${appState.currentUser.uid}
+            Cashback Amount: ₹${offer.shubhzoneMoney}
+            Product: ${offer.productLink}
+            UPI ID: ${upi}
+            Proof Link: ${proofImageUrl}
+            ---------------------------------
+        `;
+
+        alert("Claim submitted successfully! You will be notified once it's approved.");
+        // Optionally redirect to WhatsApp
+        const whatsappUrl = `https://wa.me/917390928912?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+
+        // Reset timer and go back
+        appState.rewardSystem.state = 'timer';
+        appState.rewardSystem.timerValue = 200 * 60;
+        await saveUserRewardState();
+        navigateBack();
+
+
+    } catch (error) {
+        console.error("Error submitting cashback request:", error);
+        alert("An error occurred. Please try again.");
+        button.disabled = false;
+        button.textContent = "Submit Claim";
+    }
+}
+
+function initializeRewardHistoryScreen() {
+    const screen = document.getElementById('reward-history-screen');
+    screen.innerHTML = `
+        <div class="screen-header">
+            <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+            <span class="header-title">Offer History</span>
+        </div>
+        <div class="content-area" id="history-content-area" style="padding: 80px 15px;"></div>
+    `;
+
+    const contentArea = document.getElementById('history-content-area');
+    const history = appState.rewardSystem.offerHistory;
+
+    if (!history || history.length === 0) {
+        contentArea.innerHTML = '<p class="static-message">You have no past offers.</p>';
+        return;
+    }
+
+    contentArea.innerHTML = history.map(offer => `
+        <div class="holographic-card" style="margin-bottom: 10px;">
+            <div class="profile-pic"><img src="${offer.imageLink}" alt="Offer"></div>
+            <div class="info">
+                <div class="name">Offer Price: ₹${offer.offerPrice}</div>
+                <div class="subtext">Cashback: ₹${offer.shubhzoneMoney}</div>
+            </div>
+             <button class="add-button" onclick="window.open('${offer.productLink}', '_blank')">View</button>
+        </div>
+    `).join('');
+}
+
+
+async function openRewardAdminPanel() {
+    const password = prompt("Enter admin password:");
+    if (password === "himanshu@123") {
+        navigateTo('reward-admin-screen');
+    } else if (password) {
+        alert("Incorrect password.");
+    }
+}
+
+async function initializeRewardAdminScreen() {
+    const screen = document.getElementById('reward-admin-screen');
+    screen.innerHTML = `
+         <div class="screen-header">
+            <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+            <span class="header-title">Admin Panel</span>
+        </div>
+        <div class="content-area" style="padding: 80px 20px; text-align: left;">
+            <h3>Add/Edit Reward</h3>
+            <div class="input-group">
+                <label>Image Link</label>
+                <input type="text" id="admin-image-link" placeholder="https://i.ibb.co/...">
+            </div>
+            <div class="input-group">
+                <label>Product Link</label>
+                <input type="text" id="admin-product-link" placeholder="https://amzn.to/...">
+            </div>
+            <div class="input-group">
+                <label>Price</label>
+                <input type="number" id="admin-price" placeholder="e.g., 1599">
+            </div>
+            <div class="input-group">
+                <label>Offer Price</label>
+                <input type="number" id="admin-offer-price" placeholder="e.g., 392">
+            </div>
+            <div class="input-group">
+                <label>Shubhzone Cashback</label>
+                <input type="number" id="admin-cashback" placeholder="e.g., 2">
+            </div>
+            <input type="hidden" id="admin-edit-id">
+            <button class="continue-btn haptic-trigger" onclick="handleAdminSaveReward()">Save Reward</button>
+            <hr style="border-color: var(--text-secondary); margin: 20px 0;">
+            <h3>Current Rewards</h3>
+            <div id="admin-rewards-list"></div>
+        </div>
+    `;
+
+    loadAdminRewardsList();
+}
+
+async function loadAdminRewardsList() {
+    const listContainer = document.getElementById('admin-rewards-list');
+    listContainer.innerHTML = '<div class="loader"></div>';
+    const snapshot = await db.collection('rewards').orderBy('createdAt', 'desc').get();
+
+    if (snapshot.empty) {
+        listContainer.innerHTML = '<p>No rewards found.</p>';
+        return;
+    }
+
+    listContainer.innerHTML = snapshot.docs.map(doc => {
+        const reward = {
+            id: doc.id,
+            ...doc.data()
+        };
+        return `
+            <div class="holographic-card">
+                 <div class="info">
+                    <div class="name">₹${reward.offerPrice} (Cashback: ₹${reward.shubhzoneMoney})</div>
+                    <div class="subtext">${reward.productLink.substring(0, 30)}...</div>
+                </div>
+                <div class="request-actions">
+                     <button class="accept-button" onclick='populateAdminForm(${JSON.stringify(reward)})'>Edit</button>
+                     <button class="reject-button" onclick="handleAdminDeleteReward('${reward.id}')">Del</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function populateAdminForm(reward) {
+    document.getElementById('admin-image-link').value = reward.imageLink;
+    document.getElementById('admin-product-link').value = reward.productLink;
+    document.getElementById('admin-price').value = reward.price;
+    document.getElementById('admin-offer-price').value = reward.offerPrice;
+    document.getElementById('admin-cashback').value = reward.shubhzoneMoney;
+    document.getElementById('admin-edit-id').value = reward.id;
+    window.scrollTo(0, 0);
+}
+
+async function handleAdminSaveReward() {
+    const editId = document.getElementById('admin-edit-id').value;
+    const rewardData = {
+        imageLink: document.getElementById('admin-image-link').value.trim(),
+        productLink: document.getElementById('admin-product-link').value.trim(),
+        price: Number(document.getElementById('admin-price').value),
+        offerPrice: Number(document.getElementById('admin-offer-price').value),
+        shubhzoneMoney: Number(document.getElementById('admin-cashback').value),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (!rewardData.imageLink || !rewardData.productLink || !rewardData.price || !rewardData.offerPrice) {
+        alert("Please fill all fields.");
+        return;
+    }
+
+    try {
+        if (editId) {
+            // Update existing
+            await db.collection('rewards').doc(editId).set(rewardData, {
+                merge: true
+            });
+            alert("Reward updated successfully!");
+        } else {
+            // Add new
+            await db.collection('rewards').add(rewardData);
+            alert("Reward added successfully!");
+        }
+        // Clear form
+        document.getElementById('admin-image-link').value = '';
+        document.getElementById('admin-product-link').value = '';
+        document.getElementById('admin-price').value = '';
+        document.getElementById('admin-offer-price').value = '';
+        document.getElementById('admin-cashback').value = '';
+        document.getElementById('admin-edit-id').value = '';
+
+        loadAdminRewardsList();
+
+    } catch (error) {
+        console.error("Error saving reward:", error);
+        alert("An error occurred while saving.");
+    }
+}
+
+async function handleAdminDeleteReward(rewardId) {
+    if (confirm("Are you sure you want to delete this reward?")) {
+        try {
+            await db.collection('rewards').doc(rewardId).delete();
+            alert("Reward deleted.");
+            loadAdminRewardsList();
+        } catch (error) {
+            console.error("Error deleting reward:", error);
+            alert("Could not delete reward.");
+        }
+    }
+}
+
+
 // =======================================================
-// ★★★ REWARD SYSTEM LOGIC - END ★★★
+// ★★★ NEW REWARD SYSTEM (V2) - END ★★★
 // =======================================================
+
 
 async function addChannelToList(event, channelId) { /* Unchanged */ }
 
@@ -2148,9 +2575,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
                 case 'reward':
                     targetScreen = 'reward-screen';
-                    break;
-                case 'wallet':
-                    targetScreen = 'wallet-screen';
                     break;
                 default:
                     targetScreen = `${targetNav}-screen`;
@@ -2183,8 +2607,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') performLongVideoSearch();
     });
-    document.getElementById('wallet-icon-button')?.addEventListener('click', () => navigateTo('wallet-screen'));
-    document.getElementById('withdraw-btn')?.addEventListener('click', submitWithdrawalRequest);
 
     document.querySelector('#creator-page-screen .header-icon-left')?.addEventListener('click', () => navigateBack());
     initializeMessagingInterface();
@@ -2238,6 +2660,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (contentToShow) contentToShow.classList.remove('hidden');
             button.classList.add('active');
         });
+    });
+
+    // Add visibility change listener for pausing/resuming reward timer
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            pauseRewardTimer();
+        } else {
+            resumeRewardTimer();
+        }
     });
 
 });
