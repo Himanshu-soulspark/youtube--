@@ -2086,13 +2086,26 @@ body {
     aspect-ratio: auto;
 }
 
-#reward-screen, #wallet-screen {
+/* ======================================================= */
+/* ★★★ NEW & REWORKED: REWARD SYSTEM V2 STYLES - START ★★★ */
+/* ======================================================= */
+
+#reward-screen,
+#reward-withdrawal-screen,
+#reward-cashback-screen,
+#reward-history-screen,
+#reward-admin-screen {
     justify-content: flex-start;
     padding: 0;
     color: var(--text-primary);
+    background-color: var(--background);
 }
 
-#reward-screen .content-area, #wallet-screen .content-area {
+#reward-screen .content-area,
+#reward-withdrawal-screen .content-area,
+#reward-cashback-screen .content-area,
+#reward-history-screen .content-area,
+#reward-admin-screen .content-area {
     padding: 75px 20px 80px 20px;
     width: 100%;
     height: 100%;
@@ -2103,16 +2116,17 @@ body {
     text-align: center;
 }
 
+/* New Transparent Header for Reward Screen */
 .reward-header {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     position: absolute;
     top: 0;
     left: 0;
+    width: 100%;
     height: 60px;
-    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
     background-color: rgba(var(--background-rgb), 0.7);
     backdrop-filter: blur(10px);
     z-index: 50;
@@ -2123,9 +2137,21 @@ body {
     font-size: 1.5em;
     font-weight: 700;
     color: var(--primary-neon);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
-.wallet-icon-button {
+.reward-header .reward-timer {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--text-primary);
+    background-color: rgba(var(--secondary-background-rgb), 0.5);
+    padding: 5px 12px;
+    border-radius: 8px;
+}
+
+.reward-header .wallet-icon-button {
     background: none;
     border: none;
     color: var(--text-primary);
@@ -2133,26 +2159,17 @@ body {
     cursor: pointer;
 }
 
+/* Styles for Scratch Card V2 */
 .reward-status-container {
     margin-top: 20px;
-}
-
-.reward-timer {
-    font-size: 2.5em;
-    font-weight: 700;
-    color: var(--primary-neon);
-    margin-top: 10px;
-    background-color: var(--secondary-background);
-    padding: 10px 20px;
-    border-radius: 12px;
-    border: 1px solid var(--primary-neon);
+    width: 100%;
 }
 
 .scratch-card-container {
     width: 100%;
-    max-width: 300px;
+    max-width: 320px;
     aspect-ratio: 16 / 9;
-    margin-top: 20px;
+    margin: 20px auto 0 auto;
     position: relative;
     border-radius: 15px;
     overflow: hidden;
@@ -2161,31 +2178,147 @@ body {
     justify-content: center;
     align-items: center;
     border: 2px solid var(--primary-neon);
+    cursor: crosshair;
 }
 
 .scratch-card-reward {
-    font-size: 1.8em;
+    font-size: 2.2em;
     font-weight: 700;
     color: var(--success-green);
     padding: 20px;
+    text-align: center;
 }
 
-.scratch-card-overlay {
+#scratch-canvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: var(--text-secondary);
     cursor: crosshair;
+    transition: opacity 0.5s ease;
+}
+
+/* Styles for Product Offer */
+.product-offer-card {
+    width: 100%;
+    max-width: 350px;
+    background-color: var(--secondary-background);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid var(--text-secondary);
+}
+
+.product-image-container {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    background-color: var(--background);
+}
+
+.product-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.product-pricing {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: space-around;
+    text-align: center;
+    margin-bottom: 15px;
+    gap: 10px;
+}
+
+.product-pricing > div {
+    flex: 1;
+}
+
+.product-pricing p {
+    margin: 0;
+}
+
+.product-pricing p:first-child {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.product-pricing p:last-child {
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+/* Styles for Withdrawal and Cashback Screens */
+.wallet-balance-display {
+    width: 100%;
+    padding: 20px;
+    background-color: var(--secondary-background);
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.wallet-balance-display p {
+    margin: 0;
+    font-size: 1.1em;
+    color: var(--text-secondary);
+}
+
+.wallet-balance-display h2 {
+    margin: 5px 0 0 0;
+    font-size: 3em;
+    color: var(--primary-neon);
+}
+
+.input-group {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.input-group input[type="text"],
+.input-group input[type="tel"],
+.input-group input[type="number"] {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid var(--text-secondary);
+    border-radius: 8px;
+    background-color: var(--secondary-background);
+    color: var(--text-primary);
+    font-size: 1.1em;
+    box-sizing: border-box;
+}
+
+.continue-btn,
+.logout-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.continue-btn {
+     background-color: var(--primary-neon);
     color: var(--background);
-    font-size: 1.5em;
-    font-weight: bold;
-    user-select: none;
-    transition: opacity 0.3s ease;
+}
+
+.continue-btn:disabled {
+    background-color: var(--text-disabled);
+    cursor: not-allowed;
 }
 
 .claim-offer-section {
@@ -2201,71 +2334,10 @@ body {
     font-size: 0.9em;
     color: var(--text-secondary);
 }
-.claim-offer-section .reward-timer {
-    font-size: 1.5em;
-    margin-bottom: 15px;
-}
 
-.wallet-balance-display {
-    width: 100%;
-    padding: 20px;
-    background-color: var(--secondary-background);
-    border-radius: 15px;
-    margin-bottom: 30px;
-}
-
-.wallet-balance-display p {
-    margin: 0;
-    font-size: 1.1em;
-    color: var(--text-secondary);
-}
-
-.wallet-balance-display h2 {
-    margin: 5px 0 0 0;
-    font-size: 3em;
-    color: var(--primary-neon);
-}
-
-.wallet-input-group {
-    width: 100%;
-    text-align: left;
-    margin-bottom: 20px;
-}
-
-.wallet-input-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 0.9em;
-    color: var(--text-secondary);
-}
-
-.wallet-input-group input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1px solid var(--text-secondary);
-    border-radius: 8px;
-    background-color: var(--secondary-background);
-    color: var(--text-primary);
-    font-size: 1.1em;
-}
-
-#withdraw-btn {
-    width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 8px;
-    background-color: var(--primary-neon);
-    color: var(--background);
-    font-size: 1.2em;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-#withdraw-btn:disabled {
-    background-color: var(--text-disabled);
-    cursor: not-allowed;
-}
+/* ======================================================= */
+/* ★★★ NEW & REWORKED: REWARD SYSTEM V2 STYLES - END ★★★ */
+/* ======================================================= */
 
 .long-video-grid-ad,
 .friend-list-ad,
