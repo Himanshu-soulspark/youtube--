@@ -421,10 +421,9 @@ let youtubePlayerQueue = [];
 
 let currentVideoCache = new Map();
 
-// ★★★ NECESSARY CHANGE: Removed Firestore caching to always fetch fresh videos ★★★
+// ★★★ NECESSARY CHANGE: Added better error logging ★★★
 async function fetchFromYouTubeAPI(type, params) {
     console.log(`[API] Fetching from YouTube API: ${type}`);
-    // हर बार नए वीडियो लाने के लिए, सर्वर-साइड कैश को बायपास करने के लिए एक रैंडम पैरामीटर जोड़ें
     let url = `/api/youtube?type=${type}&cb=${new Date().getTime()}`;
     for (const key in params) {
         if (params[key] !== undefined && params[key] !== null) {
@@ -435,13 +434,21 @@ async function fetchFromYouTubeAPI(type, params) {
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`YouTube API Error for type ${type}:`, errorData);
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            // अधिक विस्तृत त्रुटि प्राप्त करने का प्रयास करें
+            let errorData;
+            try {
+                errorData = await response.json();
+                console.error(`[API ERROR] YouTube API Error for type ${type}:`, JSON.stringify(errorData));
+            } catch (e) {
+                // अगर JSON नहीं है, तो टेक्स्ट के रूप में पढ़ें
+                const errorText = await response.text();
+                console.error(`[API ERROR] YouTube API Non-JSON Error for type ${type}:`, errorText);
+                errorData = { error: { message: errorText } };
+            }
+            throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
 
-        // स्थानीय कैश में वीडियो विवरण स्टोर करें ताकि बार-बार न मांगना पड़े
         if (data.items && data.items.length > 0) {
             data.items.forEach(item => {
                 const videoId = item.id?.videoId || item.id;
@@ -452,8 +459,8 @@ async function fetchFromYouTubeAPI(type, params) {
         }
         return data;
     } catch (error) {
-        console.error(`Critical Error Fetching from YouTube API (${type}):`, error);
-        // एक खाली ऑब्जेक्ट लौटाएं ताकि ऐप क्रैश न हो
+        console.error(`[CRITICAL] Critical Error Fetching from YouTube API (${type}):`, error);
+        // UI में संदेश दिखाने के लिए एक खाली ऑब्जेक्ट लौटाएं
         return {
             error: error.message,
             items: [],
@@ -461,6 +468,7 @@ async function fetchFromYouTubeAPI(type, params) {
         };
     }
 }
+
 
 function renderYouTubeLongVideos(videos, append = false) {
     const grid = document.getElementById('long-video-grid');
@@ -472,7 +480,6 @@ function renderYouTubeLongVideos(videos, append = false) {
         grid.innerHTML = '';
     }
     
-    // ★★★ FIX: अगर कोई वीडियो नहीं मिलता है तो एक स्पष्ट संदेश दिखाएं ★★★
     if (!videos || videos.length === 0 && !append) {
         grid.innerHTML = '<p class="static-message">No videos found. The API might be facing issues or your search returned no results.</p>';
         if (loadMoreBtn) loadMoreBtn.style.display = 'none';
@@ -527,7 +534,6 @@ async function loadMoreLongVideos() {
     } else {
         params.q = value;
     }
-    // ★★★ FIX: API को संकेत देने के लिए कि हमें शॉर्ट्स नहीं चाहिए ★★★
     params.videoDefinition = 'high';
 
     data = await fetchFromYouTubeAPI('search', params);
@@ -735,9 +741,6 @@ async function checkUserProfileAndProceed(user) {
         }
         updateProfileUI();
         
-        // ★★★ CRITICAL FIX: Removed automatic startAppLogic() call ★★★
-        // अब यह फंक्शन सिर्फ यह तय करेगा कि इंफॉर्मेशन स्क्रीन पर जाना है या नहीं।
-        // ऐप `get-started-btn` पर क्लिक करने के बाद ही शुरू होगा।
         if (!userData.name || !userData.state) {
             navigateTo('information-screen');
         }
@@ -2284,7 +2287,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('get-started-btn')?.addEventListener('click', () => {
         userHasInteracted = true;
-        startAppLogic();
+        // ★★★ CRITICAL FIX: Only call startAppLogic if user profile is complete ★★★
+        if (appState.currentUser.name && appState.currentUser.state) {
+            startAppLogic();
+        } else {
+            navigateTo('information-screen');
+        }
     });
 
     appContainer.addEventListener('click', (event) => {
