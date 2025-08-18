@@ -249,7 +249,6 @@
         <div id="friends-screen" class="screen">
             <div class="friends-top-bar">
                 <div class="tab-bar">
-                    <!-- ★★★ FIX: "My Channels" टैब हटा दिया गया ★★★ -->
                     <button class="tab-button active" data-tab="add">Add Friends</button>
                     <button class="tab-button" data-tab="requests">Requests</button>
                     <button class="tab-button" data-tab="members">Members</button>
@@ -257,7 +256,6 @@
             </div>
 
             <main class="content-area">
-                <!-- ★★★ FIX: "Add Friends" को डिफ़ॉल्ट रूप से दृश्यमान बनाने के लिए "hidden" क्लास हटा दी गई ★★★ -->
                 <div class="tab-content" id="add-content">
                     <div class="add-friend-search-container">
                         <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID">
@@ -322,16 +320,10 @@
             </div>
         </div>
 
-        <!-- ★ नया: REWARD SCREEN -->
+        <!-- ★★★ REWORKED REWARD SCREEN (V2) ★★★ -->
         <div id="reward-screen" class="screen">
-            <div class="reward-header">
-                <span class="header-title">Reward</span>
-                <button id="wallet-icon-button" class="wallet-icon-button haptic-trigger">
-                    <i class="fas fa-wallet"></i>
-                </button>
-            </div>
             <div class="content-area">
-                <!-- Reward content (timer/scratch card) injected by JS -->
+                <!-- JS injects the new header and main content (timer, scratch card, or offer) here -->
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
@@ -342,30 +334,29 @@
             </div>
         </div>
 
-        <!-- ★ नया: WALLET SCREEN -->
-        <div id="wallet-screen" class="screen">
-            <div class="screen-header">
-                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i
-                        class="fas fa-arrow-left"></i></div>
-                <span class="header-title">My Wallet</span>
-            </div>
-            <div class="content-area">
-                <div class="wallet-balance-display">
-                    <p>Current Balance</p>
-                    <h2 id="wallet-balance">₹0.00</h2>
-                </div>
-                <div class="wallet-input-group">
-                    <label for="upi-id-input">UPI ID</label>
-                    <input type="text" id="upi-id-input" placeholder="Enter your UPI ID">
-                </div>
-                <div class="wallet-input-group">
-                    <label for="mobile-no-input">Registered Mobile No.</label>
-                    <input type="tel" id="mobile-no-input" placeholder="Enter your mobile number">
-                </div>
-                <button id="withdraw-btn" class="haptic-trigger">Withdraw (Min ₹50)</button>
-            </div>
-             <!-- No nav bar here as it's a deep-link screen -->
+        <!-- ★★★ NEW REWARD SYSTEM SCREENS (V2) ★★★ -->
+        <!-- These are populated dynamically by script.js -->
+
+        <!-- Withdrawal Screen (Replaces old Wallet Screen) -->
+        <div id="reward-withdrawal-screen" class="screen">
+            <!-- JS will inject header and content for withdrawal details -->
         </div>
+
+        <!-- Cashback Claim Screen -->
+        <div id="reward-cashback-screen" class="screen">
+            <!-- JS will inject header and content for cashback claims -->
+        </div>
+
+        <!-- Reward History Screen -->
+        <div id="reward-history-screen" class="screen">
+            <!-- JS will inject header and content for reward history -->
+        </div>
+
+        <!-- Reward Admin Panel Screen -->
+        <div id="reward-admin-screen" class="screen">
+            <!-- JS will inject header and content for the admin panel -->
+        </div>
+
     </div> <!-- End of .app-container -->
 
     <!-- === SCRIPTS (MUST BE AT THE END) === -->
