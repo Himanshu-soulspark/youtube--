@@ -327,7 +327,6 @@ let appState = {
         likedVideos: [],
         friends: [],
         addedChannels: [],
-        walletBalance: 0, // This will be managed by the new reward system
     },
     currentScreen: 'splash-screen',
     navigationStack: ['splash-screen'],
@@ -401,6 +400,7 @@ let appState = {
         currentOffer: null,
         offerHistory: [],
         isFirstLogin: true,
+        walletBalance: 0,
     },
     specialVideoPlayer: null,
 };
@@ -819,7 +819,7 @@ profileImageInput.addEventListener('change', function() {
     if (this.files[0]) {
         const reader = new FileReader();
         reader.onload = e => profileImagePreview.src = e.target.result;
-        reader.readasdataurl(this.files[0]);
+        reader.readAsDataURL(this.files[0]);
     }
 });
 
@@ -924,19 +924,27 @@ const startAppLogic = async () => {
     }
     appStartLogicHasRun = true;
     console.log("Starting main app logic...");
-    setupAdTimers();
-    // Initialize the new reward system logic
-    await initializeUserRewardState();
-
 
     const getStartedBtn = document.getElementById('get-started-btn');
     const loadingContainer = document.getElementById('loading-container');
     if (getStartedBtn) getStartedBtn.style.display = 'none';
     if (loadingContainer) loadingContainer.style.display = 'flex';
 
-    const screenToNavigate = 'long-video-screen';
-    navigateTo(screenToNavigate);
-    updateNavActiveState('long-video');
+    try {
+        // Initialize the new reward system logic
+        await initializeUserRewardState();
+
+        // After reward system is initialized, start ads and navigate
+        setupAdTimers();
+        const screenToNavigate = 'long-video-screen';
+        navigateTo(screenToNavigate);
+        updateNavActiveState('long-video');
+
+    } catch (error) {
+        console.error("CRITICAL ERROR during app start:", error);
+        alert("Could not start the app. Please check your connection and try again.");
+        if (loadingContainer) loadingContainer.innerHTML = '<p style="color: var(--error-red);">App failed to start.</p>';
+    }
 };
 
 function renderVideoSwiper(videos, append = false) {
@@ -1339,6 +1347,7 @@ async function setupShortsScreen(category = 'All') {
         homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div> Loading shorts...';
     }
 
+    // ★★★ FIX: Ensured videoDuration is 'short' for shorts screen ★★★
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
         videoDuration: 'short',
@@ -1398,12 +1407,12 @@ async function populateLongVideoGrid(category = 'All') {
         query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
     }
 
-    // ★ बदलाव: सर्च कॉन्टेक्स्ट को अपडेट करें
     appState.longVideoSearchContext = {
         type: 'query',
         value: query
     };
 
+    // ★★★ FIX: Ensured videoDuration is 'long' for the long video grid ★★★
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
         videoDuration: 'long',
@@ -1852,29 +1861,31 @@ function handleCreatorPlayerStateChange(event) { /* Unchanged */ }
  * Initializes the user's reward state from Firestore or creates a new one.
  */
 async function initializeUserRewardState() {
-    if (!appState.currentUser.uid) return;
+    // ★★★ FIX: Added a guard clause to prevent running with null UID ★★★
+    if (!appState.currentUser.uid) {
+        console.warn("Cannot initialize reward state: User UID is not available yet.");
+        return;
+    }
     const userRewardRef = db.collection('userRewards').doc(appState.currentUser.uid);
     const doc = await userRewardRef.get();
 
     if (doc.exists) {
         const data = doc.data();
         appState.rewardSystem = { ...appState.rewardSystem,
-            ...data
+            ...data,
+            walletBalance: data.walletBalance || 0
         };
         console.log("User reward state loaded from Firestore.", appState.rewardSystem);
     } else {
         // New user, create initial state
+        // ★★★ FIX: Removed the problematic logic that violated security rules ★★★
         const initialState = {
             state: 'timer',
             timerValue: 500, // 500 seconds for first login
             isFirstLogin: true,
             offerHistory: [],
             walletBalance: 0,
-            totalUsers: (await db.collection('userRewards').get()).size
         };
-        // Logic to determine if user is eligible for money reward
-        initialState.eligibleForMoneyReward = initialState.totalUsers < 500;
-
         await userRewardRef.set(initialState);
         appState.rewardSystem = { ...appState.rewardSystem,
             ...initialState
@@ -1898,7 +1909,6 @@ async function saveUserRewardState() {
         isFirstLogin: appState.rewardSystem.isFirstLogin,
         offerHistory: appState.rewardSystem.offerHistory,
         walletBalance: appState.rewardSystem.walletBalance,
-        eligibleForMoneyReward: appState.rewardSystem.eligibleForMoneyReward,
     };
     try {
         await userRewardRef.set(stateToSave, {
@@ -1939,7 +1949,7 @@ function handleRewardTimer() {
         clearInterval(appState.rewardSystem.timerInterval);
         appState.rewardSystem.isTimerActive = false;
         // Determine next state
-        if (appState.rewardSystem.isFirstLogin && appState.rewardSystem.eligibleForMoneyReward) {
+        if (appState.rewardSystem.isFirstLogin) {
             appState.rewardSystem.state = 'scratch';
         } else {
             appState.rewardSystem.state = 'offer';
@@ -1986,7 +1996,7 @@ async function initializeRewardScreen() {
     `;
 
     const contentArea = screen.querySelector('.content-area');
-    contentArea.innerHTML = headerHTML + '<div id="reward-main-content"></div>';
+    contentArea.innerHTML = headerHTML + '<div id="reward-main-content" style="width: 100%; display: flex; justify-content: center; align-items: center; flex-grow: 1;"></div>';
     const mainContent = document.getElementById('reward-main-content');
     mainContent.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
@@ -2051,34 +2061,42 @@ function setupScratchCard() {
     if (!canvas || !rewardElem || !container) return;
 
     const ctx = canvas.getContext('2d');
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
+    
+    // Defer sizing until the next frame to ensure container dimensions are stable
+    requestAnimationFrame(() => {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
 
-    // Generate winning amount
-    const winningAmount = Math.floor(Math.random() * 10) + 1;
-    rewardElem.innerHTML = `You Won<br>₹${winningAmount}!`;
-    rewardElem.style.color = 'var(--success-green)';
+        // Generate winning amount
+        const winningAmount = Math.floor(Math.random() * 10) + 1;
+        rewardElem.innerHTML = `You Won<br>₹${winningAmount}!`;
+        rewardElem.style.color = 'var(--success-green)';
 
-    // Fill the canvas
-    ctx.fillStyle = '#AAAAAA';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#121212';
-    ctx.font = 'bold 24px Roboto';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Scratch Here', canvas.width / 2, canvas.height / 2);
+        // Fill the canvas
+        ctx.fillStyle = '#AAAAAA';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#121212';
+        ctx.font = 'bold 24px Roboto';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Scratch Here', canvas.width / 2, canvas.height / 2);
+        
+        ctx.globalCompositeOperation = 'destination-out';
+    });
+
 
     let isDrawing = false;
-    ctx.globalCompositeOperation = 'destination-out';
+    let isRevealed = false;
 
     const scratch = (e) => {
-        if (!isDrawing) return;
+        if (!isDrawing || isRevealed) return;
+        e.preventDefault();
         const rect = canvas.getBoundingClientRect();
         const x = (e.clientX || e.touches[0].clientX) - rect.left;
         const y = (e.clientY || e.touches[0].clientY) - rect.top;
 
         ctx.beginPath();
-        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.arc(x, y, 20 * (canvas.width / 320), 0, Math.PI * 2); // Scale radius
         ctx.fill();
 
         // Check completion
@@ -2088,23 +2106,26 @@ function setupScratchCard() {
             if (pixels.data[i] === 0) transparent++;
         }
         if (transparent / (pixels.data.length / 4) > 0.7) {
+            isRevealed = true; // Prevent multiple triggers
             canvas.style.opacity = 0;
             setTimeout(() => {
-                handleScratchWin(winningAmount);
+                handleScratchWin(parseInt(rewardElem.innerText.split('₹')[1]));
             }, 300);
         }
     };
+    
+    const startScratch = (e) => {
+        isDrawing = true;
+        scratch(e); // Allow click-to-scratch
+    };
+    const stopScratch = () => { isDrawing = false; };
 
-    canvas.addEventListener('mousedown', () => isDrawing = true);
-    canvas.addEventListener('touchstart', () => isDrawing = true, {
-        passive: true
-    });
-    canvas.addEventListener('mouseup', () => isDrawing = false);
-    canvas.addEventListener('touchend', () => isDrawing = false);
+    canvas.addEventListener('mousedown', startScratch);
+    canvas.addEventListener('touchstart', startScratch, { passive: false });
+    canvas.addEventListener('mouseup', stopScratch);
+    canvas.addEventListener('touchend', stopScratch);
     canvas.addEventListener('mousemove', scratch);
-    canvas.addEventListener('touchmove', scratch, {
-        passive: true
-    });
+    canvas.addEventListener('touchmove', scratch, { passive: false });
 }
 
 async function handleScratchWin(amount) {
@@ -2125,6 +2146,7 @@ async function handleScratchWin(amount) {
             </div>
         `;
     }
+    resumeRewardTimer();
 }
 
 function renderProductOfferUI(container, offerData) {
@@ -2148,7 +2170,7 @@ function renderProductOfferUI(container, offerData) {
                 </div>
             </div>
             <button class="continue-btn haptic-trigger" style="width: 100%; margin-bottom: 10px;" onclick="handleExploreOffer('${offerData.productLink}', '${offerData.id}')">Explore</button>
-            <button class="continue-btn haptic-trigger" style="width: 100%; background-color: var(--primary-neon-rgb);_ " onclick="navigateTo('reward-cashback-screen', { offer: ${JSON.stringify(offerData)} })">Claim Shubhzone Cashback</button>
+            <button class="continue-btn haptic-trigger" style="width: 100%; background-color: var(--secondary-background); border: 1px solid var(--primary-neon); color: var(--primary-neon);" onclick="navigateTo('reward-cashback-screen', { offer: ${JSON.stringify(offerData)} })">Claim Shubhzone Cashback</button>
         </div>
     `;
 }
@@ -2167,6 +2189,7 @@ async function handleExploreOffer(url, offerId) {
     }
     await saveUserRewardState();
     initializeRewardScreen();
+    resumeRewardTimer();
 }
 
 
@@ -2402,7 +2425,7 @@ async function openRewardAdminPanel() {
     const password = prompt("Enter admin password:");
     if (password === "himanshu@123") {
         navigateTo('reward-admin-screen');
-    } else if (password) {
+    } else if (password !== null) { // Handle case where user clicks cancel
         alert("Incorrect password.");
     }
 }
