@@ -420,8 +420,7 @@ body {
     gap: 15px;
 }
 
-#information-screen .continue-btn,
-#long-video-load-more-btn {
+#information-screen .continue-btn {
     background-color: var(--primary-neon);
     color: var(--background);
     font-weight: 700;
@@ -434,9 +433,30 @@ body {
     font-size: 1.1em;
 }
 
+/* ★★★ NECESSARY CHANGE: Styling for the Load More button ★★★ */
+#long-video-load-more-btn {
+    width: auto; /* पूरी चौड़ाई का नहीं */
+    padding: 10px 25px; /* छोटा पैडिंग */
+    margin: 20px auto; /* बीच में लाना */
+    background-color: var(--secondary-background);
+    color: var(--primary-neon);
+    border: 1px solid var(--primary-neon);
+    font-weight: 600;
+    font-size: 1em;
+    border-radius: 20px;
+    display: none; /* डिफ़ॉल्ट रूप से छिपा हुआ */
+}
+
+#long-video-load-more-btn:hover {
+    background-color: var(--primary-neon);
+    color: var(--background);
+}
+
 #information-screen .continue-btn:disabled,
 #long-video-load-more-btn:disabled {
     background-color: var(--text-disabled);
+    border-color: var(--text-disabled);
+    color: var(--text-secondary);
     cursor: not-allowed;
 }
 
@@ -872,6 +892,11 @@ body {
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--text-primary);
+}
+
+/* ★★★ NECESSARY CHANGE: Hiding the uploader avatar on shorts screen ★★★ */
+#home-screen .video-meta-overlay .uploader-avatar {
+    display: none;
 }
 
 .video-meta-overlay .uploader-name {
@@ -2158,9 +2183,11 @@ body {
     overflow: hidden;
     background: linear-gradient(45deg, #2a2a2a, #3a3a3a);
     display: flex;
+    flex-direction: column; /* ★★★ NECESSARY CHANGE: Stacks reward text and offer vertically ★★★ */
     justify-content: center;
     align-items: center;
     border: 2px solid var(--primary-neon);
+    padding: 10px;
 }
 
 .scratch-card-reward {
@@ -2168,6 +2195,7 @@ body {
     font-weight: 700;
     color: var(--success-green);
     padding: 20px;
+    text-align: center; /* इनाम टेक्स्ट को बीच में लाएं */
 }
 
 .scratch-card-overlay {
@@ -2186,14 +2214,18 @@ body {
     font-weight: bold;
     user-select: none;
     transition: opacity 0.3s ease;
+    padding: 10px;
+    text-align: center;
 }
 
 .claim-offer-section {
-    margin-top: 25px;
+    margin-top: 15px; /* इनाम टेक्स्ट से थोड़ी दूरी */
     padding: 15px;
     background-color: var(--secondary-background);
     border-radius: 12px;
     border: 1px solid var(--text-secondary);
+    width: 100%; /* पूरी कार्ड की चौड़ाई ले */
+    box-sizing: border-box;
 }
 
 .claim-offer-section p {
@@ -2338,6 +2370,81 @@ body {
     border-radius: 15px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     border: 2px solid rgba(var(--primary-neon-rgb), 0.5);
+}
+
+/* ★★★ NEW: Styles for the 'Saved Videos' screen ★★★ */
+#saved-videos-screen {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.saved-videos-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    background-color: rgba(var(--background-rgb), 0.7);
+    backdrop-filter: blur(10px);
+    z-index: 50;
+    border-bottom: 1px solid rgba(var(--primary-neon-rgb), 0.1);
+}
+
+.saved-videos-header .header-icon-left {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.saved-videos-toggle-container {
+    display: flex;
+    border: 1px solid var(--text-secondary);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.saved-video-toggle-btn {
+    padding: 8px 25px;
+    border: none;
+    background-color: transparent;
+    color: var(--text-secondary);
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.saved-video-toggle-btn.active {
+    background-color: var(--primary-neon);
+    color: var(--background);
+    font-weight: 700;
+}
+
+#saved-videos-screen .content-area {
+    padding: 75px 15px 80px 15px;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+#saved-long-videos {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#saved-short-videos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
 }
 
 @media (min-width: 768px) {
