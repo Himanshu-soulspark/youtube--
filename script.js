@@ -324,6 +324,7 @@ let appState = {
         likedVideos: [],
         friends: [],
         addedChannels: [],
+        savedVideos: [], // ★★★ NEW: 'Saved Videos' feature के लिए स्टेट
         walletBalance: 0,
         lastRewardTimestamp: null,
         initialRewardClaimed: false,
@@ -341,8 +342,8 @@ let appState = {
         channelShorts: null,
         channelPlaylists: null,
     },
-    longVideoSearchContext: { // ★ नया: चैनल सर्च को याद रखने के लिए
-        type: 'query', // 'query' or 'channel'
+    longVideoSearchContext: {
+        type: 'query',
         value: null
     },
     uploadDetails: {
@@ -412,7 +413,6 @@ let activePlayerId = null;
 let userHasInteracted = false;
 let hasShownAudioPopup = false;
 let hapticFeedbackEnabled = true;
-// ★ नया: प्लेयर बनाने के अनुरोधों को पंक्ति में लगाने के लिए
 let youtubePlayerQueue = [];
 
 // =============================================================================
@@ -421,26 +421,10 @@ let youtubePlayerQueue = [];
 
 let currentVideoCache = new Map();
 
+// ★★★ NECESSARY CHANGE: Removed Firestore caching to always fetch fresh videos ★★★
 async function fetchFromYouTubeAPI(type, params) {
-    const paramString = Object.keys(params).sort().map(key => `${key}=${params[key]}`).join('&');
-    const cacheKey = `${type}_${paramString}`;
-    const cacheRef = db.collection('youtube_api_cache').doc(btoa(cacheKey)); // Base64 encode to avoid invalid characters
-
-    try {
-        const cachedDoc = await cacheRef.get();
-        if (cachedDoc.exists) {
-            const cacheData = cachedDoc.data();
-            const cacheAgeHours = (new Date() - cacheData.retrievedAt.toDate()) / (1000 * 60 * 60);
-            if (cacheAgeHours < 6) { // 6 घंटे का कैश
-                console.log(`[CACHE] Serving from Firestore cache: ${type}`);
-                return cacheData.data;
-            }
-        }
-    } catch (e) {
-        console.error("Error reading from Firestore cache", e);
-    }
-
     console.log(`[API] Fetching from YouTube API: ${type}`);
+    // हर बार नए वीडियो लाने के लिए, सर्वर-साइड कैश को बायपास करने के लिए एक रैंडम पैरामीटर जोड़ें
     let url = `/api/youtube?type=${type}&cb=${new Date().getTime()}`;
     for (const key in params) {
         if (params[key] !== undefined && params[key] !== null) {
@@ -457,6 +441,7 @@ async function fetchFromYouTubeAPI(type, params) {
         }
         const data = await response.json();
 
+        // स्थानीय कैश में वीडियो विवरण स्टोर करें ताकि बार-बार न मांगना पड़े
         if (data.items && data.items.length > 0) {
             data.items.forEach(item => {
                 const videoId = item.id?.videoId || item.id;
@@ -465,15 +450,10 @@ async function fetchFromYouTubeAPI(type, params) {
                 }
             });
         }
-
-        cacheRef.set({
-            data: data,
-            retrievedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).catch(err => console.error("Error writing to Firestore cache:", err));
-
         return data;
     } catch (error) {
         console.error(`Critical Error Fetching from YouTube API (${type}):`, error);
+        // एक खाली ऑब्जेक्ट लौटाएं ताकि ऐप क्रैश न हो
         return {
             error: error.message,
             items: [],
@@ -491,16 +471,17 @@ function renderYouTubeLongVideos(videos, append = false) {
     if (!append) {
         grid.innerHTML = '';
     }
-
-    if (videos.length === 0 && !append) {
-        grid.innerHTML = '<p class="static-message">No videos found. Try a different search or category.</p>';
+    
+    // ★★★ FIX: अगर कोई वीडियो नहीं मिलता है तो एक स्पष्ट संदेश दिखाएं ★★★
+    if (!videos || videos.length === 0 && !append) {
+        grid.innerHTML = '<p class="static-message">No videos found. The API might be facing issues or your search returned no results.</p>';
         if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         return;
     }
 
     const fragment = document.createDocumentFragment();
     videos.forEach((video) => {
-        if (video.id.kind !== 'youtube#video') return;
+        if (!video || !video.id || video.id.kind !== 'youtube#video') return;
         const card = createLongVideoCard(video);
         if (card) fragment.appendChild(card);
     });
@@ -543,9 +524,11 @@ async function loadMoreLongVideos() {
 
     if (type === 'channel') {
         params.channelId = value;
-    } else { // 'query' or default
+    } else {
         params.q = value;
     }
+    // ★★★ FIX: API को संकेत देने के लिए कि हमें शॉर्ट्स नहीं चाहिए ★★★
+    params.videoDefinition = 'high';
 
     data = await fetchFromYouTubeAPI('search', params);
 
@@ -673,7 +656,7 @@ function navigateTo(nextScreenId, payload = null) {
     appState.currentScreenPayload = payload;
     activateScreen(nextScreenId);
 
-    // Initialize screen-specific logic
+    // स्क्रीन-विशिष्ट लॉजिक को इनिशियलाइज़ करें
     if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase();
     if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
     if (nextScreenId === 'history-screen') initializeHistoryScreen();
@@ -691,6 +674,10 @@ function navigateTo(nextScreenId, payload = null) {
     }
     if (nextScreenId === 'wallet-screen') {
         initializeWalletScreen();
+    }
+    // ★★★ NEW: 'Saved Videos' स्क्रीन के लिए लॉजिक ★★★
+    if (nextScreenId === 'saved-videos-screen') {
+        initializeSavedVideosScreen();
     }
 }
 
@@ -725,7 +712,6 @@ async function checkUserProfileAndProceed(user) {
         let userData = doc.data();
 
         if (!userData.referralCode || !userData.referralCode.startsWith('@')) {
-            // ★★★ NECESSARY CHANGE: Calling updated function without 'name' ★★★
             userData.referralCode = await generateAndSaveReferralCode(user.uid);
         }
         userData.friends = userData.friends || [];
@@ -739,6 +725,10 @@ async function checkUserProfileAndProceed(user) {
 
         const savedChannels = localStorage.getItem('shubhzone_addedChannels');
         appState.currentUser.addedChannels = savedChannels ? JSON.parse(savedChannels) : [];
+        
+        // ★★★ NEW: सेव किए गए वीडियो को localStorage से लोड करें ★★★
+        const savedVideos = localStorage.getItem('shubhzone_savedVideos');
+        appState.currentUser.savedVideos = savedVideos ? JSON.parse(savedVideos) : [];
 
         const savedHistory = localStorage.getItem('shubhzoneViewingHistory');
         if (savedHistory) {
@@ -760,7 +750,6 @@ async function checkUserProfileAndProceed(user) {
             avatar: user.photoURL || 'https://via.placeholder.com/120/222/FFFFFF?text=+',
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             friends: [],
-             // ★★★ NECESSARY CHANGE: Calling updated function without 'name' ★★★
             referralCode: await generateAndSaveReferralCode(user.uid),
             walletBalance: 0,
             lastRewardTimestamp: null,
@@ -880,7 +869,6 @@ async function saveAndContinue() {
 
         const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
         if (!userDoc.data().referralCode) {
-            // ★★★ NECESSARY CHANGE: Calling updated function without 'name' ★★★
             await generateAndSaveReferralCode(appState.currentUser.uid);
         }
 
@@ -965,7 +953,7 @@ function renderVideoSwiper(videos, append = false) {
 
     const fragment = document.createDocumentFragment();
     videos.forEach((video) => {
-        if (video.id.kind !== 'youtube#video') return;
+        if (!video || !video.id || video.id.kind !== 'youtube#video') return;
         const videoId = video.id?.videoId || video.id;
         if (!videoId) return;
 
@@ -975,26 +963,34 @@ function renderVideoSwiper(videos, append = false) {
         slide.dataset.channelId = video.snippet.channelId;
 
         slide.addEventListener('click', (e) => {
-            if (e.target.closest('.video-meta-overlay')) return;
+            if (e.target.closest('.video-meta-overlay') || e.target.closest('.action-icon-container')) return;
             togglePlayPause(videoId);
         });
 
         const playerHtml = `<div class="player-container" id="player-${videoId}"></div>`;
         const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
         const uploaderName = video.snippet.channelTitle;
-        const uploaderAvatar = 'https://via.placeholder.com/40';
         const title = video.snippet.title;
 
-        const creatorProfileOnClick = `navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })`;
-        const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
-
+        // ★★★ NEW: वीडियो सेव करने के लिए बटन जोड़ा गया ★★★
         slide.innerHTML = `
             <div class="video-preloader" style="background-image: url('${thumbnailUrl}');"><div class="loader"></div></div>
             ${playerHtml}
+             <div class="video-actions-overlay">
+                 <div class="action-icon-container" onclick="saveVideo('${videoId}', 'short')">
+                    <i class="fas fa-plus icon"></i>
+                    <span class="count">Save</span>
+                </div>
+             </div>
             <div class="video-meta-overlay">
-                <div class="uploader-info" onclick="${creatorProfileOnClick}"><img src="${uploaderAvatar}" class="uploader-avatar"><span class="uploader-name">${escapeHTML(uploaderName)}</span></div>
+                <div class="uploader-info" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })">
+                    <img src="https://via.placeholder.com/40" class="uploader-avatar">
+                    <span class="uploader-name">${escapeHTML(uploaderName)}</span>
+                </div>
                 <p class="video-title">${escapeHTML(title)}</p>
-                <button class="add-channel-btn haptic-trigger" onclick="${addChannelOnClick}"><i class="fas fa-plus"></i> Add</button>
+                <button class="add-channel-btn haptic-trigger" onclick="addChannelToList(event, '${video.snippet.channelId}')">
+                    <i class="fas fa-plus"></i> Add Channel
+                </button>
             </div>
         `;
         fragment.appendChild(slide);
@@ -1027,43 +1023,31 @@ function renderVideoSwiper(videos, append = false) {
     }
 }
 
-// ★ नया: प्लेयर में त्रुटि होने पर यह फ़ंक्शन कॉल होगा
 function onPlayerError(event) {
     const videoId = event.target.getVideoData().video_id;
     console.error(`[YT Player Error] Video ID: ${videoId}, Error Code: ${event.data}`);
-    // त्रुटि कोड दस्तावेज़: https://developers.google.com/youtube/iframe_api_reference#onError
-    // 2 – अमान्य पैरामीटर। (गलत वीडियो आईडी)
-    // 5 – HTML5 प्लेयर त्रुटि।
-    // 100 – वीडियो नहीं मिला (हटा दिया गया या निजी है)।
-    // 101 या 150 – वीडियो के मालिक ने एम्बेडेड प्लेबैक की अनुमति नहीं दी है।
-
-    // उपयोगकर्ता को UI पर सूचित करने का प्रयास करें
     const iframe = event.target.getIframe();
     if (iframe && iframe.parentElement) {
         const container = iframe.parentElement;
         container.innerHTML = `<div style="color:white; text-align:center; padding: 20px; font-size: 1.1em; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%;">
             <p>Could Not Play Video</p>
-            <p style="font-size:0.8em; color: #aaa;">(Error Code: ${event.data})</p>
+            <p style="font-size:0.8em; color: #aaa;">This video might be private or unavailable.</p>
         </div>`;
     }
 }
 
-// ★ संशोधित: अब यह प्लेयर बनाने के अनुरोधों को पंक्तिबद्ध करेगा
 function onYouTubeIframeAPIReady() {
     console.log("[YT API] YouTube IFrame API is ready.");
     isYouTubeApiReady = true;
-
-    // API तैयार होने से पहले पंक्तिबद्ध किए गए किसी भी प्लेयर निर्माण अनुरोध को संसाधित करें
     console.log(`[YT API] Processing ${youtubePlayerQueue.length} queued player requests.`);
     youtubePlayerQueue.forEach(request => {
         console.log(`[YT API] Creating queued player for container: ${request.containerId}`);
         if (request.type === 'shorts') {
-            createPlayerForSlide(request.slide, true); // कतार से बचने के लिए एक ध्वज पास करें
+            createPlayerForSlide(request.slide, true);
         } else if (request.type === 'long') {
-            initializeCreatorPagePlayer(request.videoId, request.containerId, 'long', true); // एक ध्वज पास करें
+            initializeCreatorPagePlayer(request.videoId, request.containerId, 'long', true);
         }
     });
-    // कतार साफ़ करें
     youtubePlayerQueue = [];
 }
 
@@ -1176,14 +1160,11 @@ function pauseActivePlayer() {
     }
 }
 
-// ★ संशोधित: अब यह प्लेयर बनाने के अनुरोध को पंक्तिबद्ध करेगा यदि API तैयार नहीं है
 function createPlayerForSlide(slide, forceCreation = false) {
     const videoId = slide.dataset.videoId;
 
     if (!isYouTubeApiReady && !forceCreation) {
-        // API तैयार नहीं है, इस अनुरोध को पंक्तिबद्ध करें
         console.log(`[YT Player] API not ready. Queuing player for video ID: ${videoId}`);
-        // डुप्लिकेट कतार से बचें
         if (!youtubePlayerQueue.some(item => item.videoId === videoId)) {
             youtubePlayerQueue.push({
                 type: 'shorts',
@@ -1235,7 +1216,7 @@ function createPlayerForSlide(slide, forceCreation = false) {
                 }
             },
             'onStateChange': onPlayerStateChange,
-            'onError': onPlayerError // त्रुटि हैंडलर जोड़ा गया
+            'onError': onPlayerError
         }
     });
 }
@@ -1410,12 +1391,11 @@ async function populateLongVideoGrid(category = 'All') {
 
     let query;
     if (category.toLowerCase() === 'trending') {
-        query = 'trending videos';
+        query = 'trending videos india';
     } else {
         query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
     }
-
-    // ★ बदलाव: सर्च कॉन्टेक्स्ट को अपडेट करें
+    
     appState.longVideoSearchContext = {
         type: 'query',
         value: query
@@ -1424,6 +1404,7 @@ async function populateLongVideoGrid(category = 'All') {
     const data = await fetchFromYouTubeAPI('search', {
         q: query,
         videoDuration: 'long',
+        videoDefinition: 'high', // ★★★ FIX: Added to avoid shorts
         type: 'video'
     });
 
@@ -1440,8 +1421,9 @@ async function renderTrendingCarousel() {
     const data = await fetchFromYouTubeAPI('search', {
         q: 'latest trending videos',
         videoDuration: 'long',
+        videoDefinition: 'high', // ★★★ FIX: Added to avoid shorts
         type: 'video',
-        limit: 10
+        maxResults: 10
     });
 
     if (data.items && data.items.length > 0) {
@@ -1461,20 +1443,17 @@ async function renderTrendingCarousel() {
 }
 
 
-// ★★★ FIX: चैनल के नाम से लॉन्ग वीडियो सर्च करने के लिए फंक्शन को पूरी तरह से बदल दिया गया है ★★★
 async function performLongVideoSearch() {
     const input = document.getElementById('long-video-search-input');
     let query = input.value.trim();
     if (!query) return;
 
-    // अगर यूजर ने यूट्यूब लिंक पेस्ट किया है तो सीधे वीडियो चलाएं
     const videoIdFromUrl = extractYouTubeId(query);
     if (videoIdFromUrl) {
         playYouTubeVideoFromCard(videoIdFromUrl);
         return;
     }
 
-    // कैटेगरी चिप्स को डीसेलेक्ट करें
     document.querySelectorAll('#long-video-category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
 
     const grid = document.getElementById('long-video-grid');
@@ -1483,11 +1462,11 @@ async function performLongVideoSearch() {
 
     let searchParams = {
         videoDuration: 'long',
+        videoDefinition: 'high', // ★★★ FIX: Added to avoid shorts
         type: 'video'
     };
     let finalData;
 
-    // 1. पहले चैनल ढूंढने की कोशिश करें
     try {
         const channelData = await fetchFromYouTubeAPI('search', {
             q: query,
@@ -1496,17 +1475,14 @@ async function performLongVideoSearch() {
         });
         let channelId = null;
         if (channelData.items && channelData.items.length > 0) {
-            // यह सुनिश्चित करने के लिए कि सही चैनल मिला है, टाइटल की जाँच करें
             const channelTitle = channelData.items[0].snippet.title.toLowerCase();
             const queryLower = query.toLowerCase();
-            // सिंपल जाँच: अगर चैनल के नाम में सर्च किया गया टेक्स्ट है
             if (channelTitle.includes(queryLower)) {
                 channelId = channelData.items[0].id.channelId;
             }
         }
 
         if (channelId) {
-            // 2. अगर चैनल मिला, तो उस चैनल के वीडियो सर्च करें
             console.log(`Channel found: ${channelId}. Searching for videos in this channel.`);
             searchParams.channelId = channelId;
             appState.longVideoSearchContext = {
@@ -1514,7 +1490,6 @@ async function performLongVideoSearch() {
                 value: channelId
             };
         } else {
-            // 3. अगर चैनल नहीं मिला, तो सामान्य टेक्स्ट सर्च करें
             console.log(`No specific channel found. Performing general search for: ${query}`);
             searchParams.q = query;
             appState.longVideoSearchContext = {
@@ -1549,8 +1524,8 @@ function createLongVideoCard(video) {
     card.dataset.channelId = video.snippet.channelId;
 
     const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
-    const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
-
+    
+    // ★★★ NEW: Save video button functionality ★★★
     card.innerHTML = `
         <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')" onclick="playYouTubeVideoFromCard('${videoId}')">
             <i class="fas fa-play play-icon-overlay"></i>
@@ -1560,8 +1535,11 @@ function createLongVideoCard(video) {
                 <span class="long-video-name">${escapeHTML(video.snippet.title)}</span>
                 <span class="long-video-uploader">${escapeHTML(video.snippet.channelTitle)}</span>
             </div>
+             <div class="action-icon-container" onclick="saveVideo('${videoId}', 'long')">
+                <i class="fas fa-plus icon" style="font-size: 1.5em;"></i>
+            </div>
         </div>
-        <button class="add-channel-btn-long-grid haptic-trigger" onclick="${addChannelOnClick}"><i class="fas fa-plus"></i> Add Channel</button>
+        <button class="add-channel-btn-long-grid haptic-trigger" onclick="addChannelToList(event, '${video.snippet.channelId}')"><i class="fas fa-plus"></i> Add Channel</button>
     `;
     return card;
 }
@@ -1717,6 +1695,7 @@ async function loadCreatorPageContent(payload) {
                 channelId: creatorId,
                 order: 'date',
                 videoDuration: 'long',
+                videoDefinition: 'high',
                 type: 'video'
             });
             renderCreatorVideoList(contentArea, data.items || [], 'long');
@@ -1749,8 +1728,6 @@ function renderCreatorVideoList(container, videos, type) { /* Unchanged */ }
 
 function renderCreatorPlaylistList(container, playlists, payload) { /* Unchanged */ }
 
-
-// ★★★ FIX: ज़ूम बटनों के साथ नया वीडियो प्लेयर व्यू ★★★
 function showCreatorPlayerView(videoId) {
     appState.creatorPage.currentView = 'player';
     const creatorPageScreen = document.getElementById('creator-page-screen');
@@ -1759,7 +1736,6 @@ function showCreatorPlayerView(videoId) {
     creatorPageScreen.querySelector('.screen-header').style.display = 'none';
     contentArea.classList.add('player-active');
 
-    // HTML में ज़ूम इन और ज़ूम आउट बटन जोड़े गए
     contentArea.innerHTML = `
         <div id="creator-page-player-container">
              <div class="player-controls-header" style="position: absolute; top: 15px; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; z-index: 30;">
@@ -1790,24 +1766,22 @@ function showCreatorPlayerView(videoId) {
         document.getElementById('app-container').classList.toggle('fullscreen-active');
     });
 
-    // ज़ूम बटनों के लिए इवेंट लिस्नर
     let currentZoom = 1.0;
     const playerWrapper = contentArea.querySelector('.player-wrapper');
     const zoomInBtn = document.getElementById('player-zoom-in-btn');
     const zoomOutBtn = document.getElementById('player-zoom-out-btn');
 
     zoomInBtn.addEventListener('click', () => {
-        currentZoom = Math.min(2.5, currentZoom + 0.1); // अधिकतम ज़ूम 2.5x
+        currentZoom = Math.min(2.5, currentZoom + 0.1);
         playerWrapper.style.transform = `scale(${currentZoom})`;
     });
 
     zoomOutBtn.addEventListener('click', () => {
-        currentZoom = Math.max(0.5, currentZoom - 0.1); // न्यूनतम ज़ूम 0.5x
+        currentZoom = Math.max(0.5, currentZoom - 0.1);
         playerWrapper.style.transform = `scale(${currentZoom})`;
     });
 }
 
-// ★ संशोधित: अब यह प्लेयर बनाने के अनुरोध को पंक्तिबद्ध करेगा यदि API तैयार नहीं है
 function initializeCreatorPagePlayer(videoId, containerId, type, forceCreation = false) {
     if (appState.creatorPagePlayers[type]) {
         console.log(`[YT Player] Destroying existing creator player of type: ${type}`);
@@ -1859,7 +1833,7 @@ function initializeCreatorPagePlayer(videoId, containerId, type, forceCreation =
                 }
             },
             'onStateChange': handleCreatorPlayerStateChange,
-            'onError': onPlayerError // त्रुटि हैंडलर जोड़ा गया
+            'onError': onPlayerError
         }
     });
 }
@@ -1902,7 +1876,7 @@ function updateRewardUI() {
                 <h2>Congratulations!</h2>
                 <p>You have earned a new scratch card.</p>
                 <div class="scratch-card-container" id="scratch-card-container">
-                    <div class="scratch-card-overlay" id="scratch-overlay">Scratch Here</div>
+                    <div class="scratch-card-overlay" id="scratch-overlay">Scratch to win up to ₹500!</div>
                     <div class="scratch-card-reward" id="scratch-reward"></div>
                 </div>
             </div>
@@ -1928,14 +1902,14 @@ function updateRewardUI() {
     }
 }
 
-// ★★★ NECESSARY CHANGE: Timer logic updated to be a continuous 60-second cycle ★★★
+// ★★★ NECESSARY CHANGE: New timer logic (5 min first, then 90 min) ★★★
 function startRewardTimerCheck() {
-    const {
-        lastRewardTimestamp
-    } = appState.currentUser;
+    const { lastRewardTimestamp, initialRewardClaimed } = appState.currentUser;
     const now = new Date();
 
-    const rewardIntervalMillis = 60 * 1000; // 60 सेकंड
+    // पहली बार के लिए 5 मिनट, बाद में 90 मिनट का अंतराल
+    const rewardIntervalMillis = initialRewardClaimed ? (90 * 60 * 1000) : (5 * 60 * 1000);
+    
     const lastRewardTime = lastRewardTimestamp ? lastRewardTimestamp.toDate() : new Date(0);
     const timePassed = now.getTime() - lastRewardTime.getTime();
 
@@ -1982,16 +1956,18 @@ function setupScratchCard() {
 
     let isScratching = false;
 
-    const random = Math.random();
-    let rewardText;
-    let rewardValue = 0;
-    if (random < 0.2) {
-        rewardText = "Try Again Next Time!";
-    } else {
-        // ★ NO CHANGE NEEDED: This already gives a value between 1 and 10.
-        rewardValue = Math.floor(Math.random() * 10) + 1;
-        rewardText = `You Won ₹${rewardValue}!`;
+    // ★★★ NECESSARY CHANGE: Reward logic (actual 1-9, chance of 60) ★★★
+    let rewardValue = Math.floor(Math.random() * 9) + 1; // 1 से 9 के बीच इनाम
+    let rewardText = `You Won ₹${rewardValue}!`;
+
+    // 1000 सफल रेफरल पर 60 रुपये देने का लॉजिक सर्वर पर होना चाहिए।
+    // यहाँ हम केवल क्लाइंट-साइड दिखावा कर सकते हैं। यह असली लॉजिक नहीं है।
+    // For demonstration, let's add a 1 in 1000 chance to get 60.
+    if (Math.random() < 0.001) {
+        rewardValue = 60;
+        rewardText = `🎉 JACKPOT! You Won ₹${rewardValue}! 🎉`;
     }
+
     rewardElem.textContent = rewardText;
 
     const scratch = (e) => {
@@ -2014,15 +1990,11 @@ function setupScratchCard() {
     const stopScratching = () => isScratching = false;
 
     overlay.addEventListener('mousedown', startScratching);
-    overlay.addEventListener('touchstart', startScratching, {
-        passive: true
-    });
+    overlay.addEventListener('touchstart', startScratching, { passive: true });
     window.addEventListener('mouseup', stopScratching);
     window.addEventListener('touchend', stopScratching);
     overlay.addEventListener('mousemove', scratch);
-    overlay.addEventListener('touchmove', scratch, {
-        passive: true
-    });
+    overlay.addEventListener('touchmove', scratch, { passive: true });
 }
 
 async function handleRewardRevealed(amount, text) {
@@ -2032,20 +2004,17 @@ async function handleRewardRevealed(amount, text) {
             initialRewardClaimed: true,
             lastRewardTimestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        // स्थानीय स्थिति को तुरंत अपडेट करें
+        
         appState.currentUser.initialRewardClaimed = true;
-        appState.currentUser.lastRewardTimestamp = {
-            toDate: () => new Date()
-        };
+        appState.currentUser.lastRewardTimestamp = { toDate: () => new Date() };
     } catch (error) {
         console.error("Error updating user reward status:", error);
     }
 
     if (amount > 0) {
         const container = document.getElementById('scratch-card-container');
-        // ★★★ NECESSARY CHANGE: Offer timer changed to 20 minutes ★★★
         if (container) {
-            container.innerHTML += `
+            const offerHTML = `
                 <div class="claim-offer-section">
                     <p>इस ऑफर को पाने के लिए, अपने किसी दोस्त को 20 मिनट के अंदर इनवाइट करें।</p>
                     <p>(To claim this offer, invite a friend within 20 minutes.)</p>
@@ -2053,6 +2022,9 @@ async function handleRewardRevealed(amount, text) {
                     <button class="continue-btn" onclick="copyToClipboard(appState.currentUser.referralCode, event)">Copy Referral ID</button>
                 </div>
             `;
+            // पहले से मौजूद इनाम टेक्स्ट के बाद ऑफर को जोड़ें
+            container.innerHTML = `<div class="scratch-card-reward">${text}</div>` + offerHTML;
+            
             startCountdownTimer('claim-timer', 20 * 60, () => {
                 const claimSection = document.querySelector('.claim-offer-section');
                 if (claimSection) claimSection.innerHTML = "<p>Offer Expired!</p>";
@@ -2060,12 +2032,13 @@ async function handleRewardRevealed(amount, text) {
         }
     }
 
-    // ★ FIX: कुछ सेकंड के बाद टाइमर शुरू करने के लिए रीचेक करें
+    // कुछ सेकंड के बाद टाइमर शुरू करने के लिए रीचेक करें
     setTimeout(() => {
         startRewardTimerCheck();
     }, 5000);
 }
 
+// ★★★ NECESSARY CHANGE: Reward only goes to wallet on successful referral ★★★
 async function processReferral(referralCode, newUserId) {
     const querySnapshot = await db.collection('users').where('referralCode', '==', referralCode).limit(1).get();
     if (querySnapshot.empty) return null;
@@ -2078,12 +2051,17 @@ async function processReferral(referralCode, newUserId) {
         return null;
     }
 
-    // ★ NO CHANGE NEEDED: This already gives 1 or 2 Rs (with a small chance of 10).
-    const rewardAmount = Math.random() > 0.95 ? 10 : (Math.random() > 0.5 ? 2 : 1);
+    const rewardAmount = Math.random() > 0.5 ? 2 : 1; // 1 or 2 Rs
 
-    await db.collection('users').doc(referringUserId).update({
-        walletBalance: firebase.firestore.FieldValue.increment(rewardAmount)
-    });
+    try {
+        await db.collection('users').doc(referringUserId).update({
+            walletBalance: firebase.firestore.FieldValue.increment(rewardAmount)
+        });
+        console.log(`User ${referringUserId} was rewarded ${rewardAmount} for referral.`);
+    } catch (error) {
+        console.error("Error giving referral bonus:", error);
+    }
+
 
     return {
         uid: referringUserId
@@ -2158,6 +2136,111 @@ async function submitWithdrawalRequest() {
 // ★★★ REWARD SYSTEM LOGIC - END ★★★
 // =======================================================
 
+// =======================================================
+// ★★★ NEW: 'SAVED VIDEOS' FEATURE LOGIC - START ★★★
+// =======================================================
+
+function saveVideo(videoId, videoType) {
+    const existingVideo = appState.currentUser.savedVideos.find(v => v.id === videoId);
+    if (existingVideo) {
+        alert("Video is already saved.");
+        return;
+    }
+
+    const videoDetails = currentVideoCache.get(videoId);
+    if (!videoDetails) {
+        alert("Could not save video. Details not found.");
+        return;
+    }
+
+    const videoToSave = {
+        id: videoId,
+        type: videoType,
+        title: videoDetails.snippet.title,
+        channelTitle: videoDetails.snippet.channelTitle,
+        thumbnailUrl: videoDetails.snippet.thumbnails.medium.url,
+    };
+
+    appState.currentUser.savedVideos.unshift(videoToSave); // सबसे नए को सबसे ऊपर रखें
+    localStorage.setItem('shubhzone_savedVideos', JSON.stringify(appState.currentUser.savedVideos));
+    alert("Video saved!");
+}
+
+function removeSavedVideo(videoId) {
+    appState.currentUser.savedVideos = appState.currentUser.savedVideos.filter(v => v.id !== videoId);
+    localStorage.setItem('shubhzone_savedVideos', JSON.stringify(appState.currentUser.savedVideos));
+    // UI को फिर से रेंडर करें
+    renderSavedVideos();
+}
+
+function initializeSavedVideosScreen() {
+    renderSavedVideos();
+    // डिफ़ॉल्ट रूप से लॉन्ग वीडियो दिखाएं
+    toggleSavedVideoView('long');
+}
+
+function renderSavedVideos() {
+    const longVideoContainer = document.getElementById('saved-long-videos');
+    const shortVideoContainer = document.getElementById('saved-short-videos');
+    if (!longVideoContainer || !shortVideoContainer) return;
+
+    const saved = appState.currentUser.savedVideos;
+    
+    const longVideos = saved.filter(v => v.type === 'long');
+    const shortVideos = saved.filter(v => v.type === 'short');
+
+    if (longVideos.length > 0) {
+        longVideoContainer.innerHTML = longVideos.map(video => `
+            <div class="history-list-item">
+                <div class="history-item-thumbnail" style="background-image: url('${escapeHTML(video.thumbnailUrl)}')" onclick="playYouTubeVideoFromCard('${video.id}')"></div>
+                <div class="history-item-info">
+                    <span class="history-item-title">${escapeHTML(video.title)}</span>
+                    <span class="history-item-uploader">${escapeHTML(video.channelTitle)}</span>
+                </div>
+                <div class="history-item-menu" onclick="removeSavedVideo('${video.id}')">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        longVideoContainer.innerHTML = '<p class="static-message">No long videos saved yet.</p>';
+    }
+
+    if (shortVideos.length > 0) {
+        shortVideoContainer.innerHTML = shortVideos.map(video => `
+            <div class="history-short-card" style="background-image: url('${escapeHTML(video.thumbnailUrl)}')">
+                <div class="history-item-menu" onclick="removeSavedVideo('${video.id}')">
+                    <i class="fas fa-trash-alt"></i>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        shortVideoContainer.innerHTML = '<p class="static-message">No short videos saved yet.</p>';
+    }
+}
+
+function toggleSavedVideoView(view) {
+    const longBtn = document.getElementById('saved-toggle-long');
+    const shortBtn = document.getElementById('saved-toggle-short');
+    const longContainer = document.getElementById('saved-long-videos');
+    const shortContainer = document.getElementById('saved-short-videos');
+    
+    if (view === 'long') {
+        longBtn.classList.add('active');
+        shortBtn.classList.remove('active');
+        longContainer.style.display = 'flex';
+        shortContainer.style.display = 'none';
+    } else {
+        shortBtn.classList.add('active');
+        longBtn.classList.remove('active');
+        shortContainer.style.display = 'grid'; // शॉर्ट्स के लिए ग्रिड लेआउट
+        longContainer.style.display = 'none';
+    }
+}
+
+// =======================================================
+// ★★★ NEW: 'SAVED VIDEOS' FEATURE LOGIC - END ★★★
+// =======================================================
 
 async function addChannelToList(event, channelId) { /* Unchanged */ }
 
@@ -2235,26 +2318,26 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('main-sidebar').classList.add('open');
         document.getElementById('sidebar-overlay').classList.add('open');
     };
+    const closeSidebar = () => {
+        document.getElementById('main-sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('open');
+    };
+
     document.getElementById('home-menu-icon')?.addEventListener('click', openSidebar);
     document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
+    document.getElementById('close-sidebar-btn')?.addEventListener('click', closeSidebar);
+    document.getElementById('sidebar-overlay')?.addEventListener('click', closeSidebar);
 
-    const profileSidebarBtn = document.getElementById('sidebar-profile-btn');
-    if (profileSidebarBtn) {
-        profileSidebarBtn.addEventListener('click', () => {
-            navigateTo('profile-screen');
-            document.getElementById('main-sidebar').classList.remove('open');
-            document.getElementById('sidebar-overlay').classList.remove('open');
-        });
-    }
+    document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => {
+        navigateTo('profile-screen');
+        closeSidebar();
+    });
+    // ★★★ NEW: 'Saved Videos' बटन के लिए इवेंट लिस्नर ★★★
+    document.getElementById('sidebar-saved-btn')?.addEventListener('click', () => {
+        navigateTo('saved-videos-screen');
+        closeSidebar();
+    });
 
-    document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
-        document.getElementById('main-sidebar').classList.remove('open');
-        document.getElementById('sidebar-overlay').classList.remove('open');
-    });
-    document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-        document.getElementById('main-sidebar').classList.remove('open');
-        document.getElementById('sidebar-overlay').classList.remove('open');
-    });
 
     document.getElementById('long-video-history-btn')?.addEventListener('click', () => navigateTo('history-screen'));
     document.getElementById('back-from-history-btn')?.addEventListener('click', () => navigateBack());
@@ -2319,4 +2402,4 @@ function toggleProfileVideoView(view) {
         shortGrid.style.display = 'none';
         longGrid.style.display = 'grid';
     }
-}
+}```
