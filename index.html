@@ -11,7 +11,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Main App Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&display=swap"
+        rel="stylesheet">
 
     <!-- CSS फ़ाइल को यहाँ लिंक किया गया है -->
     <link rel="stylesheet" href="style.css"> <!-- Replace with your CSS file name -->
@@ -26,23 +27,21 @@
             <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
         </div>
 
+        <!-- ★ बदलाव: साइडबार में प्रोफ़ाइल बटन जोड़ा गया -->
         <div id="sidebar-profile-btn" class="sidebar-option haptic-trigger">
             <i class="fas fa-user" style="margin-right: 15px;"></i>
             <span>Profile</span>
         </div>
 
-        <!-- ★★★ NEW: 'Saved Videos' button added to the sidebar ★★★ -->
-        <div id="sidebar-saved-btn" class="sidebar-option haptic-trigger">
-            <i class="fas fa-bookmark" style="margin-right: 15px;"></i>
-            <span>Saved Videos</span>
-        </div>
-
-        <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer" class="premium-features-card haptic-trigger">
+        <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer"
+            class="premium-features-card haptic-trigger">
             <div class="premium-image-wrapper">
-                <img src="https://i.ibb.co/0RF4GmTZ/Flux-Dev-A-futuristic-social-media-interface-named-Shubhzone-g-1.jpg" alt="Premium Features Image">
+                <img src="https://i.ibb.co/0RF4GmTZ/Flux-Dev-A-futuristic-social-media-interface-named-Shubhzone-g-1.jpg"
+                    alt="Premium Features Image">
             </div>
             <span>Premium Features</span>
         </a>
+
     </div>
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
     <!-- === SIDEBAR END === -->
@@ -57,7 +56,8 @@
             <ul id="comments-list"></ul>
             <div class="comment-input-container">
                 <input type="text" id="comment-input" placeholder="Commenting is disabled." disabled>
-                <button id="send-comment-btn" class="haptic-trigger" disabled><i class="fas fa-paper-plane"></i></button>
+                <button id="send-comment-btn" class="haptic-trigger" disabled><i
+                        class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </div>
@@ -103,7 +103,8 @@
             </div>
             <div style="margin-top: 60px; width: 100%; overflow-y: auto; padding: 20px;">
                 <div class="profile-image-upload">
-                    <img id="profile-image-preview" src="https://via.placeholder.com/120/222/FFFFFF?text=+" alt="Profile Preview">
+                    <img id="profile-image-preview" src="https://via.placeholder.com/120/222/FFFFFF?text=+"
+                        alt="Profile Preview">
                     <label for="profile-image-input" class="profile-image-label haptic-trigger">
                         <i class="fas fa-camera"></i>
                     </label>
@@ -113,6 +114,7 @@
                     <label for="info-name">Name</label>
                     <input type="text" id="info-name" placeholder="Enter your name">
                 </div>
+                <!-- ★ नया: रेफरल कोड इनपुट फील्ड -->
                 <div class="input-group">
                     <label for="info-referral">Referral ID (Optional)</label>
                     <input type="text" id="info-referral" placeholder="Enter referral ID if you have one">
@@ -148,7 +150,8 @@
                         <option value="West Bengal">West Bengal</option>
                         <option value="custom">Other</option>
                     </select>
-                    <input type="text" id="custom-state-input" class="custom-input" placeholder="Please specify your state">
+                    <input type="text" id="custom-state-input" class="custom-input"
+                        placeholder="Please specify your state">
                 </div>
                 <div class="input-group">
                     <label for="info-country">Country</label>
@@ -156,10 +159,12 @@
                         <option value="India">India</option>
                         <option value="custom">Custom</option>
                     </select>
-                    <input type="text" id="custom-country-input" class="custom-input" placeholder="Please specify your country">
+                    <input type="text" id="custom-country-input" class="custom-input"
+                        placeholder="Please specify your country">
                 </div>
                 <div class="button-container">
-                    <button id="save-continue-btn" class="continue-btn haptic-trigger" onclick="saveAndContinue()">Continue</button>
+                    <button id="save-continue-btn" class="continue-btn haptic-trigger"
+                        onclick="saveAndContinue()">Continue</button>
                     <button class="logout-btn haptic-trigger" onclick="logoutUser()">Logout</button>
                 </div>
             </div>
@@ -205,7 +210,7 @@
                     <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
                 </div>
                 <div id="long-video-grid"></div>
-                <!-- Load More button is dynamically added here by script.js -->
+                <!-- "Load More" button is dynamically added here by script.js -->
             </div>
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
@@ -244,12 +249,15 @@
         <div id="friends-screen" class="screen">
             <div class="friends-top-bar">
                 <div class="tab-bar">
+                    <!-- ★★★ FIX: "My Channels" टैब हटा दिया गया ★★★ -->
                     <button class="tab-button active" data-tab="add">Add Friends</button>
                     <button class="tab-button" data-tab="requests">Requests</button>
                     <button class="tab-button" data-tab="members">Members</button>
                 </div>
             </div>
+
             <main class="content-area">
+                <!-- ★★★ FIX: "Add Friends" को डिफ़ॉल्ट रूप से दृश्यमान बनाने के लिए "hidden" क्लास हटा दी गई ★★★ -->
                 <div class="tab-content" id="add-content">
                     <div class="add-friend-search-container">
                         <input type="text" id="add-friend-search-input" placeholder="Search by Name or @ID">
@@ -270,7 +278,8 @@
                 <div class="chat-messages" id="chat-messages"></div>
                 <div class="chat-input-bar">
                     <input type="text" class="input-field" placeholder="Message...">
-                    <button class="send-button haptic-trigger" id="send-button"><i class="fas fa-paper-plane"></i></button>
+                    <button class="send-button haptic-trigger" id="send-button"><i
+                            class="fas fa-paper-plane"></i></button>
                 </div>
             </div>
 
@@ -290,19 +299,22 @@
                 <button id="profile-your-zone-btn" class="haptic-trigger">Edit Profile</button>
             </div>
             <div id="profile-video-toggle-buttons">
-                <button id="profile-show-shorts-btn" class="profile-toggle-btn active haptic-trigger">Short Video</button>
+                <button id="profile-show-shorts-btn" class="profile-toggle-btn active haptic-trigger">Short
+                    Video</button>
                 <button id="profile-show-longs-btn" class="profile-toggle-btn haptic-trigger">Long Video</button>
             </div>
             <div id="profile-video-content">
                 <div id="user-short-video-grid"></div>
                 <div id="user-long-video-grid" style="display: none;"></div>
             </div>
+            <!-- No nav bar here as it's a deep-link screen -->
         </div>
 
         <!-- === CREATOR PAGE SCREEN === -->
         <div id="creator-page-screen" class="screen">
             <div class="screen-header">
-                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i
+                        class="fas fa-arrow-left"></i></div>
                 <div id="creator-page-tabs"></div>
             </div>
             <div id="creator-page-content" class="content-area">
@@ -310,7 +322,7 @@
             </div>
         </div>
 
-        <!-- === REWARD SCREEN === -->
+        <!-- ★ नया: REWARD SCREEN -->
         <div id="reward-screen" class="screen">
             <div class="reward-header">
                 <span class="header-title">Reward</span>
@@ -330,10 +342,11 @@
             </div>
         </div>
 
-        <!-- === WALLET SCREEN === -->
+        <!-- ★ नया: WALLET SCREEN -->
         <div id="wallet-screen" class="screen">
             <div class="screen-header">
-                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i
+                        class="fas fa-arrow-left"></i></div>
                 <span class="header-title">My Wallet</span>
             </div>
             <div class="content-area">
@@ -351,23 +364,8 @@
                 </div>
                 <button id="withdraw-btn" class="haptic-trigger">Withdraw (Min ₹50)</button>
             </div>
+             <!-- No nav bar here as it's a deep-link screen -->
         </div>
-
-        <!-- ★★★ NEW: 'Saved Videos' Screen Container ★★★ -->
-        <div id="saved-videos-screen" class="screen">
-            <div class="saved-videos-header">
-                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-                <div class="saved-videos-toggle-container">
-                    <button id="saved-toggle-long" class="saved-video-toggle-btn haptic-trigger" onclick="toggleSavedVideoView('long')">Long Videos</button>
-                    <button id="saved-toggle-short" class="saved-video-toggle-btn haptic-trigger" onclick="toggleSavedVideoView('short')">Shorts</button>
-                </div>
-            </div>
-            <div class="content-area">
-                <div id="saved-long-videos" style="display: none;"></div>
-                <div id="saved-short-videos" style="display: none;"></div>
-            </div>
-        </div>
-
     </div> <!-- End of .app-container -->
 
     <!-- === SCRIPTS (MUST BE AT THE END) === -->
@@ -391,4 +389,5 @@
     </script>
 
 </body>
+
 </html>
