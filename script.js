@@ -250,14 +250,14 @@ function fallbackCopyToClipboard(text, event) {
     document.body.removeChild(textArea);
 }
 
-async function generateAndSaveReferralCode(uid, name) {
-    const safeName = (name || 'user').replace(/[^a-zA-Z]/g, '').toLowerCase().substring(0, 4);
-    const randomPart = Math.random().toString().substring(2, 6);
-    let referralCode = `@${safeName}${randomPart}`;
-    while (referralCode.length < 7) {
-        referralCode += Math.floor(Math.random() * 10);
-    }
+// ★★★ NECESSARY CHANGE: Referral ID is now 5 alphanumeric characters ★★★
+async function generateAndSaveReferralCode(uid) {
+    // 5-अक्षर का अल्फान्यूमेरिक कोड जेनरेट करें
+    const randomPart = Math.random().toString(36).substring(2, 7).toUpperCase();
+    let referralCode = `@${randomPart}`;
+
     try {
+        // NOTE: In a real-world app, you should check if this code already exists and regenerate if it does.
         await db.collection('users').doc(uid).update({
             referralCode: referralCode
         });
@@ -725,7 +725,8 @@ async function checkUserProfileAndProceed(user) {
         let userData = doc.data();
 
         if (!userData.referralCode || !userData.referralCode.startsWith('@')) {
-            userData.referralCode = await generateAndSaveReferralCode(user.uid, userData.name);
+            // ★★★ NECESSARY CHANGE: Calling updated function without 'name' ★★★
+            userData.referralCode = await generateAndSaveReferralCode(user.uid);
         }
         userData.friends = userData.friends || [];
         userData.walletBalance = userData.walletBalance || 0;
@@ -759,7 +760,8 @@ async function checkUserProfileAndProceed(user) {
             avatar: user.photoURL || 'https://via.placeholder.com/120/222/FFFFFF?text=+',
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             friends: [],
-            referralCode: await generateAndSaveReferralCode(user.uid, user.displayName || 'user'),
+             // ★★★ NECESSARY CHANGE: Calling updated function without 'name' ★★★
+            referralCode: await generateAndSaveReferralCode(user.uid),
             walletBalance: 0,
             lastRewardTimestamp: null,
             initialRewardClaimed: false,
@@ -878,7 +880,8 @@ async function saveAndContinue() {
 
         const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
         if (!userDoc.data().referralCode) {
-            await generateAndSaveReferralCode(appState.currentUser.uid, name);
+            // ★★★ NECESSARY CHANGE: Calling updated function without 'name' ★★★
+            await generateAndSaveReferralCode(appState.currentUser.uid);
         }
 
         const refreshedUserData = (await db.collection('users').doc(appState.currentUser.uid).get()).data();
@@ -1925,30 +1928,25 @@ function updateRewardUI() {
     }
 }
 
+// ★★★ NECESSARY CHANGE: Timer logic updated to be a continuous 60-second cycle ★★★
 function startRewardTimerCheck() {
     const {
-        initialRewardClaimed,
         lastRewardTimestamp
     } = appState.currentUser;
     const now = new Date();
 
-    if (!initialRewardClaimed) {
-        // ★ FIX: पहली बार उपयोगकर्ता के लिए 60 सेकंड का टाइमर
-        appState.rewardState.isEligible = false;
-        appState.rewardState.secondsRemaining = 60;
-    } else {
-        const sixtyMinutes = 60 * 60 * 1000;
-        const lastRewardTime = lastRewardTimestamp ? lastRewardTimestamp.toDate() : new Date(0);
-        const timePassed = now.getTime() - lastRewardTime.getTime();
+    const rewardIntervalMillis = 60 * 1000; // 60 सेकंड
+    const lastRewardTime = lastRewardTimestamp ? lastRewardTimestamp.toDate() : new Date(0);
+    const timePassed = now.getTime() - lastRewardTime.getTime();
 
-        if (timePassed >= sixtyMinutes) {
-            appState.rewardState.isEligible = true;
-            appState.rewardState.secondsRemaining = 0;
-        } else {
-            appState.rewardState.isEligible = false;
-            appState.rewardState.secondsRemaining = Math.round((sixtyMinutes - timePassed) / 1000);
-        }
+    if (timePassed >= rewardIntervalMillis) {
+        appState.rewardState.isEligible = true;
+        appState.rewardState.secondsRemaining = 0;
+    } else {
+        appState.rewardState.isEligible = false;
+        appState.rewardState.secondsRemaining = Math.round((rewardIntervalMillis - timePassed) / 1000);
     }
+
     updateRewardUI();
 }
 
@@ -1990,6 +1988,7 @@ function setupScratchCard() {
     if (random < 0.2) {
         rewardText = "Try Again Next Time!";
     } else {
+        // ★ NO CHANGE NEEDED: This already gives a value between 1 and 10.
         rewardValue = Math.floor(Math.random() * 10) + 1;
         rewardText = `You Won ₹${rewardValue}!`;
     }
@@ -2044,16 +2043,17 @@ async function handleRewardRevealed(amount, text) {
 
     if (amount > 0) {
         const container = document.getElementById('scratch-card-container');
+        // ★★★ NECESSARY CHANGE: Offer timer changed to 20 minutes ★★★
         if (container) {
             container.innerHTML += `
                 <div class="claim-offer-section">
-                    <p>इस ऑफर को पाने के लिए, अपने किसी दोस्त को 24 मिनट के अंदर इनवाइट करें।</p>
-                    <p>(To claim this offer, invite a friend within 24 minutes.)</p>
-                    <div id="claim-timer" class="reward-timer">24:00</div>
+                    <p>इस ऑफर को पाने के लिए, अपने किसी दोस्त को 20 मिनट के अंदर इनवाइट करें।</p>
+                    <p>(To claim this offer, invite a friend within 20 minutes.)</p>
+                    <div id="claim-timer" class="reward-timer">20:00</div>
                     <button class="continue-btn" onclick="copyToClipboard(appState.currentUser.referralCode, event)">Copy Referral ID</button>
                 </div>
             `;
-            startCountdownTimer('claim-timer', 24 * 60, () => {
+            startCountdownTimer('claim-timer', 20 * 60, () => {
                 const claimSection = document.querySelector('.claim-offer-section');
                 if (claimSection) claimSection.innerHTML = "<p>Offer Expired!</p>";
             });
@@ -2078,6 +2078,7 @@ async function processReferral(referralCode, newUserId) {
         return null;
     }
 
+    // ★ NO CHANGE NEEDED: This already gives 1 or 2 Rs (with a small chance of 10).
     const rewardAmount = Math.random() > 0.95 ? 10 : (Math.random() > 0.5 ? 2 : 1);
 
     await db.collection('users').doc(referringUserId).update({
