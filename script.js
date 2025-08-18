@@ -726,7 +726,6 @@ async function checkUserProfileAndProceed(user) {
         const savedChannels = localStorage.getItem('shubhzone_addedChannels');
         appState.currentUser.addedChannels = savedChannels ? JSON.parse(savedChannels) : [];
         
-        // ★★★ NEW: सेव किए गए वीडियो को localStorage से लोड करें ★★★
         const savedVideos = localStorage.getItem('shubhzone_savedVideos');
         appState.currentUser.savedVideos = savedVideos ? JSON.parse(savedVideos) : [];
 
@@ -735,10 +734,11 @@ async function checkUserProfileAndProceed(user) {
             appState.viewingHistory = JSON.parse(savedHistory);
         }
         updateProfileUI();
-
-        if (userData.name && userData.state) {
-            await startAppLogic();
-        } else {
+        
+        // ★★★ CRITICAL FIX: Removed automatic startAppLogic() call ★★★
+        // अब यह फंक्शन सिर्फ यह तय करेगा कि इंफॉर्मेशन स्क्रीन पर जाना है या नहीं।
+        // ऐप `get-started-btn` पर क्लिक करने के बाद ही शुरू होगा।
+        if (!userData.name || !userData.state) {
             navigateTo('information-screen');
         }
 
@@ -904,7 +904,7 @@ function updateProfileUI() {
 
 let appStartLogicHasRun = false;
 const startAppLogic = async () => {
-    if (appStartLogicHasRun && appState.currentScreen !== 'splash-screen' && appState.currentScreen !== 'information-screen') {
+    if (appStartLogicHasRun) {
         return;
     }
     appStartLogicHasRun = true;
@@ -972,7 +972,6 @@ function renderVideoSwiper(videos, append = false) {
         const uploaderName = video.snippet.channelTitle;
         const title = video.snippet.title;
 
-        // ★★★ NEW: वीडियो सेव करने के लिए बटन जोड़ा गया ★★★
         slide.innerHTML = `
             <div class="video-preloader" style="background-image: url('${thumbnailUrl}');"><div class="loader"></div></div>
             ${playerHtml}
@@ -984,7 +983,6 @@ function renderVideoSwiper(videos, append = false) {
              </div>
             <div class="video-meta-overlay">
                 <div class="uploader-info" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })">
-                    <img src="https://via.placeholder.com/40" class="uploader-avatar">
                     <span class="uploader-name">${escapeHTML(uploaderName)}</span>
                 </div>
                 <p class="video-title">${escapeHTML(title)}</p>
@@ -2402,4 +2400,4 @@ function toggleProfileVideoView(view) {
         shortGrid.style.display = 'none';
         longGrid.style.display = 'grid';
     }
-}```
+}
