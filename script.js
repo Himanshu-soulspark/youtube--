@@ -1,4 +1,4 @@
-javascript
+
 /* ================================================= /
 / === Shubhzone App Script (Code 2) - FINAL v6.0 === /
 / === MODIFIED AS PER USER REQUEST - AUG 2025    === /
@@ -919,6 +919,15 @@ function updateProfileUI() {
 
 let appStartLogicHasRun = false;
 const startAppLogic = async () => {
+    // ★★★ CRITICAL FIX FOR 'GET STARTED' BUTTON ★★★
+    // This check ensures the app only proceeds after user data (UID) is available.
+    // It prevents the app from getting stuck if Firebase auth is slightly delayed.
+    if (!appState.currentUser || !appState.currentUser.uid) {
+        console.warn("User data not ready yet, retrying in 100ms...");
+        setTimeout(startAppLogic, 100); // Try again after a short delay
+        return; // Stop the function for now
+    }
+    
     if (appStartLogicHasRun && appState.currentScreen !== 'splash-screen' && appState.currentScreen !== 'information-screen') {
         return;
     }
@@ -2735,4 +2744,3 @@ function toggleProfileVideoView(view) {
         longGrid.style.display = 'grid';
     }
 }
-```
