@@ -394,7 +394,7 @@ let appState = {
     // NEW REWARD SYSTEM STATE
     rewardSystem: {
         state: 'loading', // loading, timer, scratch, offer
-        timerValue: 500,
+        timerValue: 30,
         timerInterval: null,
         isTimerActive: false,
         currentOffer: null,
@@ -1890,7 +1890,7 @@ async function initializeUserRewardState() {
         // ★★★ FIX: Removed the problematic logic that violated security rules ★★★
         const initialState = {
             state: 'timer',
-            timerValue: 500, // 500 seconds for first login
+            timerValue: 30, // 30 seconds for first login
             isFirstLogin: true,
             offerHistory: [],
             walletBalance: 0,
@@ -2142,7 +2142,7 @@ async function handleScratchWin(amount) {
     appState.rewardSystem.isFirstLogin = false; // Mark first reward as claimed
     appState.rewardSystem.walletBalance += amount;
     appState.rewardSystem.state = 'timer';
-    appState.rewardSystem.timerValue = 200 * 60; // Set next timer to 200 minutes
+    appState.rewardSystem.timerValue = 30; // Set next timer to 30 seconds
 
     await saveUserRewardState();
 
@@ -2188,7 +2188,7 @@ async function handleExploreOffer(url, offerId) {
     window.open(url, '_blank');
     // Set next timer
     appState.rewardSystem.state = 'timer';
-    appState.rewardSystem.timerValue = 200 * 60; // 200 minutes
+    appState.rewardSystem.timerValue = 30; // 30 seconds
     // Add to history
     if (appState.rewardSystem.currentOffer) {
         appState.rewardSystem.offerHistory.unshift(appState.rewardSystem.currentOffer);
@@ -2386,7 +2386,7 @@ async function submitCashbackRequest() {
 
         // Reset timer and go back
         appState.rewardSystem.state = 'timer';
-        appState.rewardSystem.timerValue = 200 * 60;
+        appState.rewardSystem.timerValue = 30;
         await saveUserRewardState();
         navigateBack();
 
@@ -2744,3 +2744,4 @@ function toggleProfileVideoView(view) {
         longGrid.style.display = 'grid';
     }
 }
+```
