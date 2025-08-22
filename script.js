@@ -2744,4 +2744,3 @@ function toggleProfileVideoView(view) {
         longGrid.style.display = 'grid';
     }
 }
-```
