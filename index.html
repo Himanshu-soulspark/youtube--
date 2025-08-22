@@ -27,7 +27,6 @@
             <span id="close-sidebar-btn" class="close-sidebar-btn haptic-trigger">×</span>
         </div>
 
-        <!-- ★ बदलाव: साइडबार में प्रोफ़ाइल बटन जोड़ा गया -->
         <div id="sidebar-profile-btn" class="sidebar-option haptic-trigger">
             <i class="fas fa-user" style="margin-right: 15px;"></i>
             <span>Profile</span>
@@ -114,7 +113,6 @@
                     <label for="info-name">Name</label>
                     <input type="text" id="info-name" placeholder="Enter your name">
                 </div>
-                <!-- ★ नया: रेफरल कोड इनपुट फील्ड -->
                 <div class="input-group">
                     <label for="info-referral">Referral ID (Optional)</label>
                     <input type="text" id="info-referral" placeholder="Enter referral ID if you have one">
@@ -377,6 +375,20 @@
         };
         window.addEventListener('resize', setAppHeight);
         setAppHeight();
+    </script>
+    
+    <!-- ★★★ NEW: CUELINKS TRACKING SCRIPT (THE ONLY REQUIRED CHANGE) ★★★ -->
+    <!-- यह स्क्रिप्ट सुनिश्चित करती है कि आपकी ऐप में मौजूद सभी बाहरी शॉपिंग लिंक्स मॉनेटाइज हो जाएं -->
+    <script type='text/javascript'>
+          var cId = 'YOUR_CUELINKS_CAMPAIGN_ID'; // ★★★ अपनी Cuelinks कैंपेन ID यहाँ डालें ★★★
+
+          (function(d, t) {
+            var s = document.createElement('script');
+            s.type = 'text/javascript';
+            s.async = true;
+            s.src = (document.location.protocol == 'https:' ? 'https://cdn0.cuelinks.com/js/' : 'http://cdn0.cuelinks.com/js/')  + 'cuelinksv2.js';
+            document.getElementsByTagName('body')[0].appendChild(s);
+          }());
     </script>
 
 </body>
