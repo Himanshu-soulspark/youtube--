@@ -1,80 +1,168 @@
-// =======================================================
-// === Shubhzone - YouTube API Server (Node.js) ===
-// =======================================================
+// ====================================================================
+// === Shubhzone - YouTube API Server (Node.js) - FINAL VERSION ===
+// === ★★★ Firebase Caching और Custom Loop के साथ अपडेट किया गया ★★★ ===
+// ====================================================================
 
 // 1. ज़रूरी पैकेज इम्पोर्ट करें
 const express = require('express');
+const fetch = require('node-fetch');
+const cors = require('cors'); // बाहरी रिक्वेस्ट को अनुमति देने के लिए (अत्यंत आवश्यक)
+const admin = require('firebase-admin'); // Firebase से सर्वर पर बात करने के लिए
 const path = require('path');
-const fetch = require('node-fetch'); // YouTube API को कॉल करने के लिए
 
-// 2. सर्वर सेटअप करें
+// 2. Firebase एडमिन को शुरू करें
+// यह आपके Render पर बनाए गए Secret File से जुड़ेगा
+try {
+    const serviceAccount = require('./firebase-credentials.json');
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
+    });
+    console.log("Firebase Admin SDK सफलतापूर्वक शुरू हो गया है।");
+} catch (error) {
+    console.error("Firebase Admin SDK शुरू करने में विफल:", error.message);
+    console.log("कृपया सुनिश्चित करें कि 'firebase-credentials.json' फाइल सही जगह पर है और सही है।");
+}
+
+const db = admin.firestore(); // Firestore डेटाबेस का रेफरेंस
+
+// 3. सर्वर सेटअप करें
 const app = express();
-const port = process.env.PORT || 3000; // Render यह पोर्ट अपने आप सेट करेगा
+const port = process.env.PORT || 3000;
 
-// 3. Render के Environment Variable से सुरक्षित रूप से API कुंजी पढ़ें
+// ★★★ CORS को सक्षम करें ★★★
+// यह सुनिश्चित करता है कि आपकी सिंगल HTML फाइल सर्वर से बात कर सके।
+app.use(cors());
+
+// 4. Render के Environment Variable से YouTube API कुंजी पढ़ें
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
-// 4. API रूट: यह वह रास्ता है जिससे आपका फ्रंटएंड (script.js) बात करेगा
+// 5. ★★★ मुख्य API रूट (सबसे महत्वपूर्ण हिस्सा) ★★★
 app.get('/api/youtube', async (req, res) => {
-    
-    // फ्रंटएंड से भेजे गए पैरामीटर (query, pageToken) को पकड़ें
-    const query = req.query.q || '';
-    const pageToken = req.query.pageToken || '';
 
-    // सबसे पहले जांचें कि API कुंजी Render में सेट है या नहीं
+    // सबसे पहले जांचें कि API कुंजी सेट है या नहीं
     if (!YOUTUBE_API_KEY) {
-        console.error("ERROR: YOUTUBE_API_KEY is not set in environment variables.");
-        return res.status(500).json({ error: "YouTube API key is not configured on the server." });
+        console.error("त्रुटि: YOUTUBE_API_KEY एनवायरनमेंट वेरिएबल में सेट नहीं है।");
+        return res.status(500).json({ error: "YouTube API कुंजी सर्वर पर कॉन्फ़िगर नहीं है।" });
     }
 
-    // YouTube API का URL बनाएं
-    let youtubeApiUrl;
+    // --- कस्टम कैशिंग लूप लॉजिक ---
+    const counterRef = db.collection('serverState').doc('apiCounter');
+    let forceApiCall = false;
+    let currentCount = 0;
 
-    if (query) {
-        // अगर कोई सर्च शब्द है, तो सर्च वाला URL इस्तेमाल करें
-        youtubeApiUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&type=video&key=${YOUTUBE_API_KEY}&q=${encodeURIComponent(query)}`;
-    } else {
-        // अगर कोई सर्च शब्द नहीं है, तो भारत के ट्रेंडिंग वीडियो वाला URL इस्तेमाल करें
-        youtubeApiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&chart=mostPopular&regionCode=IN&maxResults=20&key=${YOUTUBE_API_KEY}`;
+    try {
+        const counterDoc = await counterRef.get();
+        if (!counterDoc.exists) {
+            // अगर काउंटर मौजूद नहीं है, तो इसे 0 से शुरू करें
+            await counterRef.set({ count: 0 });
+            forceApiCall = true; // पहली बार हमेशा API कॉल करें
+        } else {
+            currentCount = counterDoc.data().count;
+            // लूप लॉजिक: 0 और 1 पर API कॉल, 2, 3, 4 पर कैश से
+            if (currentCount < 2) {
+                forceApiCall = true;
+                console.log(`काउंटर है ${currentCount}. नई API कॉल की जाएगी।`);
+            } else {
+                console.log(`काउंटर है ${currentCount}. Firebase कैश से डेटा लाने का प्रयास किया जाएगा।`);
+            }
+        }
+    } catch (e) {
+        console.error("Firebase काउंटर पढ़ने में त्रुटि:", e);
+        // अगर कोई त्रुटि होती है, तो सुरक्षित रहने के लिए API कॉल करें
+        forceApiCall = true;
+    }
+
+    // --- YouTube API URL बनाना ---
+    const { type, ...queryParams } = req.query;
+    const sortedParams = Object.keys(queryParams).sort().map(key => `${key}=${queryParams[key]}`).join('&');
+    
+    // हर यूनिक रिक्वेस्ट के लिए एक यूनिक कैश की (Key) बनाएं
+    const cacheKey = Buffer.from(`${type}_${sortedParams}`).toString('base64');
+    const cacheRef = db.collection('youtube_cache').doc(cacheKey);
+
+    // अगर यह कैश से डेटा लेने की बारी है, तो पहले कैश देखें
+    if (!forceApiCall) {
+        try {
+            const cachedDoc = await cacheRef.get();
+            if (cachedDoc.exists) {
+                const cacheData = cachedDoc.data();
+                const cacheAgeHours = (Date.now() - cacheData.timestamp) / (1000 * 60 * 60);
+                // अगर कैश 6 घंटे से कम पुराना है, तो उसे इस्तेमाल करें
+                if (cacheAgeHours < 6) {
+                    console.log(`कैश हिट! '${cacheKey}' के लिए डेटा Firebase से भेजा गया।`);
+                    // काउंटर अपडेट करें
+                    await counterRef.set({ count: (currentCount + 1) % 5 });
+                    return res.status(200).json(cacheData.data);
+                }
+            }
+            console.log("कैश मिस या पुराना। एक नई API कॉल की जाएगी।");
+        } catch (e) {
+            console.error("Firebase कैश पढ़ने में त्रुटि:", e);
+        }
     }
     
-    // अगर "Load More" बटन दबाया गया है, तो pageToken जोड़ें
-    if (pageToken) {
-        youtubeApiUrl += `&pageToken=${pageToken}`;
+    // --- नई API कॉल करना ---
+    let youtubeApiUrl;
+    const baseUrl = 'https://www.googleapis.com/youtube/v3/';
+    
+    // फ्रंटएंड से आए 'type' के आधार पर सही URL चुनें
+    switch (type) {
+        case 'search':
+            youtubeApiUrl = `${baseUrl}search?part=snippet&key=${YOUTUBE_API_KEY}&${sortedParams}`;
+            break;
+        case 'videoDetails':
+            youtubeApiUrl = `${baseUrl}videos?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}&${sortedParams}`;
+            break;
+        case 'playlists':
+            youtubeApiUrl = `${baseUrl}playlists?part=snippet&key=${YOUTUBE_API_KEY}&${sortedParams}`;
+            break;
+        case 'playlistItems':
+            youtubeApiUrl = `${baseUrl}playlistItems?part=snippet&key=${YOUTUBE_API_KEY}&${sortedParams}`;
+            break;
+        default:
+            // अगर कोई प्रकार नहीं दिया गया है, तो ट्रेंडिंग वीडियो दिखाएं
+            youtubeApiUrl = `${baseUrl}videos?part=snippet,contentDetails&chart=mostPopular&regionCode=IN&maxResults=20&key=${YOUTUBE_API_KEY}`;
     }
 
     try {
-        // हमारे सर्वर से YouTube API को कॉल करें
+        console.log(`YouTube API को कॉल किया जा रहा है: ${youtubeApiUrl}`);
         const youtubeResponse = await fetch(youtubeApiUrl);
         const data = await youtubeResponse.json();
 
-        // अगर YouTube से कोई एरर आता है, तो उसे भी फ्रंटएंड पर भेजें
         if (data.error) {
-            console.error("YouTube API Error:", data.error.message);
+            console.error("YouTube API से त्रुटि:", data.error.message);
             return res.status(500).json({ error: data.error.message });
         }
 
-        // सब कुछ सही होने पर, YouTube से मिले डेटा को फ्रंटएंड पर वापस भेज दें
+        // सफल होने पर, डेटा को Firebase में कैश करें
+        await cacheRef.set({
+            data: data,
+            timestamp: Date.now()
+        });
+        console.log(`'${cacheKey}' के लिए डेटा Firebase में कैश किया गया।`);
+
+        // काउंटर अपडेट करें
+        await counterRef.set({ count: (currentCount + 1) % 5 });
+
+        // फ्रंटएंड को डेटा भेजें
         res.status(200).json(data);
 
     } catch (error) {
-        console.error("Failed to fetch from YouTube API:", error);
-        res.status(500).json({ error: "Server failed to fetch data from YouTube." });
+        console.error("YouTube API से डेटा लाने में विफल:", error);
+        res.status(500).json({ error: "सर्वर YouTube से डेटा लाने में विफल रहा।" });
     }
 });
 
-// 5. स्टैटिक फाइलें सर्व करें (आपकी HTML, CSS, JS फाइलें)
-// यह सुनिश्चित करता है कि आपकी वेबसाइट लोड हो
+// 6. स्टैटिक फाइलें (आपकी HTML फाइल) सर्व करें
 const publicPath = path.join(__dirname, '');
 app.use(express.static(publicPath));
 
-// 6. किसी भी अन्य रिक्वेस्ट के लिए आपकी index.html फाइल भेजें
-// यह सुनिश्चित करता है कि पेज रीलोड करने पर ऐप सही से काम करे
+// 7. किसी भी अन्य रिक्वेस्ट के लिए आपकी index.html फाइल भेजें
 app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
-// 7. सर्वर शुरू करें
+// 8. सर्वर शुरू करें
 app.listen(port, () => {
-  console.log(`Server is running successfully on port ${port}`);
+  console.log(`सर्वर पोर्ट ${port} पर सफलतापूर्वक चल रहा है।`);
 });
