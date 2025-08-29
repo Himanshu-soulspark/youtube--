@@ -2339,7 +2339,21 @@
             </div>
         </div>
 
-        <!-- === SHORTS SCREEN (Previously Home) === -->
+        <!-- ★★★ नया बदलाव: नया खाली होम स्क्रीन ★★★ -->
+        <div id="main-home-screen" class="screen">
+            <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 20px;">
+                 <h2 style="color: var(--text-secondary); font-weight: 500; text-align: center;">Welcome to Shubhzone</h2>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+                <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
+                <div class="nav-item" data-nav="profile" style="display: none;"><i class="fas fa-user"></i>Profile</div>
+            </div>
+        </div>
+
+        <!-- === SHORTS SCREEN (ID 'home-screen' ही है) === -->
         <div id="home-screen" class="screen">
             <div class="home-top-bar">
                 <div id="home-menu-icon" class="home-menu-icon haptic-trigger">
@@ -2355,7 +2369,7 @@
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+                <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
                 <div class="nav-item" data-nav="friends"><i class="fas fa-user-friends"></i>Friends</div>
                 <div class="nav-item" data-nav="profile" style="display: none;"><i class="fas fa-user"></i>Profile</div>
             </div>
@@ -2713,27 +2727,31 @@
 
         let currentVideoCache = new Map();
 
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★ सबसे ज़रूरी बदलाव: यह फंक्शन सर्वर से सही ढंग से बात करता है ★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
         async function fetchFromYouTubeAPI(type, params) {
+            // हर यूनिक रिक्वेस्ट के लिए एक यूनिक कैश की (Key) बनाएं
             const paramString = Object.keys(params).sort().map(key => `${key}=${params[key]}`).join('&');
             const cacheKey = `${type}_${paramString}`;
-            const cacheRef = db.collection('youtube_api_cache').doc(btoa(cacheKey));
-
-            try {
-                const cachedDoc = await cacheRef.get();
-                if (cachedDoc.exists) {
-                    const cacheData = cachedDoc.data();
-                    const cacheAgeHours = (new Date() - cacheData.retrievedAt.toDate()) / (1000 * 60 * 60);
-                    if (cacheAgeHours < 6) {
-                        console.log(`[CACHE] Serving from Firestore cache: ${type}`);
-                        return cacheData.data;
-                    }
+            
+            // पहले लोकल स्टोरेज में कैश देखें
+            const cachedItem = localStorage.getItem(cacheKey);
+            if (cachedItem) {
+                const cacheData = JSON.parse(cachedItem);
+                const cacheAgeHours = (Date.now() - cacheData.timestamp) / (1000 * 60 * 60);
+                if (cacheAgeHours < 1) { // 1 घंटे का लोकल कैश
+                    console.log(`[LOCAL CACHE] Serving from browser cache: ${type}`);
+                    return cacheData.data;
                 }
-            } catch (e) {
-                console.error("Error reading from Firestore cache", e);
             }
 
-            console.log(`[API] Fetching from YouTube API: ${type}`);
-            let url = `https://shubhzone-backend.onrender.com/api/youtube?type=${type}&cb=${new Date().getTime()}`;
+            console.log(`[API] सर्वर से डेटा लाया जा रहा है: ${type}`);
+            
+            // <<< यही सबसे ज़रूरी लाइन है
+            // सुनिश्चित करें कि URL आपके Render सर्वर का पूरा पता है
+            let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`;
+
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
                     url += `&${key}=${encodeURIComponent(params[key])}`;
@@ -2744,11 +2762,19 @@
                 const response = await fetch(url);
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.error(`YouTube API Error for type ${type}:`, errorData);
+                    console.error(`API Error for type ${type}:`, errorData);
                     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
 
+                // वीडियो डेटा को लोकल स्टोरेज में कैश करें
+                const itemToCache = {
+                    data: data,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(cacheKey, JSON.stringify(itemToCache));
+
+                // वीडियो मेटाडेटा को ग्लोबल कैश में डालें
                 if (data.items && data.items.length > 0) {
                     data.items.forEach(item => {
                         const videoId = item.id?.videoId || item.id;
@@ -2757,15 +2783,17 @@
                         }
                     });
                 }
-
-                cacheRef.set({
-                    data: data,
-                    retrievedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).catch(err => console.error("Error writing to Firestore cache:", err));
-
+                
                 return data;
             } catch (error) {
-                console.error(`Critical Error Fetching from YouTube API (${type}):`, error);
+                console.error(`सर्वर से डेटा लाने में गंभीर त्रुटि (${type}):`, error);
+                // UI पर एरर दिखाने के लिए
+                if (type === 'search') {
+                     const grid = document.getElementById('long-video-grid');
+                     if(grid) grid.innerHTML = '<p class="static-message">Could not load videos. Please check your connection or API key.</p>';
+                     const carousel = document.getElementById('long-video-carousel-wrapper');
+                     if(carousel) carousel.innerHTML = '<p class="static-message">Could not load trending videos.</p>';
+                }
                 return {
                     error: error.message,
                     items: [],
@@ -2773,7 +2801,7 @@
                 };
             }
         }
-
+        
         function renderYouTubeLongVideos(videos, append = false) {
             const grid = document.getElementById('long-video-grid');
             const loadMoreBtn = document.getElementById('long-video-load-more-btn');
@@ -2974,13 +3002,13 @@
             }
 
             if (appState.navigationStack.length <= 1) {
-                navigateTo('long-video-screen');
+                navigateTo('main-home-screen'); // वापस होम पर जाएं
                 return;
             }
 
             appState.navigationStack.pop();
 
-            const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'long-video-screen';
+            const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'main-home-screen';
 
             navigateTo(previousScreenId, null);
         }
@@ -3190,9 +3218,10 @@
             if (loadingContainer) loadingContainer.style.display = 'flex';
 
             try {
-                const screenToNavigate = 'long-video-screen';
+                // ★★★ नया बदलाव: ऐप अब खाली होम स्क्रीन पर खुलेगा ★★★
+                const screenToNavigate = 'main-home-screen';
                 navigateTo(screenToNavigate);
-                updateNavActiveState('long-video');
+                updateNavActiveState('home');
 
             } catch (error) {
                 console.error("CRITICAL ERROR during app start:", error);
@@ -4087,9 +4116,14 @@
                     const targetNav = item.getAttribute('data-nav');
                     if (item.style.display === 'none') return;
                     let targetScreen;
+                    
+                    // ★★★ नया बदलाव: नेविगेशन लॉजिक को ठीक किया गया ★★★
                     switch (targetNav) {
+                        case 'home':
+                            targetScreen = 'main-home-screen';
+                            break;
                         case 'shorts':
-                            targetScreen = 'home-screen';
+                            targetScreen = 'home-screen'; // 'home-screen' अब शॉर्ट्स प्लेयर है
                             break;
                         default:
                             targetScreen = `${targetNav}-screen`;
