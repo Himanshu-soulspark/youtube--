@@ -464,18 +464,17 @@
             border-radius: 8px;
             font-size: 1.1em;
         }
-
-        /* ★★★ FIX: Load More बटन के स्टाइल को ठीक किया गया ★★★ */
+        
         #long-video-load-more-btn {
             background-color: var(--primary-neon);
             color: var(--background);
             font-weight: 700;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            width: auto; /* इसे 100% से auto किया गया */
-            display: block; /* इसे ब्लॉक बनाया गया ताकि margin auto काम करे */
-            margin: 20px auto; /* बटन को बीच में लाने के लिए */
-            padding: 12px 30px; /* थोड़ी पैडिंग बढ़ाई गई */
+            width: auto;
+            display: block;
+            margin: 20px auto;
+            padding: 12px 30px;
             border: none;
             border-radius: 8px;
             font-size: 1.1em;
@@ -2741,10 +2740,7 @@
         // =============================================================================
 
         let currentVideoCache = new Map();
-
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // ★★★ सबसे ज़रूरी बदलाव: यह फंक्शन सर्वर से सही ढंग से बात करता है ★★★
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        
         async function fetchFromYouTubeAPI(type, params) {
             const paramString = Object.keys(params).sort().map(key => `${key}=${params[key]}`).join('&');
             const cacheKey = `${type}_${paramString}`;
@@ -2827,7 +2823,7 @@
 
             const fragment = document.createDocumentFragment();
             videos.forEach((video) => {
-                if (!video.id || video.id.kind !== 'youtube#video') return;
+                if (!video.id || !video.id.kind || video.id.kind !== 'youtube#video') return;
                 const card = createLongVideoCard(video);
                 if (card) fragment.appendChild(card);
             });
@@ -2854,7 +2850,7 @@
             const params = {
                 pageToken: appState.youtubeNextPageTokens.long,
                 videoDuration: 'long',
-                type: 'video' // ★★★ FIX: 'type: video' जोड़ा गया ताकि API सही से काम करे ★★★
+                type: 'video'
             };
 
             if (type === 'channel') {
@@ -3226,7 +3222,6 @@
             if (loadingContainer) loadingContainer.style.display = 'flex';
 
             try {
-                // ★★★ नया बदलाव: ऐप अब खाली होम स्क्रीन पर खुलेगा ★★★
                 const screenToNavigate = 'main-home-screen';
                 navigateTo(screenToNavigate);
                 updateNavActiveState('home');
@@ -3268,7 +3263,7 @@
 
             const fragment = document.createDocumentFragment();
             videos.forEach((video) => {
-                if (!video.id || video.id.kind !== 'youtube#video') return;
+                if (!video.id || !video.id.kind || video.id.kind !== 'youtube#video') return;
                 const videoId = video.id?.videoId || video.id;
                 if (!videoId) return;
 
@@ -3610,13 +3605,13 @@
                 videoSwiper.innerHTML = '';
                 videoSwiper.appendChild(homeStaticMessageContainer);
                 homeStaticMessageContainer.style.display = 'flex';
-                homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div> Loading shorts...';
+                homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div>'; // सिर्फ लोडर दिखाएं
             }
 
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'short',
-                type: 'video' // ★★★ FIX: 'type: video' जोड़ा गया ताकि API सही से काम करे ★★★
+                type: 'video' 
             });
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
             if (data.items && data.items.length > 0) {
@@ -3634,7 +3629,7 @@
                 q: query,
                 videoDuration: 'short',
                 pageToken: appState.youtubeNextPageTokens.shorts,
-                type: 'video' // ★★★ FIX: 'type: video' जोड़ा गया ताकि API सही से काम करे ★★★
+                type: 'video'
             });
 
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
@@ -3645,14 +3640,14 @@
 
         async function setupLongVideoScreen() {
             renderCategoriesInBar();
-            await populateLongVideoGrid('Trending');
             await renderTrendingCarousel();
+            await populateLongVideoGrid('Trending');
             const gridContainer = document.querySelector('.long-video-screen-content');
             let loadMoreBtn = document.getElementById('long-video-load-more-btn');
             if (!loadMoreBtn && gridContainer) {
                 loadMoreBtn = document.createElement('button');
                 loadMoreBtn.id = 'long-video-load-more-btn';
-                loadMoreBtn.className = 'haptic-trigger'; // .continue-btn हटाया गया
+                loadMoreBtn.className = 'haptic-trigger';
                 loadMoreBtn.textContent = 'Load More';
                 loadMoreBtn.style.display = 'none';
                 loadMoreBtn.onclick = loadMoreLongVideos;
@@ -3694,7 +3689,7 @@
                 q: 'latest trending videos',
                 videoDuration: 'long',
                 type: 'video',
-                maxResults: 10 // maxResults का इस्तेमाल करें, limit नहीं
+                maxResults: 10
             });
 
             if (data.items && data.items.length > 0) {
@@ -3732,7 +3727,7 @@
 
             let searchParams = {
                 videoDuration: 'long',
-                type: 'video' // ★★★ FIX: 'type: video' जोड़ा गया ताकि API सही से काम करे ★★★
+                type: 'video'
             };
             let finalData;
 
