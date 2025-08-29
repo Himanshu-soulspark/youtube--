@@ -1,6 +1,6 @@
 // ====================================================================
-// === Shubhzone - YouTube API Server (Node.js) - FINAL VERSION ===
-// === ★★★ Firebase कनेक्शन की समस्या को ठीक किया गया ★★★ ===
+// === Shubhzone - YouTube API Server (Node.js) - ★★★ सुरक्षित और बेहतर संस्करण ★★★ ===
+// === ★★★ API कुंजी लीक होने और अनावश्यक API कॉल्स की समस्या को ठीक किया गया ★★★ ===
 // ====================================================================
 
 // 1. ज़रूरी पैकेज इम्पोर्ट करें
@@ -14,7 +14,6 @@ const path = require('path');
 let db; // db को बाहर डिफाइन करें ताकि इसे कहीं भी इस्तेमाल किया जा सके
 
 try {
-    // <<< यही वह लाइन है जिसे बदलना है
     // Render की Secret File को उसके सही पते से पढ़ें
     const serviceAccount = require('/etc/secrets/firebase-credentials.json');
 
@@ -25,7 +24,8 @@ try {
     db = admin.firestore(); // कनेक्शन सफल होने के बाद ही db को इनिशियलाइज़ करें
     console.log("Firebase Admin SDK सफलतापूर्वक शुरू हो गया है।");
 
-} catch (error) {
+} catch (error)
+ {
     console.error("Firebase Admin SDK शुरू करने में विफल:", error.message);
     console.log("कृपया सुनिश्चित करें कि Render के Secret Files में 'firebase-credentials.json' सही ढंग से सेट है।");
 }
@@ -54,53 +54,34 @@ app.get('/api/youtube', async (req, res) => {
         return res.status(500).json({ error: "YouTube API कुंजी सर्वर पर कॉन्फ़िगर नहीं है।" });
     }
 
-    // --- कस्टम कैशिंग लूप लॉजिक ---
-    const counterRef = db.collection('serverState').doc('apiCounter');
-    let forceApiCall = false;
-    let currentCount = 0;
-
-    try {
-        const counterDoc = await counterRef.get();
-        if (!counterDoc.exists) {
-            await counterRef.set({ count: 0 });
-            forceApiCall = true;
-        } else {
-            currentCount = counterDoc.data().count;
-            if (currentCount < 2) {
-                forceApiCall = true;
-                console.log(`काउंटर है ${currentCount}. नई API कॉल की जाएगी।`);
-            } else {
-                console.log(`काउंटर है ${currentCount}. Firebase कैश से डेटा लाने का प्रयास किया जाएगा।`);
-            }
-        }
-    } catch (e) {
-        console.error("Firebase काउंटर पढ़ने में त्रुटि:", e);
-        forceApiCall = true;
-    }
-
     // --- YouTube API URL बनाना ---
     const { type, ...queryParams } = req.query;
-    const sortedParams = Object.keys(queryParams).sort().map(key => `${key}=${queryParams[key]}`).join('&');
+    // बिना कुंजी के मापदंडों की एक सुरक्षित सूची बनाएं
+    const safeParams = Object.keys(queryParams)
+                             .sort()
+                             .map(key => `${key}=${queryParams[key]}`)
+                             .join('&');
     
-    const cacheKey = Buffer.from(`${type}_${sortedParams}`).toString('base64');
+    const cacheKey = Buffer.from(`${type}_${safeParams}`).toString('base64');
     const cacheRef = db.collection('youtube_cache').doc(cacheKey);
 
-    if (!forceApiCall) {
-        try {
-            const cachedDoc = await cacheRef.get();
-            if (cachedDoc.exists) {
-                const cacheData = cachedDoc.data();
-                const cacheAgeHours = (Date.now() - cacheData.timestamp) / (1000 * 60 * 60);
-                if (cacheAgeHours < 6) {
-                    console.log(`कैश हिट! '${cacheKey}' के लिए डेटा Firebase से भेजा गया।`);
-                    await counterRef.set({ count: (currentCount + 1) % 5 });
-                    return res.status(200).json(cacheData.data);
-                }
+    // --- कैश से डेटा लाने का प्रयास ---
+    try {
+        const cachedDoc = await cacheRef.get();
+        if (cachedDoc.exists) {
+            const cacheData = cachedDoc.data();
+            // 6 घंटे से कम पुराना कैश इस्तेमाल करें
+            const cacheAgeHours = (Date.now() - cacheData.timestamp) / (1000 * 60 * 60);
+            if (cacheAgeHours < 6) {
+                console.log(`कैश हिट! '${type}' प्रकार की रिक्वेस्ट के लिए डेटा Firebase से भेजा गया।`);
+                return res.status(200).json(cacheData.data);
             }
-            console.log("कैश मिस या पुराना। एक नई API कॉल की जाएगी।");
-        } catch (e) {
-            console.error("Firebase कैश पढ़ने में त्रुटि:", e);
         }
+        // अगर कैश नहीं मिलता या पुराना है, तो आगे बढ़ें
+        console.log(`'${type}' प्रकार की रिक्वेस्ट के लिए कैश मिस या पुराना। एक नई API कॉल की जाएगी।`);
+    } catch (e) {
+        console.error("Firebase कैश पढ़ने में त्रुटि:", e);
+        // अगर कैश पढ़ने में त्रुटि होती है, तो भी नई API कॉल करें
     }
     
     // --- नई API कॉल करना ---
@@ -109,23 +90,24 @@ app.get('/api/youtube', async (req, res) => {
     
     switch (type) {
         case 'search':
-            youtubeApiUrl = `${baseUrl}search?part=snippet&key=${YOUTUBE_API_KEY}&${sortedParams}`;
+            youtubeApiUrl = `${baseUrl}search?part=snippet&key=${YOUTUBE_API_KEY}&${safeParams}`;
             break;
         case 'videoDetails':
-            youtubeApiUrl = `${baseUrl}videos?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}&${sortedParams}`;
+            youtubeApiUrl = `${baseUrl}videos?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}&${safeParams}`;
             break;
         case 'playlists':
-            youtubeApiUrl = `${baseUrl}playlists?part=snippet&key=${YOUTUBE_API_KEY}&${sortedParams}`;
+            youtubeApiUrl = `${baseUrl}playlists?part=snippet&key=${YOUTUBE_API_KEY}&${safeParams}`;
             break;
         case 'playlistItems':
-            youtubeApiUrl = `${baseUrl}playlistItems?part=snippet&key=${YOUTUBE_API_KEY}&${sortedParams}`;
+            youtubeApiUrl = `${baseUrl}playlistItems?part=snippet&key=${YOUTUBE_API_KEY}&${safeParams}`;
             break;
         default:
             youtubeApiUrl = `${baseUrl}videos?part=snippet,contentDetails&chart=mostPopular&regionCode=IN&maxResults=20&key=${YOUTUBE_API_KEY}`;
     }
 
     try {
-        console.log(`YouTube API को कॉल किया जा रहा है: ${youtubeApiUrl}`);
+        // ★★★ FIX: सुरक्षित लॉगिंग, अब API कुंजी लॉग नहीं होगी ★★★
+        console.log(`YouTube API को कॉल किया जा रहा है (Type: ${type})।`);
         const youtubeResponse = await fetch(youtubeApiUrl);
         const data = await youtubeResponse.json();
 
@@ -134,13 +116,12 @@ app.get('/api/youtube', async (req, res) => {
             return res.status(500).json({ error: data.error.message });
         }
 
+        // नए डेटा को Firebase में कैश करें
         await cacheRef.set({
             data: data,
             timestamp: Date.now()
         });
-        console.log(`'${cacheKey}' के लिए डेटा Firebase में कैश किया गया।`);
-
-        await counterRef.set({ count: (currentCount + 1) % 5 });
+        console.log(`'${type}' प्रकार की रिक्वेस्ट के लिए डेटा Firebase में कैश किया गया।`);
 
         res.status(200).json(data);
 
