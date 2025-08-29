@@ -2742,28 +2742,21 @@
         let currentVideoCache = new Map();
         
         async function fetchFromYouTubeAPI(type, params) {
-            const paramString = Object.keys(params).sort().map(key => `${key}=${params[key]}`).join('&');
-            const cacheKey = `${type}_${paramString}`;
             
-            const cachedItem = localStorage.getItem(cacheKey);
-            if (cachedItem) {
-                const cacheData = JSON.parse(cachedItem);
-                const cacheAgeHours = (Date.now() - cacheData.timestamp) / (1000 * 60 * 60);
-                if (cacheAgeHours < 1) { 
-                    console.log(`[LOCAL CACHE] Serving from browser cache: ${type}`);
-                    return cacheData.data;
-                }
-            }
-
-            console.log(`[API] सर्वर से डेटा लाया जा रहा है: ${type}`);
-            
-            let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`;
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            // ★★★ FINAL FIX: सर्वर का URL ठीक किया गया ★★★
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            // यह सर्वर को हमेशा उसी डोमेन पर कॉल करेगा जिस पर ऐप चल रहा है।
+            // let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`; // <-- यह गलत था
+            let url = `/api/youtube?type=${type}`; // <-- यह सही तरीका है
 
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
                     url += `&${key}=${encodeURIComponent(params[key])}`;
                 }
             }
+            
+            console.log(`[API] सही सर्वर से डेटा लाया जा रहा है: ${url}`);
 
             try {
                 const response = await fetch(url);
@@ -2773,12 +2766,6 @@
                     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-
-                const itemToCache = {
-                    data: data,
-                    timestamp: Date.now()
-                };
-                localStorage.setItem(cacheKey, JSON.stringify(itemToCache));
 
                 if (data.items && data.items.length > 0) {
                     data.items.forEach(item => {
@@ -2850,7 +2837,7 @@
             const params = {
                 pageToken: appState.youtubeNextPageTokens.long,
                 videoDuration: 'long',
-                type: 'video' // ★★★ FIX APPLIED HERE ★★★
+                type: 'video'
             };
 
             if (type === 'channel') {
@@ -3611,7 +3598,7 @@
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'short',
-                type: 'video' // ★★★ FIX APPLIED HERE ★★★
+                type: 'video' 
             });
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
             if (data.items && data.items.length > 0) {
@@ -3629,7 +3616,7 @@
                 q: query,
                 videoDuration: 'short',
                 pageToken: appState.youtubeNextPageTokens.shorts,
-                type: 'video' // ★★★ FIX APPLIED HERE ★★★
+                type: 'video'
             });
 
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
@@ -3674,7 +3661,7 @@
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'long',
-                type: 'video' // ★★★ FIX APPLIED HERE ★★★
+                type: 'video'
             });
 
             appState.youtubeNextPageTokens.long = data.nextPageToken || null;
@@ -3688,7 +3675,7 @@
             const data = await fetchFromYouTubeAPI('search', {
                 q: 'latest trending videos',
                 videoDuration: 'long',
-                type: 'video', // ★★★ FIX APPLIED HERE ★★★
+                type: 'video',
                 maxResults: 10
             });
 
@@ -3727,7 +3714,7 @@
 
             let searchParams = {
                 videoDuration: 'long',
-                type: 'video' // ★★★ FIX APPLIED HERE ★★★
+                type: 'video'
             };
             let finalData;
 
@@ -3950,7 +3937,7 @@
                         channelId: creatorId,
                         order: 'date',
                         videoDuration: 'long',
-                        type: 'video' // ★★★ FIX APPLIED HERE ★★★
+                        type: 'video'
                     });
                     renderCreatorVideoList(contentArea, data.items || [], 'long');
                     break;
@@ -3959,7 +3946,7 @@
                         channelId: creatorId,
                         videoDuration: 'short',
                         order: 'date',
-                        type: 'video' // ★★★ FIX APPLIED HERE ★★★
+                        type: 'video'
                     });
                     renderCreatorVideoList(contentArea, data.items || [], 'short');
                     break;
