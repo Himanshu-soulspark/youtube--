@@ -2850,7 +2850,7 @@
             const params = {
                 pageToken: appState.youtubeNextPageTokens.long,
                 videoDuration: 'long',
-                type: 'video'
+                type: 'video' // ★★★ FIX APPLIED HERE ★★★
             };
 
             if (type === 'channel') {
@@ -3611,7 +3611,7 @@
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'short',
-                type: 'video' 
+                type: 'video' // ★★★ FIX APPLIED HERE ★★★
             });
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
             if (data.items && data.items.length > 0) {
@@ -3629,7 +3629,7 @@
                 q: query,
                 videoDuration: 'short',
                 pageToken: appState.youtubeNextPageTokens.shorts,
-                type: 'video'
+                type: 'video' // ★★★ FIX APPLIED HERE ★★★
             });
 
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
@@ -3674,7 +3674,7 @@
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'long',
-                type: 'video'
+                type: 'video' // ★★★ FIX APPLIED HERE ★★★
             });
 
             appState.youtubeNextPageTokens.long = data.nextPageToken || null;
@@ -3688,7 +3688,7 @@
             const data = await fetchFromYouTubeAPI('search', {
                 q: 'latest trending videos',
                 videoDuration: 'long',
-                type: 'video',
+                type: 'video', // ★★★ FIX APPLIED HERE ★★★
                 maxResults: 10
             });
 
@@ -3727,7 +3727,7 @@
 
             let searchParams = {
                 videoDuration: 'long',
-                type: 'video'
+                type: 'video' // ★★★ FIX APPLIED HERE ★★★
             };
             let finalData;
 
@@ -3950,7 +3950,7 @@
                         channelId: creatorId,
                         order: 'date',
                         videoDuration: 'long',
-                        type: 'video'
+                        type: 'video' // ★★★ FIX APPLIED HERE ★★★
                     });
                     renderCreatorVideoList(contentArea, data.items || [], 'long');
                     break;
@@ -3959,7 +3959,7 @@
                         channelId: creatorId,
                         videoDuration: 'short',
                         order: 'date',
-                        type: 'video'
+                        type: 'video' // ★★★ FIX APPLIED HERE ★★★
                     });
                     renderCreatorVideoList(contentArea, data.items || [], 'short');
                     break;
