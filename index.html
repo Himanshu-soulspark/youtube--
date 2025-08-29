@@ -2748,7 +2748,7 @@
             // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
             // यह सर्वर को हमेशा उसी डोमेन पर कॉल करेगा जिस पर ऐप चल रहा है।
             // let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`; // <-- यह गलत था
-            let url = `/api/youtube?type=${type}`; // <-- यह सही तरीका है
+            let url = `/api/youtube?type=${type}`; // <-- यह सही तरीका है। यह हमेशा shboard.render.com पर ही रिक्वेस्ट भेजेगा।
 
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
