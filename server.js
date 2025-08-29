@@ -1,6 +1,5 @@
 // ====================================================================
-// === Shubhzone - YouTube API Server (Node.js) - ★★★ हाइब्रिड 'ऑलवेज-ऑन' संस्करण ★★★ ===
-// === ★★★ यह संस्करण हमेशा API कॉल करता है, लेकिन विफलता पर तुरंत कैश का उपयोग करता है ★★★ ===
+// === Shubhzone - YouTube API Server (Node.js) - ★★★ FINAL CORRECTED VERSION ★★★ ===
 // ====================================================================
 
 // 1. ज़रूरी पैकेज इम्पोर्ट करें
@@ -44,13 +43,14 @@ app.get('/api/youtube', async (req, res) => {
     const cacheKey = Buffer.from(`${type}_${safeParams}`).toString('base64');
     const cacheRef = db.collection('youtube_cache').doc(cacheKey);
 
-    // --- ★★★ नया हाइब्रिड लॉजिक: हमेशा पहले नई API कॉल करने का प्रयास करें ★★★ ---
     let youtubeApiUrl;
     const baseUrl = 'https://www.googleapis.com/youtube/v3/';
     
     switch (type) {
         case 'search':
-            youtubeApiUrl = `${baseUrl}search?part=snippet&key=${YOUTUBE_API_KEY}&${safeParams}`;
+            // ★★★★★★★★★★ यही है असली समाधान ★★★★★★★★★★
+            // हमने यहाँ &type=video जोड़ दिया है ताकि YouTube को हमेशा पता हो कि हम वीडियो ही ढूँढ़ रहे हैं।
+            youtubeApiUrl = `${baseUrl}search?part=snippet&type=video&key=${YOUTUBE_API_KEY}&${safeParams}`;
             break;
         case 'videoDetails':
             youtubeApiUrl = `${baseUrl}videos?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}&${safeParams}`;
@@ -66,43 +66,37 @@ app.get('/api/youtube', async (req, res) => {
     }
 
     try {
-        console.log(`YouTube API को कॉल किया जा रहा है (Type: ${type})।`);
-        const youtubeResponse = await fetch(youtubeApiUrl, { timeout: 8000 }); // 8 सेकंड का टाइमआउट
+        console.log(`YouTube API को कॉल किया जा रहा है (Type: ${type})। URL: ${youtubeApiUrl}`);
+        const youtubeResponse = await fetch(youtubeApiUrl, { timeout: 8000 }); 
         
         if (!youtubeResponse.ok) {
-            // अगर YouTube कोई भी एरर देता है (जैसे 403, 500), तो उसे एक विफलता मानें
+            const errorBody = await youtubeResponse.text();
+            console.error(`YouTube API Error Body: ${errorBody}`);
             throw new Error(`YouTube API ने एरर दिया: ${youtubeResponse.statusText}`);
         }
 
         const data = await youtubeResponse.json();
 
-        // अगर डेटा में कोई एरर है, तो उसे भी विफलता मानें
         if (data.error) {
             throw new Error(`YouTube API से त्रुटि: ${data.error.message}`);
         }
 
-        // --- API कॉल सफल होने पर ---
-        // 1. नए डेटा को Firebase में कैश करें
         await cacheRef.set({
             data: data,
             timestamp: Date.now()
         });
         console.log(`API कॉल सफल! डेटा Firebase में कैश किया गया और भेजा गया।`);
-        // 2. नए डेटा को उपयोगकर्ता को भेजें
         return res.status(200).json(data);
 
     } catch (error) {
-        // --- ★★★ API कॉल विफल होने पर (किसी भी कारण से) ★★★ ---
         console.warn(`API कॉल विफल हुई: ${error.message}। अब Firebase कैश से डेटा लाने का प्रयास किया जा रहा है।`);
         
         try {
             const cachedDoc = await cacheRef.get();
             if (cachedDoc.exists) {
                 console.log(`API विफलता के कारण बैकअप कैश का उपयोग किया गया। डेटा Firebase से भेजा गया।`);
-                // अगर कैश उपलब्ध है, तो उसे भेजें
                 return res.status(200).json(cachedDoc.data().data);
             } else {
-                // अगर API भी विफल हो गई और कैश भी नहीं है, तब एरर भेजें
                 console.error("API विफल हो गई और इस रिक्वेस्ट के लिए कोई कैश भी उपलब्ध नहीं है।");
                 return res.status(503).json({ error: "Service unavailable and no cache found." });
             }
