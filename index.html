@@ -2834,10 +2834,11 @@
                 value
             } = appState.longVideoSearchContext;
             
+            // ★★★★★★★★★★ FIX #1 of 7 ★★★★★★★★★★
+            // 'type: "video"' को हटाया गया
             const params = {
                 pageToken: appState.youtubeNextPageTokens.long,
-                videoDuration: 'long',
-                type: 'video'
+                videoDuration: 'long'
             };
 
             if (type === 'channel') {
@@ -3595,10 +3596,11 @@
                 homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div>'; // सिर्फ लोडर दिखाएं
             }
 
+            // ★★★★★★★★★★ FIX #2 of 7 ★★★★★★★★★★
+            // 'type: "video"' को हटाया गया
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
-                videoDuration: 'short',
-                type: 'video' 
+                videoDuration: 'short'
             });
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
             if (data.items && data.items.length > 0) {
@@ -3612,11 +3614,13 @@
             const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
             const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
             const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
+            
+            // ★★★★★★★★★★ FIX #3 of 7 ★★★★★★★★★★
+            // 'type: "video"' को हटाया गया
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'short',
-                pageToken: appState.youtubeNextPageTokens.shorts,
-                type: 'video'
+                pageToken: appState.youtubeNextPageTokens.shorts
             });
 
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
@@ -3658,10 +3662,11 @@
                 value: query
             };
 
+            // ★★★★★★★★★★ FIX #4 of 7 ★★★★★★★★★★
+            // 'type: "video"' को हटाया गया
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
-                videoDuration: 'long',
-                type: 'video'
+                videoDuration: 'long'
             });
 
             appState.youtubeNextPageTokens.long = data.nextPageToken || null;
@@ -3672,10 +3677,12 @@
             const carouselWrapper = document.getElementById('long-video-carousel-wrapper');
             if (!carouselWrapper) return;
             carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
+            
+            // ★★★★★★★★★★ FIX #5 of 7 ★★★★★★★★★★
+            // 'type: "video"' को हटाया गया
             const data = await fetchFromYouTubeAPI('search', {
                 q: 'latest trending videos',
                 videoDuration: 'long',
-                type: 'video',
                 maxResults: 10
             });
 
@@ -3712,9 +3719,10 @@
             if (!grid) return;
             grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
+            // ★★★★★★★★★★ FIX #6 of 7 ★★★★★★★★★★
+            // 'type: "video"' को हटाया गया
             let searchParams = {
-                videoDuration: 'long',
-                type: 'video'
+                videoDuration: 'long'
             };
             let finalData;
 
@@ -3933,20 +3941,20 @@
             switch (startWith) {
                 case 'home':
                 case 'videos':
+                    // ★★★★★★★★★★ FIX #7 of 7 (part a) ★★★★★★★★★★
                     data = await fetchFromYouTubeAPI('search', {
                         channelId: creatorId,
                         order: 'date',
-                        videoDuration: 'long',
-                        type: 'video'
+                        videoDuration: 'long'
                     });
                     renderCreatorVideoList(contentArea, data.items || [], 'long');
                     break;
                 case 'shorts':
+                    // ★★★★★★★★★★ FIX #7 of 7 (part b) ★★★★★★★★★★
                     data = await fetchFromYouTubeAPI('search', {
                         channelId: creatorId,
                         videoDuration: 'short',
-                        order: 'date',
-                        type: 'video'
+                        order: 'date'
                     });
                     renderCreatorVideoList(contentArea, data.items || [], 'short');
                     break;
