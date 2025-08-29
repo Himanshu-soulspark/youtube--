@@ -1,6 +1,6 @@
 // ====================================================================
-// === Shubhzone - YouTube API Server (Node.js) - ★★★ कोटा-फर्स्ट लॉजिक संस्करण ★★★ ===
-// === ★★★ यह संस्करण पहले API कोटा का उपयोग करेगा और खत्म होने पर कैश का इस्तेमाल करेगा ★★★ ===
+// === Shubhzone - YouTube API Server (Node.js) - ★★★ सबसे बेहतर और अंतिम संस्करण ★★★ ===
+// === ★★★ यह संस्करण 'कैश-फर्स्ट' लॉजिक का उपयोग करता है जो सबसे तेज़ और कुशल है ★★★ ===
 // ====================================================================
 
 // 1. ज़रूरी पैकेज इम्पोर्ट करें
@@ -11,22 +11,30 @@ const admin = require('firebase-admin');
 const path = require('path');
 
 // 2. Firebase एडमिन को शुरू करें
-let db; 
+let db; // db को बाहर डिफाइन करें ताकि इसे कहीं भी इस्तेमाल किया जा सके
 
 try {
+    // Render की Secret File को उसके सही पते से पढ़ें
     const serviceAccount = require('/etc/secrets/firebase-credentials.json');
+
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
-    db = admin.firestore();
+    
+    db = admin.firestore(); // कनेक्शन सफल होने के बाद ही db को इनिशियलाइज़ करें
     console.log("Firebase Admin SDK सफलतापूर्वक शुरू हो गया है।");
-} catch (error) {
+
+} catch (error)
+ {
     console.error("Firebase Admin SDK शुरू करने में विफल:", error.message);
+    console.log("कृपया सुनिश्चित करें कि Render के Secret Files में 'firebase-credentials.json' सही ढंग से सेट है।");
 }
 
 // 3. सर्वर सेटअप करें
 const app = express();
 const port = process.env.PORT || 3000;
+
+// CORS को सक्षम करें
 app.use(cors());
 
 // 4. Render के Environment Variable से YouTube API कुंजी पढ़ें
@@ -34,17 +42,49 @@ const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 // 5. मुख्य API रूट
 app.get('/api/youtube', async (req, res) => {
-    if (!db || !YOUTUBE_API_KEY) {
-        console.error("त्रुटि: Firebase या YouTube API कुंजी कॉन्फ़िगर नहीं है।");
-        return res.status(500).json({ error: "सर्वर ठीक से कॉन्फ़िगर नहीं है।" });
+
+    // जांचें कि Firebase ठीक से शुरू हुआ है या नहीं
+    if (!db) {
+        console.error("त्रुटि: Firestore डेटाबेस उपलब्ध नहीं है। Firebase कनेक्शन जांचें।");
+        return res.status(500).json({ error: "सर्वर डेटाबेस से कनेक्ट नहीं हो पा रहा है।" });
     }
 
+    if (!YOUTUBE_API_KEY) {
+        console.error("त्रुटि: YOUTUBE_API_KEY एनवायरनमेंट वेरिएबल में सेट नहीं है।");
+        return res.status(500).json({ error: "YouTube API कुंजी सर्वर पर कॉन्फ़िगर नहीं है।" });
+    }
+
+    // --- YouTube API URL बनाना ---
     const { type, ...queryParams } = req.query;
-    const safeParams = Object.keys(queryParams).sort().map(key => `${key}=${queryParams[key]}`).join('&');
+    // बिना कुंजी के मापदंडों की एक सुरक्षित सूची बनाएं
+    const safeParams = Object.keys(queryParams)
+                             .sort()
+                             .map(key => `${key}=${queryParams[key]}`)
+                             .join('&');
+    
     const cacheKey = Buffer.from(`${type}_${safeParams}`).toString('base64');
     const cacheRef = db.collection('youtube_cache').doc(cacheKey);
 
-    // --- ★★★ नया लॉजिक: हमेशा पहले नई API कॉल करने का प्रयास करें ★★★ ---
+    // --- ★★★ सबसे सही तरीका: पहले कैश से डेटा लाने का प्रयास करें ★★★ ---
+    try {
+        const cachedDoc = await cacheRef.get();
+        if (cachedDoc.exists) {
+            const cacheData = cachedDoc.data();
+            // 6 घंटे से कम पुराना कैश इस्तेमाल करें
+            const cacheAgeHours = (Date.now() - cacheData.timestamp) / (1000 * 60 * 60);
+            if (cacheAgeHours < 6) {
+                console.log(`कैश हिट! '${type}' प्रकार की रिक्वेस्ट के लिए डेटा Firebase से भेजा गया।`);
+                return res.status(200).json(cacheData.data);
+            }
+        }
+        // अगर कैश नहीं मिलता या पुराना है, तो आगे बढ़ें
+        console.log(`'${type}' प्रकार की रिक्वेस्ट के लिए कैश मिस या पुराना। एक नई API कॉल की जाएगी।`);
+    } catch (e) {
+        console.error("Firebase कैश पढ़ने में त्रुटि:", e);
+        // अगर कैश पढ़ने में त्रुटि होती है, तो भी नई API कॉल करें
+    }
+    
+    // --- नई API कॉल करना (केवल जब कैश उपलब्ध न हो) ---
     let youtubeApiUrl;
     const baseUrl = 'https://www.googleapis.com/youtube/v3/';
     
@@ -66,44 +106,27 @@ app.get('/api/youtube', async (req, res) => {
     }
 
     try {
+        // सुरक्षित लॉगिंग
         console.log(`YouTube API को कॉल किया जा रहा है (Type: ${type})।`);
         const youtubeResponse = await fetch(youtubeApiUrl);
         const data = await youtubeResponse.json();
 
-        // जांचें कि क्या API से कोई त्रुटि मिली है
         if (data.error) {
-            console.warn("YouTube API से त्रुटि मिली:", data.error.message);
-            
-            // ★★★ मुख्य बदलाव: जांचें कि क्या यह 'कोटा खत्म' वाली त्रुटि है ★★★
-            const isQuotaError = data.error.errors.some(e => e.reason === 'quotaExceeded');
-
-            if (isQuotaError) {
-                console.log("API कोटा खत्म हो गया है! Firebase कैश से डेटा लाने का प्रयास किया जा रहा है।");
-                const cachedDoc = await cacheRef.get();
-                if (cachedDoc.exists) {
-                    console.log(`कैश हिट! कोटा खत्म होने के कारण डेटा Firebase से भेजा गया।`);
-                    return res.status(200).json(cachedDoc.data().data);
-                } else {
-                    console.error("कोटा खत्म हो गया है और इस रिक्वेस्ट के लिए कोई कैश भी उपलब्ध नहीं है।");
-                    return res.status(503).json({ error: "API quota exceeded and no cache is available." });
-                }
-            } else {
-                // अगर कोई और तरह की त्रुटि है, तो उसे दिखाएं
-                return res.status(500).json({ error: data.error.message });
-            }
+            console.error("YouTube API से त्रुटि:", data.error.message);
+            return res.status(500).json({ error: data.error.message });
         }
 
-        // अगर API कॉल सफल होती है, तो डेटा को कैश में सेव करें
+        // नए डेटा को Firebase में कैश करें
         await cacheRef.set({
             data: data,
             timestamp: Date.now()
         });
-        console.log(`API कॉल सफल! डेटा Firebase में कैश किया गया और भेजा गया।`);
+        console.log(`'${type}' प्रकार की रिक्वेस्ट के लिए डेटा Firebase में कैश किया गया।`);
 
         res.status(200).json(data);
 
     } catch (error) {
-        console.error("YouTube API से डेटा लाने में गंभीर विफलता:", error);
+        console.error("YouTube API से डेटा लाने में विफल:", error);
         res.status(500).json({ error: "सर्वर YouTube से डेटा लाने में विफल रहा।" });
     }
 });
