@@ -2200,6 +2200,55 @@
                 height: 100vh;
             }
         }
+
+        /* ★★★★★★★★★★ आपके अनुरोध के अनुसार नए स्टाइल यहाँ जोड़े गए हैं ★★★★★★★★★★ */
+        .home-grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* दो बराबर कॉलम */
+            gap: 15px; /* कार्ड के बीच में जगह */
+            padding: 20px;
+            width: 100%;
+        }
+
+        .home-grid-card {
+            background-color: var(--secondary-background);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid rgba(var(--primary-neon-rgb), 0.1);
+        }
+
+        .home-grid-card img {
+            width: 100%;
+            aspect-ratio: 1 / 1; /* 1:1 का अनुपात */
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .btn-3d {
+            width: 100%;
+            margin-top: 12px;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--primary-neon);
+            color: var(--background);
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.1s ease-in-out;
+            /* 3D प्रभाव के लिए */
+            border-bottom: 4px solid #00AFAF; /* थोड़ा गहरा शेड */
+        }
+
+        .btn-3d:active {
+             /* बटन दबाने पर */
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
     </style>
 </head>
 
@@ -2355,9 +2404,25 @@
 
         <!-- ★★★ नया बदलाव: नया खाली होम स्क्रीन ★★★ -->
         <div id="main-home-screen" class="screen">
-            <div style="flex-grow: 1; display: flex; justify-content: center; align-items: center; padding: 20px;">
-                 <h2 style="color: var(--text-secondary); font-weight: 500; text-align: center;">Welcome to Shubhzone</h2>
+            
+            <!-- ★★★★★★★★★★ आपके अनुरोध के अनुसार यह नया सेक्शन जोड़ा गया है ★★★★★★★★★★ -->
+            <div style="flex-grow: 1; width: 100%; overflow-y: auto;">
+                <div class="home-grid-container">
+                    <!-- कार्ड 1 -->
+                    <div class="home-grid-card">
+                        <img src="https://i.ibb.co/fz4R70tD/Leonardo-Phoenix-10-An-animated-scene-of-a-happy-young-boy-rec-3.jpg" alt="Reward Section">
+                        <button class="btn-3d haptic-trigger">Reward</button>
+                    </div>
+                    <!-- कार्ड 2 -->
+                    <div class="home-grid-card">
+                        <img src="https://i.ibb.co/JWkN2C8z/Leonardo-Phoenix-10-A-beautiful-young-girl-stylish-and-modern-0.jpg" alt="Profile Section">
+                        <button class="btn-3d haptic-trigger">Profile</button>
+                    </div>
+                </div>
+                 <!-- आप चाहें तो ग्रिड के नीचे और भी कंटेंट जोड़ सकते हैं -->
             </div>
+            <!-- ★★★★★★★★★★ नया सेक्शन यहाँ खत्म होता है ★★★★★★★★★★ -->
+
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
@@ -2834,8 +2899,6 @@
                 value
             } = appState.longVideoSearchContext;
             
-            // ★★★★★★★★★★ FIX #1 of 7 ★★★★★★★★★★
-            // 'type: "video"' को हटाया गया
             const params = {
                 pageToken: appState.youtubeNextPageTokens.long,
                 videoDuration: 'long'
@@ -3596,8 +3659,6 @@
                 homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div>'; // सिर्फ लोडर दिखाएं
             }
 
-            // ★★★★★★★★★★ FIX #2 of 7 ★★★★★★★★★★
-            // 'type: "video"' को हटाया गया
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'short'
@@ -3614,9 +3675,6 @@
             const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
             const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
             const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
-            
-            // ★★★★★★★★★★ FIX #3 of 7 ★★★★★★★★★★
-            // 'type: "video"' को हटाया गया
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'short',
@@ -3662,8 +3720,6 @@
                 value: query
             };
 
-            // ★★★★★★★★★★ FIX #4 of 7 ★★★★★★★★★★
-            // 'type: "video"' को हटाया गया
             const data = await fetchFromYouTubeAPI('search', {
                 q: query,
                 videoDuration: 'long'
@@ -3677,9 +3733,6 @@
             const carouselWrapper = document.getElementById('long-video-carousel-wrapper');
             if (!carouselWrapper) return;
             carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
-            
-            // ★★★★★★★★★★ FIX #5 of 7 ★★★★★★★★★★
-            // 'type: "video"' को हटाया गया
             const data = await fetchFromYouTubeAPI('search', {
                 q: 'latest trending videos',
                 videoDuration: 'long',
@@ -3719,8 +3772,6 @@
             if (!grid) return;
             grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
-            // ★★★★★★★★★★ FIX #6 of 7 ★★★★★★★★★★
-            // 'type: "video"' को हटाया गया
             let searchParams = {
                 videoDuration: 'long'
             };
@@ -3941,7 +3992,6 @@
             switch (startWith) {
                 case 'home':
                 case 'videos':
-                    // ★★★★★★★★★★ FIX #7 of 7 (part a) ★★★★★★★★★★
                     data = await fetchFromYouTubeAPI('search', {
                         channelId: creatorId,
                         order: 'date',
@@ -3950,7 +4000,6 @@
                     renderCreatorVideoList(contentArea, data.items || [], 'long');
                     break;
                 case 'shorts':
-                    // ★★★★★★★★★★ FIX #7 of 7 (part b) ★★★★★★★★★★
                     data = await fetchFromYouTubeAPI('search', {
                         channelId: creatorId,
                         videoDuration: 'short',
