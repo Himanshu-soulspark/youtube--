@@ -2248,139 +2248,6 @@
             transform: translateY(2px);
             border-bottom-width: 2px;
         }
-
-        /* ★★★★★★★★★★ REWARD GAME STYLES START ★★★★★★★★★★ */
-        .game-red-light {
-            position: fixed;
-            width: 15px;
-            height: 15px;
-            background-color: red;
-            border-radius: 50%;
-            opacity: 0.4;
-            pointer-events: none;
-            z-index: 9999;
-            box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.5);
-        }
-
-        .game-insect {
-            position: fixed;
-            font-size: 24px;
-            pointer-events: none;
-            z-index: 9999;
-            color: #fff;
-            text-shadow: 0 0 5px #000;
-        }
-
-        @keyframes insect-fall-straight {
-            from { transform: translateY(-30px); }
-            to { transform: translateY(100vh); }
-        }
-
-        @keyframes insect-fall-jump {
-            0% { transform: translate(0, -30px); }
-            25% { transform: translate(-30px, 25vh); }
-            50% { transform: translate(30px, 50vh); }
-            75% { transform: translate(-20px, 75vh); }
-            100% { transform: translate(10px, 100vh); }
-        }
-
-        .game-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-        }
-
-        .game-modal-overlay.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .game-modal-content {
-            background-color: var(--secondary-background);
-            padding: 25px;
-            border-radius: 15px;
-            text-align: center;
-            width: 90%;
-            max-width: 300px;
-            border: 1px solid var(--primary-neon);
-            box-shadow: 0 0 20px rgba(var(--primary-neon-rgb), 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .game-modal-content p {
-            margin: 0 0 20px 0;
-            font-size: 1.1em;
-        }
-
-        .game-modal-buttons {
-            display: flex;
-            gap: 15px;
-        }
-
-        .game-modal-buttons button {
-            flex-grow: 1;
-            padding: 12px;
-            font-size: 1.1em;
-            font-weight: 700;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.1s ease;
-        }
-        .game-modal-buttons button:active {
-            transform: scale(0.95);
-        }
-
-        .game-modal-buttons .yes-btn {
-            background-color: var(--success-green);
-            color: var(--background);
-        }
-
-        .game-modal-buttons .no-btn {
-            background-color: var(--error-red);
-            color: var(--text-primary);
-        }
-
-        .game-timer-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 5px;
-            width: 100%;
-            background-color: var(--primary-neon);
-            animation: shrink 1s linear forwards;
-        }
-
-        @keyframes shrink {
-            from { width: 100%; }
-            to { width: 0%; }
-        }
-
-        #game-result-popup {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 25px;
-            border-radius: 20px;
-            font-weight: 700;
-            color: var(--background);
-            z-index: 10001;
-            opacity: 0;
-            transition: opacity 0.3s, top 0.3s;
-        }
-        /* ★★★★★★★★★★ REWARD GAME STYLES END ★★★★★★★★★★ */
     </style>
 </head>
 
@@ -2715,20 +2582,6 @@
         </div>
 
     </div> <!-- End of .app-container -->
-    
-    <!-- ★★★★★★★★★★ REWARD GAME HTML START ★★★★★★★★★★ -->
-    <div id="game-modal" class="game-modal-overlay">
-        <div class="game-modal-content">
-            <p id="game-question">Did the red light flash?</p>
-            <div class="game-modal-buttons">
-                <button id="game-yes-btn" class="yes-btn">Yes</button>
-                <button id="game-no-btn" class="no-btn">No</button>
-            </div>
-            <div id="game-timer" class="game-timer-bar"></div>
-        </div>
-    </div>
-    <div id="game-result-popup"></div>
-    <!-- ★★★★★★★★★★ REWARD GAME HTML END ★★★★★★★★★★ -->
 
     <!-- === SCRIPTS (MUST BE AT THE END) === -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -3278,7 +3131,9 @@
                 if (user) {
                     checkUserProfileAndProceed(user);
                 } else {
-                    auth.signInAnonymously().catch(error => console.error("Anonymous sign-in failed:", error));
+                    // Anonymous sign-in removed. The app will wait for a user to be logged in.
+                    // You might want to redirect to a login page here if you have one.
+                    console.log("No user is signed in. Please implement a login flow.");
                 }
             });
 
@@ -3422,11 +3277,6 @@
                 const screenToNavigate = 'main-home-screen';
                 navigateTo(screenToNavigate);
                 updateNavActiveState('home');
-                
-                // ★★★ REWARD GAME START ★★★
-                rewardGameManager.startGameLoop();
-
-
             } catch (error) {
                 console.error("CRITICAL ERROR during app start:", error);
                 alert("Could not start the app. Please check your connection and try again.");
@@ -4297,169 +4147,6 @@
         // =======================================================
         // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
         // =======================================================
-        
-        // =======================================================
-        // ★★★ NEW: REWARD GAME LOGIC - START ★★★
-        // =======================================================
-        const rewardGameManager = {
-            isRunning: false,
-            gameLoopTimeout: null,
-            questionTimeout: null,
-            state: {
-                eventHappened: false,
-                expectedAnswer: 'no', // 'yes' or 'no'
-                eventType: null, // 'light' or 'insect'
-            },
-
-            // Game loop to trigger events randomly
-            startGameLoop: function() {
-                if (this.isRunning) return;
-                this.isRunning = true;
-                console.log("[Game] Reward game loop started.");
-                this.scheduleNextEvent();
-            },
-
-            scheduleNextEvent: function() {
-                // Random time between 30 and 60 seconds
-                const randomInterval = Math.random() * (60000 - 30000) + 30000;
-                this.gameLoopTimeout = setTimeout(() => {
-                    this.triggerGameEvent();
-                }, randomInterval);
-            },
-
-            // Decide if and what event to trigger
-            triggerGameEvent: function() {
-                if (document.hidden) { // Don't run if tab is not active
-                    this.scheduleNextEvent();
-                    return;
-                }
-                
-                this.state.eventHappened = Math.random() < 0.6; // 60% chance the event actually happens
-                const eventType = Math.random() < 0.5 ? 'light' : 'insect'; // 50/50 chance for light or insect
-                
-                let questionText = '';
-                let insectDidJump = false;
-
-                if (this.state.eventHappened) {
-                    if (eventType === 'light') {
-                        this.state.eventType = 'light';
-                        this.state.expectedAnswer = 'yes';
-                        questionText = "Did the red light flash?";
-                        this.showRedLight();
-                    } else { // insect
-                        this.state.eventType = 'insect';
-                        insectDidJump = Math.random() < 0.5;
-                        this.state.expectedAnswer = insectDidJump ? 'yes' : 'no';
-                        questionText = "Did the insect jump from side to side?";
-                        this.showInsect(insectDidJump);
-                    }
-                } else { // Event did NOT happen
-                     if (eventType === 'light') {
-                        this.state.eventType = 'light';
-                        this.state.expectedAnswer = 'no';
-                        questionText = "Did the red light flash?";
-                    } else { // insect
-                        this.state.eventType = 'insect';
-                        this.state.expectedAnswer = 'no';
-                        questionText = "Did the insect jump from side to side?";
-                    }
-                }
-
-                // Ask the question after a short delay
-                setTimeout(() => {
-                    this.askQuestion(questionText);
-                }, 4000); // Wait 4 seconds for insect animation to finish
-            },
-
-            // Visual effect functions
-            showRedLight: function() {
-                const light = document.createElement('div');
-                light.className = 'game-red-light';
-                // Random position
-                light.style.top = `${Math.random() * 90}%`;
-                light.style.left = `${Math.random() * 90}%`;
-                document.body.appendChild(light);
-                setTimeout(() => {
-                    document.body.removeChild(light);
-                }, 200); // Flash for 200ms
-            },
-
-            showInsect: function(shouldJump) {
-                const insect = document.createElement('div');
-                insect.className = 'game-insect';
-                insect.textContent = '🐜'; // Insect emoji
-                insect.style.left = `${Math.random() * 80 + 10}%`; // Start somewhere in the middle horizontally
-                insect.style.top = '0px';
-
-                if (shouldJump) {
-                    insect.style.animation = 'insect-fall-jump 4s linear forwards';
-                } else {
-                    insect.style.animation = 'insect-fall-straight 4s linear forwards';
-                }
-                
-                document.body.appendChild(insect);
-                
-                insect.addEventListener('animationend', () => {
-                    document.body.removeChild(insect);
-                });
-            },
-
-            // Modal and question logic
-            askQuestion: function(question) {
-                const modal = document.getElementById('game-modal');
-                const questionEl = document.getElementById('game-question');
-                const timerEl = document.getElementById('game-timer');
-
-                questionEl.textContent = question;
-                
-                // Reset timer animation
-                timerEl.style.animation = 'none';
-                timerEl.offsetHeight; // Trigger reflow
-                timerEl.style.animation = 'shrink 1s linear forwards';
-                
-                modal.classList.add('visible');
-
-                this.questionTimeout = setTimeout(() => {
-                    this.handleAnswer('timeout');
-                }, 1000);
-            },
-            
-            handleAnswer: function(userAnswer) {
-                clearTimeout(this.questionTimeout);
-                const modal = document.getElementById('game-modal');
-                if (!modal.classList.contains('visible')) return; // Avoid double triggers
-                
-                modal.classList.remove('visible');
-
-                const correct = userAnswer === this.state.expectedAnswer;
-                
-                if (userAnswer === 'timeout') {
-                    this.showResult('Fail', false);
-                } else {
-                    this.showResult(correct ? 'Pass' : 'Fail', correct);
-                }
-                
-                // Schedule the next event
-                this.scheduleNextEvent();
-            },
-
-            showResult: function(text, isSuccess) {
-                const popup = document.getElementById('game-result-popup');
-                popup.textContent = text;
-                popup.style.backgroundColor = isSuccess ? 'var(--success-green)' : 'var(--error-red)';
-                popup.style.top = '20px';
-                popup.style.opacity = '1';
-
-                setTimeout(() => {
-                    popup.style.top = '-50px';
-                    popup.style.opacity = '0';
-                }, 2000);
-            }
-        };
-        // =======================================================
-        // ★★★ NEW: REWARD GAME LOGIC - END ★★★
-        // =======================================================
-
 
         async function addChannelToList(event, channelId) { /* Unchanged */ }
 
@@ -4573,10 +4260,6 @@
                     button.classList.add('active');
                 });
             });
-            
-             // ★★★ REWARD GAME EVENT LISTENERS ★★★
-            document.getElementById('game-yes-btn').addEventListener('click', () => rewardGameManager.handleAnswer('yes'));
-            document.getElementById('game-no-btn').addEventListener('click', () => rewardGameManager.handleAnswer('no'));
         });
 
         function initializeMessagingInterface() {
