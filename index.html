@@ -475,7 +475,7 @@
             color: var(--background);
             font-weight: 700;
             cursor: pointer;
-            transition: background-color: 0.3s ease;
+            transition: background-color 0.3s ease;
             width: auto;
             display: block;
             margin: 20px auto;
@@ -1330,7 +1330,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s ease;
+            transition: background-color: 0.2s ease;
         }
 
         #long-video-search-btn:hover,
@@ -2100,7 +2100,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.2s;
+            transition: background-color: 0.2s;
         }
 
         .player-controls-header button:hover {
@@ -3132,9 +3132,10 @@
                 navigateTo('information-screen');
             }
         }
-
+        
+        // ★★★ FINAL FIX START ★★★
         let appInitializationComplete = false;
-        let isHandlingRedirect = false; // ★★★ FIX: रीडायरेक्ट को संभालने के लिए एक नया फ्लैग ★★★
+        let isHandlingRedirect = false; // यह ट्रैक करेगा कि क्या हम गूगल से वापस आए हैं
 
         function initializeApp() {
             if (appInitializationComplete) return;
@@ -3142,40 +3143,40 @@
 
             document.querySelectorAll('.nav-item[data-nav="profile"]').forEach(item => item.style.display = 'none');
             
-            // ★★★ FIX: यह फंक्शन सबसे पहले चलना चाहिए ताकि हम पता लगा सकें कि यूज़र रीडायरेक्ट से आया है ★★★
+            // यह सबसे पहले चलना चाहिए
             auth.getRedirectResult()
                 .then((result) => {
                     if (result.user) {
-                        // यूज़र ने सफलतापूर्वक लॉगिन कर लिया है।
+                        // यूज़र ने सफलतापूर्वक लॉगिन कर लिया है। अब onAuthStateChanged उसे संभाल लेगा।
                         isHandlingRedirect = true; // हम रीडायरेक्ट को संभाल रहे हैं
                         console.log("Redirect result received for user:", result.user.displayName);
-                        // onAuthStateChanged बाकी काम करेगा।
                     }
                 }).catch((error) => {
                     console.error("Error getting redirect result:", error);
                     alert("Login failed during redirect. " + error.message);
                 });
 
+            // यह हमेशा यूज़र की स्थिति को सुनता रहेगा
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    // अगर उपयोगकर्ता लॉग इन है, तो प्रोफाइल जांचें और ऐप शुरू करें
+                    // यूज़र लॉग इन है (चाहे सीधे या रीडायरेक्ट से)
                     checkUserProfileAndProceed(user);
                 } else if (!isHandlingRedirect) {
-                     // ★★★ FIX: केवल तभी स्प्लैश दिखाएं जब हम रीडायरेक्ट को नहीं संभाल रहे हों ★★★
-                    // कोई उपयोगकर्ता लॉग इन नहीं है। स्प्लैश स्क्रीन पर रहें।
+                    // यूज़र लॉग इन नहीं है और हम रीडायरेक्ट का इंतज़ार भी नहीं कर रहे हैं
                     console.log("No user is signed in. Waiting on Splash/Login screen.");
                     activateScreen('splash-screen');
                 }
+                // अगर isHandlingRedirect true है, तो हम कुछ नहीं करेंगे और इंतज़ार करेंगे
+                // क्योंकि यूज़र की जानकारी आने में थोड़ा समय लग सकता है।
             });
         }
+        // ★★★ FINAL FIX END ★★★
 
         async function signInWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             try {
-                // ★★★ FIX: signInWithPopup को signInWithRedirect से बदला गया है ★★★
-                // यह मोबाइल पर पॉप-अप ब्लॉक होने की समस्या को हल करता है।
+                // पॉप-अप की जगह रीडायरेक्ट का उपयोग करें, जो मोबाइल पर बेहतर काम करता है
                 await auth.signInWithRedirect(provider);
-                // रीडायरेक्ट के बाद, onAuthStateChanged बाकी ऐप लॉजिक को संभाल लेगा।
             } catch (error) {
                 console.error("Google Sign-in Error:", error);
                 alert("Could not start sign in with Google. Error: " + error.message);
