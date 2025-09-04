@@ -2582,7 +2582,7 @@
         </div>
 
     </div> <!-- End of .app-container -->
-
+    
     <!-- === SCRIPTS (MUST BE AT THE END) === -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
@@ -3129,11 +3129,13 @@
 
             auth.onAuthStateChanged(user => {
                 if (user) {
+                    // अगर कोई उपयोगकर्ता लॉग इन है, तो ऐप शुरू करें
                     checkUserProfileAndProceed(user);
                 } else {
-                    // Anonymous sign-in removed. The app will wait for a user to be logged in.
-                    // You might want to redirect to a login page here if you have one.
-                    console.log("No user is signed in. Please implement a login flow.");
+                    // अगर कोई उपयोगकर्ता लॉग इन नहीं है, तो कुछ न करें।
+                    // उपयोगकर्ता को लॉगिन करने के लिए एक UI प्रदान करना होगा।
+                    // अनोनिमस लॉगिन हटा दिया गया है।
+                    console.log("No user is signed in. Waiting for user to log in.");
                 }
             });
 
@@ -3277,6 +3279,7 @@
                 const screenToNavigate = 'main-home-screen';
                 navigateTo(screenToNavigate);
                 updateNavActiveState('home');
+                
             } catch (error) {
                 console.error("CRITICAL ERROR during app start:", error);
                 alert("Could not start the app. Please check your connection and try again.");
@@ -4147,7 +4150,7 @@
         // =======================================================
         // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
         // =======================================================
-
+        
         async function addChannelToList(event, channelId) { /* Unchanged */ }
 
         function renderMyChannelsList() { /* Unchanged */ }
@@ -4188,7 +4191,14 @@
 
             document.getElementById('get-started-btn')?.addEventListener('click', () => {
                 userHasInteracted = true;
-                startAppLogic();
+                // Get Started बटन अब सीधे ऐप शुरू करने का प्रयास करेगा
+                // यदि उपयोगकर्ता लॉग इन नहीं है, तो कुछ नहीं होगा
+                // यह सुनिश्चित करता है कि बटन क्लिक करने योग्य है
+                if (auth.currentUser) {
+                     startAppLogic();
+                } else {
+                    alert("Please log in to continue.");
+                }
             });
 
             appContainer.addEventListener('click', (event) => {
