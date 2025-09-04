@@ -170,10 +170,15 @@
         }
 
         #splash-screen,
-        #information-screen {
+        #information-screen,
+        #login-screen {
             padding: 20px;
             background-color: var(--background);
             z-index: 11;
+        }
+        
+        #login-screen {
+            justify-content: center;
         }
 
         #information-screen {
@@ -283,7 +288,7 @@
             text-shadow: 0 0 8px rgba(var(--primary-neon-rgb), 0.3);
         }
 
-        #splash-screen .tagline {
+        #splash-screen .tagline, #login-screen .tagline {
             font-family: 'Roboto', sans-serif;
             font-size: 1.2em;
             font-style: italic;
@@ -2328,6 +2333,19 @@
             </div>
         </div>
 
+        <!-- ★★★ NEW: LOGIN SCREEN ★★★ -->
+        <div id="login-screen" class="screen">
+            <div class="welcome-center">
+                <h2 class="app-name">Join Shubhzone</h2>
+                <p class="tagline">Start your journey</p>
+                <div style="margin-top: 40px; width: 100%; padding: 0 20px;">
+                    <button id="google-signin-btn" class="continue-btn haptic-trigger" style="width: 100%; padding: 15px; border-radius: 8px; font-size: 1.2em;">
+                        <i class="fab fa-google" style="margin-right: 10px;"></i> Sign in with Google
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- === INFORMATION SCREEN === -->
         <div id="information-screen" class="screen">
             <div class="screen-header">
@@ -3006,7 +3024,7 @@
         function navigateTo(nextScreenId, payload = null) {
             if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && nextScreenId !== 'creator-page-screen') return;
 
-            if (nextScreenId !== 'splash-screen' && nextScreenId !== 'information-screen') {
+            if (nextScreenId !== 'splash-screen' && nextScreenId !== 'information-screen' && nextScreenId !== 'login-screen') {
                 localStorage.setItem('shubhzone_lastScreen', nextScreenId);
             }
 
@@ -3080,9 +3098,7 @@
                     userData.referralCode = await generateAndSaveReferralCode(user.uid, userData.name);
                 }
                 userData.friends = userData.friends || [];
-                appState.currentUser = { ...appState.currentUser,
-                    ...userData
-                };
+                appState.currentUser = { ...appState.currentUser, ...userData };
 
                 const savedChannels = localStorage.getItem('shubhzone_addedChannels');
                 appState.currentUser.addedChannels = savedChannels ? JSON.parse(savedChannels) : [];
@@ -3102,7 +3118,7 @@
             } else {
                 const initialData = {
                     uid: user.uid,
-                    name: '',
+                    name: user.displayName || '',
                     email: user.email || '',
                     avatar: user.photoURL || 'https://via.placeholder.com/120/222/FFFFFF?text=+',
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
@@ -3111,9 +3127,7 @@
                     isReferred: false,
                 };
                 await userRef.set(initialData);
-                appState.currentUser = { ...appState.currentUser,
-                    ...initialData
-                };
+                appState.currentUser = { ...appState.currentUser, ...initialData };
                 updateProfileUI();
                 navigateTo('information-screen');
             }
@@ -3129,18 +3143,30 @@
 
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    // अगर कोई उपयोगकर्ता लॉग इन है, तो ऐप शुरू करें
+                    // अगर उपयोगकर्ता लॉग इन है, तो प्रोफाइल जांचें और ऐप शुरू करें
                     checkUserProfileAndProceed(user);
                 } else {
-                    // अगर कोई उपयोगकर्ता लॉग इन नहीं है, तो कुछ न करें।
-                    // उपयोगकर्ता को लॉगिन करने के लिए एक UI प्रदान करना होगा।
-                    // अनोनिमस लॉगिन हटा दिया गया है।
-                    console.log("No user is signed in. Waiting for user to log in.");
+                    // कोई उपयोगकर्ता लॉग इन नहीं है। स्प्लैश स्क्रीन पर रहें।
+                    // उपयोगकर्ता "Get Started" पर क्लिक करके लॉगिन स्क्रीन पर जाएगा।
+                    console.log("No user is signed in. Waiting on Splash/Login screen.");
                 }
             });
 
             activateScreen('splash-screen');
         }
+
+        async function signInWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                const result = await auth.signInWithPopup(provider);
+                // सफल साइन-इन पर, onAuthStateChanged बाकी ऐप लॉजिक को संभाल लेगा।
+                console.log("Signed in with Google successfully:", result.user.displayName);
+            } catch (error) {
+                console.error("Google Sign-in Error:", error);
+                alert("Could not sign in with Google. Error: " + error.message);
+            }
+        }
+
 
         function loadUserVideosFromFirebase() {
             renderUserProfileVideos();
@@ -4191,15 +4217,12 @@
 
             document.getElementById('get-started-btn')?.addEventListener('click', () => {
                 userHasInteracted = true;
-                // Get Started बटन अब सीधे ऐप शुरू करने का प्रयास करेगा
-                // यदि उपयोगकर्ता लॉग इन नहीं है, तो कुछ नहीं होगा
-                // यह सुनिश्चित करता है कि बटन क्लिक करने योग्य है
-                if (auth.currentUser) {
-                     startAppLogic();
-                } else {
-                    alert("Please log in to continue.");
-                }
+                // Get Started बटन अब सीधे लॉगिन स्क्रीन पर ले जाएगा
+                navigateTo('login-screen');
             });
+
+            // गूगल साइन-इन बटन के लिए इवेंट लिसनर
+            document.getElementById('google-signin-btn')?.addEventListener('click', signInWithGoogle);
 
             appContainer.addEventListener('click', (event) => {
                 if (!userHasInteracted) {
