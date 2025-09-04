@@ -475,7 +475,7 @@
             color: var(--background);
             font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color: 0.3s ease;
             width: auto;
             display: block;
             margin: 20px auto;
@@ -496,7 +496,7 @@
             color: var(--text-primary);
             font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color: 0.3s ease;
             width: 100%;
             padding: 12px 15px;
             border: none;
@@ -1157,7 +1157,7 @@
             cursor: pointer;
             border-radius: 8px;
             font-size: 1.1em;
-            transition: background-color 0.2s ease, border-color 0.2s ease;
+            transition: background-color: 0.2s ease, border-color: 0.2s ease;
             display: flex;
             align-items: center;
             margin-bottom: 10px;
@@ -3134,25 +3134,39 @@
         }
 
         let appInitializationComplete = false;
+        let isHandlingRedirect = false; // ★★★ FIX: रीडायरेक्ट को संभालने के लिए एक नया फ्लैग ★★★
 
         function initializeApp() {
             if (appInitializationComplete) return;
             appInitializationComplete = true;
 
             document.querySelectorAll('.nav-item[data-nav="profile"]').forEach(item => item.style.display = 'none');
+            
+            // ★★★ FIX: यह फंक्शन सबसे पहले चलना चाहिए ताकि हम पता लगा सकें कि यूज़र रीडायरेक्ट से आया है ★★★
+            auth.getRedirectResult()
+                .then((result) => {
+                    if (result.user) {
+                        // यूज़र ने सफलतापूर्वक लॉगिन कर लिया है।
+                        isHandlingRedirect = true; // हम रीडायरेक्ट को संभाल रहे हैं
+                        console.log("Redirect result received for user:", result.user.displayName);
+                        // onAuthStateChanged बाकी काम करेगा।
+                    }
+                }).catch((error) => {
+                    console.error("Error getting redirect result:", error);
+                    alert("Login failed during redirect. " + error.message);
+                });
 
             auth.onAuthStateChanged(user => {
                 if (user) {
                     // अगर उपयोगकर्ता लॉग इन है, तो प्रोफाइल जांचें और ऐप शुरू करें
                     checkUserProfileAndProceed(user);
-                } else {
+                } else if (!isHandlingRedirect) {
+                     // ★★★ FIX: केवल तभी स्प्लैश दिखाएं जब हम रीडायरेक्ट को नहीं संभाल रहे हों ★★★
                     // कोई उपयोगकर्ता लॉग इन नहीं है। स्प्लैश स्क्रीन पर रहें।
-                    // उपयोगकर्ता "Get Started" पर क्लिक करके लॉगिन स्क्रीन पर जाएगा।
                     console.log("No user is signed in. Waiting on Splash/Login screen.");
+                    activateScreen('splash-screen');
                 }
             });
-
-            activateScreen('splash-screen');
         }
 
         async function signInWithGoogle() {
