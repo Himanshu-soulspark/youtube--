@@ -462,7 +462,7 @@
             color: var(--background);
             font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color: 0.3s ease;
             width: 100%;
             padding: 12px 15px;
             border: none;
@@ -3158,12 +3158,13 @@
         async function signInWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             try {
-                const result = await auth.signInWithPopup(provider);
-                // सफल साइन-इन पर, onAuthStateChanged बाकी ऐप लॉजिक को संभाल लेगा।
-                console.log("Signed in with Google successfully:", result.user.displayName);
+                // ★★★ FIX: signInWithPopup को signInWithRedirect से बदला गया है ★★★
+                // यह मोबाइल पर पॉप-अप ब्लॉक होने की समस्या को हल करता है।
+                await auth.signInWithRedirect(provider);
+                // रीडायरेक्ट के बाद, onAuthStateChanged बाकी ऐप लॉजिक को संभाल लेगा।
             } catch (error) {
                 console.error("Google Sign-in Error:", error);
-                alert("Could not sign in with Google. Error: " + error.message);
+                alert("Could not start sign in with Google. Error: " + error.message);
             }
         }
 
