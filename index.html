@@ -14,14 +14,12 @@
     <!-- Main App Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&display=swap"
         rel="stylesheet">
-    <!-- Razorpay SDK -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <style>
         /* ================================================= /
-        / === Shubhzone App Styles (Code 2) - FINAL v7.0 === /
-        / === MODIFIED AS PER USER REQUEST - SEP 2025    === /
-        / === SOLVED: Login Loop, Payment Gate, Search   === /
+        / === Shubhzone App Styles (Code 2) - FINAL v6.0 === /
+        / === MODIFIED AS PER USER REQUEST - AUG 2025    === /
+        / === SOLVED: Styles for Reward System & UI/UX   === /
         / ================================================= */
 
         /* Design Style Guide */
@@ -172,18 +170,10 @@
         }
 
         #splash-screen,
-        #information-screen,
-        #login-screen,
-        #payment-screen {
+        #information-screen {
             padding: 20px;
             background-color: var(--background);
             z-index: 11;
-        }
-        
-        #login-screen,
-        #payment-screen {
-            justify-content: center;
-            text-align: center;
         }
 
         #information-screen {
@@ -293,7 +283,7 @@
             text-shadow: 0 0 8px rgba(var(--primary-neon-rgb), 0.3);
         }
 
-        #splash-screen .tagline, #login-screen .tagline {
+        #splash-screen .tagline {
             font-family: 'Roboto', sans-serif;
             font-size: 1.2em;
             font-style: italic;
@@ -467,7 +457,7 @@
             color: var(--background);
             font-weight: 700;
             cursor: pointer;
-            transition: background-color: 0.3s ease;
+            transition: background-color 0.3s ease;
             width: 100%;
             padding: 12px 15px;
             border: none;
@@ -610,16 +600,6 @@
             height: 100%;
             padding-top: 5px;
         }
-        
-        .nav-item[data-locked="true"] {
-            color: var(--text-disabled);
-            pointer-events: none;
-            cursor: not-allowed;
-        }
-        
-        .nav-item[data-locked="true"] i {
-            color: var(--text-disabled);
-        }
 
         .nav-item.active {
             color: transparent;
@@ -634,15 +614,6 @@
             -webkit-background-clip: text;
             background-clip: text;
         }
-        
-        .nav-item[data-locked="true"].active i,
-        .nav-item[data-locked="true"].active {
-            background: none;
-            -webkit-background-clip: unset;
-            background-clip: unset;
-            color: var(--text-disabled);
-        }
-
 
         .nav-item i {
             font-size: 1.5em;
@@ -1181,7 +1152,7 @@
             cursor: pointer;
             border-radius: 8px;
             font-size: 1.1em;
-            transition: background-color: 0.2s ease, border-color: 0.2s ease;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
             display: flex;
             align-items: center;
             margin-bottom: 10px;
@@ -2277,6 +2248,139 @@
             transform: translateY(2px);
             border-bottom-width: 2px;
         }
+
+        /* ★★★★★★★★★★ REWARD GAME STYLES START ★★★★★★★★★★ */
+        .game-red-light {
+            position: fixed;
+            width: 15px;
+            height: 15px;
+            background-color: red;
+            border-radius: 50%;
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.5);
+        }
+
+        .game-insect {
+            position: fixed;
+            font-size: 24px;
+            pointer-events: none;
+            z-index: 9999;
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+        }
+
+        @keyframes insect-fall-straight {
+            from { transform: translateY(-30px); }
+            to { transform: translateY(100vh); }
+        }
+
+        @keyframes insect-fall-jump {
+            0% { transform: translate(0, -30px); }
+            25% { transform: translate(-30px, 25vh); }
+            50% { transform: translate(30px, 50vh); }
+            75% { transform: translate(-20px, 75vh); }
+            100% { transform: translate(10px, 100vh); }
+        }
+
+        .game-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .game-modal-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .game-modal-content {
+            background-color: var(--secondary-background);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            width: 90%;
+            max-width: 300px;
+            border: 1px solid var(--primary-neon);
+            box-shadow: 0 0 20px rgba(var(--primary-neon-rgb), 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-modal-content p {
+            margin: 0 0 20px 0;
+            font-size: 1.1em;
+        }
+
+        .game-modal-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .game-modal-buttons button {
+            flex-grow: 1;
+            padding: 12px;
+            font-size: 1.1em;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .game-modal-buttons button:active {
+            transform: scale(0.95);
+        }
+
+        .game-modal-buttons .yes-btn {
+            background-color: var(--success-green);
+            color: var(--background);
+        }
+
+        .game-modal-buttons .no-btn {
+            background-color: var(--error-red);
+            color: var(--text-primary);
+        }
+
+        .game-timer-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            width: 100%;
+            background-color: var(--primary-neon);
+            animation: shrink 1s linear forwards;
+        }
+
+        @keyframes shrink {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        #game-result-popup {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 25px;
+            border-radius: 20px;
+            font-weight: 700;
+            color: var(--background);
+            z-index: 10001;
+            opacity: 0;
+            transition: opacity 0.3s, top 0.3s;
+        }
+        /* ★★★★★★★★★★ REWARD GAME STYLES END ★★★★★★★★★★ */
     </style>
 </head>
 
@@ -2351,40 +2455,11 @@
                 <button id="get-started-btn" class="get-started-btn haptic-trigger">Get Started</button>
                 <div id="loading-container" style="display: none;">
                     <div class="loader"></div>
-                    <p style="margin-top: 10px;">Loading profile...</p>
+                    <p style="margin-top: 10px;">Loading Videos, Please Wait...</p>
                 </div>
                 <p class="creator-credit-new">Made with ❤️ by Udbhav</p>
             </div>
         </div>
-
-        <!-- ★★★ LOGIN SCREEN (COMMENTED OUT AS PER REQUEST) ★★★ -->
-        <!-- 
-        <div id="login-screen" class="screen">
-            <div class="welcome-center">
-                <h2 class="app-name">Join Shubhzone</h2>
-                <p class="tagline">Start your journey</p>
-                <div style="margin-top: 40px; width: 100%; padding: 0 20px;">
-                    <button id="google-signin-btn" class="continue-btn haptic-trigger" style="width: 100%; padding: 15px; border-radius: 8px; font-size: 1.2em;">
-                        <i class="fab fa-google" style="margin-right: 10px;"></i> Sign in with Google
-                    </button>
-                </div>
-            </div>
-        </div>
-        -->
-
-        <!-- ★★★ PAYMENT SCREEN ★★★ -->
-        <div id="payment-screen" class="screen">
-            <div class="welcome-center">
-                <h2 class="app-name">Unlock All Features</h2>
-                <p class="tagline" style="margin-top: 15px; font-size: 1em;">To access all features of Shubhzone, a one-time activation fee is required.</p>
-                <div style="margin-top: 40px; width: 100%; padding: 0 20px;">
-                    <button id="payment-btn" class="continue-btn haptic-trigger" style="width: 100%; padding: 15px; border-radius: 8px; font-size: 1.2em;">
-                        Pay ₹1 to Unlock
-                    </button>
-                </div>
-            </div>
-        </div>
-
 
         <!-- === INFORMATION SCREEN === -->
         <div id="information-screen" class="screen">
@@ -2641,10 +2716,23 @@
 
     </div> <!-- End of .app-container -->
     
+    <!-- ★★★★★★★★★★ REWARD GAME HTML START ★★★★★★★★★★ -->
+    <div id="game-modal" class="game-modal-overlay">
+        <div class="game-modal-content">
+            <p id="game-question">Did the red light flash?</p>
+            <div class="game-modal-buttons">
+                <button id="game-yes-btn" class="yes-btn">Yes</button>
+                <button id="game-no-btn" class="no-btn">No</button>
+            </div>
+            <div id="game-timer" class="game-timer-bar"></div>
+        </div>
+    </div>
+    <div id="game-result-popup"></div>
+    <!-- ★★★★★★★★★★ REWARD GAME HTML END ★★★★★★★★★★ -->
+
     <!-- === SCRIPTS (MUST BE AT THE END) === -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <!-- REMOVED: firebase-auth.js is no longer needed -->
-    <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script> -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
@@ -2669,7 +2757,7 @@
         }
 
         // Firebase सेवाओं को इनिशियलाइज़ करें
-        // const auth = firebase.auth(); // REMOVED: No longer needed
+        const auth = firebase.auth();
         const db = firebase.firestore();
         const storage = firebase.storage();
         const analytics = firebase.analytics();
@@ -2794,7 +2882,6 @@
                 state: "",
                 country: "",
                 referralCode: null,
-                isPaid: false, // Payment status
                 likedVideos: [],
                 friends: [],
                 addedChannels: [],
@@ -2870,7 +2957,9 @@
             // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
             // ★★★ FINAL FIX: सर्वर का URL ठीक किया गया ★★★
             // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-            let url = `/api/youtube?type=${type}`;
+            // यह सर्वर को हमेशा उसी डोमेन पर कॉल करेगा जिस पर ऐप चल रहा है।
+            // let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`; // <-- यह गलत था
+            let url = `/api/youtube?type=${type}`; // <-- यह सही तरीका है। यह हमेशा shboard.render.com पर ही रिक्वेस्ट भेजेगा।
 
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
@@ -2878,7 +2967,7 @@
                 }
             }
             
-            console.log(`[API] Fetching data from server: ${url}`);
+            console.log(`[API] सही सर्वर से डेटा लाया जा रहा है: ${url}`);
 
             try {
                 const response = await fetch(url);
@@ -2900,7 +2989,7 @@
                 
                 return data;
             } catch (error) {
-                console.error(`Critical error fetching from server (${type}):`, error);
+                console.error(`सर्वर से डेटा लाने में गंभीर त्रुटि (${type}):`, error);
                 if (type === 'search') {
                      const grid = document.getElementById('long-video-grid');
                      if(grid) grid.innerHTML = '<p class="static-message">Could not load videos. Please check your connection or API key.</p>';
@@ -3064,7 +3153,7 @@
         function navigateTo(nextScreenId, payload = null) {
             if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && nextScreenId !== 'creator-page-screen') return;
 
-            if (nextScreenId !== 'splash-screen' && nextScreenId !== 'information-screen' && nextScreenId !== 'login-screen') {
+            if (nextScreenId !== 'splash-screen' && nextScreenId !== 'information-screen') {
                 localStorage.setItem('shubhzone_lastScreen', nextScreenId);
             }
 
@@ -3125,20 +3214,22 @@
             navigateTo(previousScreenId, null);
         }
 
-        async function checkUserProfileAndProceed(userId) {
-            if (!userId) return;
-            appState.currentUser.uid = userId;
-            const userRef = db.collection('users').doc(userId);
+        async function checkUserProfileAndProceed(user) {
+            if (!user) return;
+            appState.currentUser.uid = user.uid;
+            const userRef = db.collection('users').doc(user.uid);
             const doc = await userRef.get();
 
             if (doc.exists) {
                 let userData = doc.data();
 
                 if (!userData.referralCode || !userData.referralCode.startsWith('@')) {
-                    userData.referralCode = await generateAndSaveReferralCode(userId, userData.name);
+                    userData.referralCode = await generateAndSaveReferralCode(user.uid, userData.name);
                 }
                 userData.friends = userData.friends || [];
-                appState.currentUser = { ...appState.currentUser, ...userData };
+                appState.currentUser = { ...appState.currentUser,
+                    ...userData
+                };
 
                 const savedChannels = localStorage.getItem('shubhzone_addedChannels');
                 appState.currentUser.addedChannels = savedChannels ? JSON.parse(savedChannels) : [];
@@ -3148,63 +3239,51 @@
                     appState.viewingHistory = JSON.parse(savedHistory);
                 }
                 updateProfileUI();
-                
-                // ★★★ PAYMENT CHECK ★★★
-                if(appState.currentUser.isPaid) {
-                    unlockNav();
-                    if (userData.name && userData.state) {
-                         await startAppLogic();
-                    } else {
-                         navigateTo('information-screen');
-                    }
+
+                if (userData.name && userData.state) {
+                    await startAppLogic();
                 } else {
-                    lockNav();
-                    navigateTo('payment-screen');
+                    navigateTo('information-screen');
                 }
 
             } else {
-                // This case should ideally not happen for a returning user with a UID.
-                // It means their data was deleted from Firestore. Treat as a new user.
-                console.warn(`User with UID ${userId} not found in Firestore. Directing to information screen.`);
-                localStorage.removeItem('shubhzone_user_id'); // Clear invalid ID
-                appState.currentUser.uid = null;
+                const initialData = {
+                    uid: user.uid,
+                    name: '',
+                    email: user.email || '',
+                    avatar: user.photoURL || 'https://via.placeholder.com/120/222/FFFFFF?text=+',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    friends: [],
+                    referralCode: await generateAndSaveReferralCode(user.uid, user.displayName || 'user'),
+                    isReferred: false,
+                };
+                await userRef.set(initialData);
+                appState.currentUser = { ...appState.currentUser,
+                    ...initialData
+                };
+                updateProfileUI();
                 navigateTo('information-screen');
             }
         }
-        
-        // ★★★ NEW APP INITIALIZATION (NO AUTH) ★★★
+
+        let appInitializationComplete = false;
+
         function initializeApp() {
-            const userId = localStorage.getItem('shubhzone_user_id');
-            const loadingContainer = document.getElementById('loading-container');
-            const getStartedBtn = document.getElementById('get-started-btn');
+            if (appInitializationComplete) return;
+            appInitializationComplete = true;
 
-            if (userId) {
-                // Returning user
-                getStartedBtn.style.display = 'none';
-                loadingContainer.style.display = 'flex';
-                checkUserProfileAndProceed(userId);
-            } else {
-                // New user
-                getStartedBtn.style.display = 'block';
-                loadingContainer.style.display = 'none';
-                console.log("No user ID found. Waiting on Splash screen for user to start.");
-                activateScreen('splash-screen');
-            }
-        }
-        
-        /*
-        // COMMENTED OUT: Google Sign-in is no longer used
-        async function signInWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                await auth.signInWithRedirect(provider);
-            } catch (error) {
-                console.error("Google Sign-in Error:", error);
-                alert("Could not start sign in with Google. Error: " + error.message);
-            }
-        }
-        */
+            document.querySelectorAll('.nav-item[data-nav="profile"]').forEach(item => item.style.display = 'none');
 
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    checkUserProfileAndProceed(user);
+                } else {
+                    auth.signInAnonymously().catch(error => console.error("Anonymous sign-in failed:", error));
+                }
+            });
+
+            activateScreen('splash-screen');
+        }
 
         function loadUserVideosFromFirebase() {
             renderUserProfileVideos();
@@ -3234,18 +3313,6 @@
             saveContinueBtn.disabled = true;
             saveContinueBtn.textContent = 'Saving...';
 
-            let userUid = appState.currentUser.uid;
-            let isNewUser = false;
-
-            // If there's no UID, it's a new user. Generate a UID for them.
-            if (!userUid) {
-                userUid = db.collection("users").doc().id;
-                appState.currentUser.uid = userUid;
-                localStorage.setItem('shubhzone_user_id', userUid);
-                isNewUser = true;
-                console.log("New user detected. Generated UID:", userUid);
-            }
-
             const name = document.getElementById('info-name').value.trim();
             const stateValue = document.getElementById('info-state').value;
             const customState = document.getElementById('custom-state-input').value.trim();
@@ -3260,24 +3327,17 @@
             }
 
             const userData = {
-                uid: userUid,
                 name,
                 mobile: document.getElementById('info-mobile').value.trim(),
                 email: document.getElementById('info-email').value.trim(),
                 address: document.getElementById('info-address').value.trim(),
                 hobby: document.getElementById('info-hobby').value.trim(),
                 state: state,
-                country: document.getElementById('info-country').value === 'custom' ? document.getElementById('custom-country-input').value.trim() : document.getElementById('info-country').value,
-                friends: [],
-                isPaid: false // Default payment status
+                country: document.getElementById('info-country').value === 'custom' ? document.getElementById('custom-country-input').value.trim() : document.getElementById('info-country').value
             };
 
-            if (isNewUser) {
-                userData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-            }
-
             if (referralCodeInput) {
-                const referringUser = await processReferral(referralCodeInput, userUid);
+                const referringUser = await processReferral(referralCodeInput, appState.currentUser.uid);
                 if (referringUser) {
                     userData.isReferred = true;
                     userData.referredBy = referringUser.uid;
@@ -3289,7 +3349,7 @@
             const file = profileImageInput.files[0];
             if (file) {
                 try {
-                    const storageRef = storage.ref(`avatars/${userUid}/${file.name}`);
+                    const storageRef = storage.ref(`avatars/${appState.currentUser.uid}/${file.name}`);
                     const snapshot = await storageRef.put(file);
                     userData.avatar = await snapshot.ref.getDownloadURL();
                 } catch (error) {
@@ -3302,25 +3362,22 @@
             }
 
             try {
-                // Use .set() to create a new document or overwrite an existing one.
-                await db.collection('users').doc(userUid).set(userData, {
+                await db.collection('users').doc(appState.currentUser.uid).set(userData, {
                     merge: true
                 });
 
-                const userDoc = await db.collection('users').doc(userUid).get();
+                const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
                 if (!userDoc.data().referralCode) {
-                    await generateAndSaveReferralCode(userUid, name);
+                    await generateAndSaveReferralCode(appState.currentUser.uid, name);
                 }
 
-                const refreshedUserData = (await db.collection('users').doc(userUid).get()).data();
-                appState.currentUser = { ...appState.currentUser, ...refreshedUserData };
+                const refreshedUserData = (await db.collection('users').doc(appState.currentUser.uid).get()).data();
+                appState.currentUser = { ...appState.currentUser,
+                    ...refreshedUserData
+                };
 
                 updateProfileUI();
-                
-                // After saving info, user must pay
-                lockNav();
-                navigateTo('payment-screen');
-
+                await startAppLogic();
             } catch (error) {
                 console.error("Profile save error:", error);
                 alert("Failed to save profile.");
@@ -3366,6 +3423,10 @@
                 navigateTo(screenToNavigate);
                 updateNavActiveState('home');
                 
+                // ★★★ REWARD GAME START ★★★
+                rewardGameManager.startGameLoop();
+
+
             } catch (error) {
                 console.error("CRITICAL ERROR during app start:", error);
                 alert("Could not start the app. Please check your connection and try again.");
@@ -3680,14 +3741,13 @@
 
         function logoutUser() {
             if (confirm("Are you sure you want to log out?")) {
-                // Clear all user-specific data from local storage
-                localStorage.removeItem('shubhzone_user_id');
-                localStorage.removeItem('shubhzone_lastScreen');
-                localStorage.removeItem('shubhzone_addedChannels');
-                localStorage.removeItem('shubhzoneViewingHistory');
-                
-                // Reload the app to go back to the splash screen
-                window.location.reload();
+                localStorage.clear();
+                auth.signOut().then(() => {
+                    window.location.reload();
+                }).catch(error => {
+                    console.error("Logout failed:", error);
+                    alert("Logout failed.");
+                });
             }
         }
 
@@ -3801,12 +3861,8 @@
             let query;
             if (category.toLowerCase() === 'trending') {
                 query = 'trending videos';
-            } else if (category.toLowerCase() === 'all') {
-                // ★★★ YOUTUBE SEARCH FIX ★★★
-                query = 'latest trending videos'; // "All" के लिए एक निश्चित खोज
-            }
-            else {
-                query = category;
+            } else {
+                query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
             }
 
             appState.longVideoSearchContext = {
@@ -3828,7 +3884,7 @@
             if (!carouselWrapper) return;
             carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
             const data = await fetchFromYouTubeAPI('search', {
-                q: 'latest movie trailers',
+                q: 'latest trending videos',
                 videoDuration: 'long',
                 maxResults: 10
             });
@@ -3949,138 +4005,6 @@
             `;
             return card;
         }
-
-        // ★★★ PAYMENT GATEWAY FUNCTIONS (NOW WITH RAZORPAY) ★★★
-        function lockNav() {
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.setAttribute('data-locked', 'true');
-            });
-        }
-
-        function unlockNav() {
-            document.querySelectorAll('.nav-item').forEach(item => {
-                item.setAttribute('data-locked', 'false');
-            });
-        }
-        
-        async function initiatePayment() {
-            const paymentBtn = document.getElementById('payment-btn');
-            paymentBtn.disabled = true;
-            paymentBtn.innerHTML = '<div class="loader"></div>';
-
-            try {
-                // Step 1: सर्वर से Razorpay ऑर्डर डिटेल्स प्राप्त करें
-                const orderResponse = await fetch('/create-razorpay-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: appState.currentUser.uid,
-                        email: appState.currentUser.email,
-                        name: appState.currentUser.name
-                    })
-                });
-
-                if (!orderResponse.ok) {
-                    const errorText = await orderResponse.text();
-                    throw new Error('Failed to create Razorpay order on server: ' + errorText);
-                }
-
-                const orderData = await orderResponse.json();
-                
-                // Step 2: Razorpay ऑप्शन्स कॉन्फ़िगर करें
-                const options = {
-                    "key": "YOUR_RAZORPAY_KEY_ID", // ★★★ अपनी Razorpay Key ID यहाँ डालें ★★★
-                    "amount": orderData.amount, // राशि पैसे में (सर्वर से आनी चाहिए)
-                    "currency": orderData.currency,
-                    "name": "Shubhzone",
-                    "description": "One-time Activation Fee",
-                    "image": "https://i.ibb.co/0RF4GmTZ/Flux-Dev-A-futuristic-social-media-interface-named-Shubhzone-g-1.jpg",
-                    "order_id": orderData.id, // सर्वर से प्राप्त Order ID
-                    "handler": async function (response){
-                        // Step 3: पेमेंट को सर्वर पर वेरिफाई करें
-                        try {
-                            const verifyResponse = await fetch('/verify-razorpay-payment', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    razorpay_order_id: response.razorpay_order_id,
-                                    razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature,
-                                    userId: appState.currentUser.uid
-                                })
-                            });
-
-                            if (!verifyResponse.ok) {
-                                throw new Error('Payment verification failed on server.');
-                            }
-                            
-                            const verificationResult = await verifyResponse.json();
-
-                            if (verificationResult.status === 'success') {
-                                // Step 4: सफल होने पर UI अपडेट करें
-                                alert('Payment Successful! All features are now unlocked.');
-                                appState.currentUser.isPaid = true;
-                                unlockNav();
-                                
-                                // देखें कि प्रोफ़ाइल पूरी है या नहीं
-                                const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
-                                if (userDoc.exists() && userDoc.data().name && userDoc.data().state) {
-                                    startAppLogic();
-                                } else {
-                                    navigateTo('information-screen');
-                                }
-                            } else {
-                                throw new Error('Payment verification returned failure.');
-                            }
-
-                        } catch (verifyError) {
-                            console.error("Payment verification error:", verifyError);
-                            alert("Payment successful, but verification failed. Please contact support. " + verifyError.message);
-                            paymentBtn.disabled = false;
-                            paymentBtn.textContent = 'Pay ₹1 to Unlock';
-                        }
-                    },
-                    "prefill": {
-                        "name": appState.currentUser.name || "",
-                        "email": appState.currentUser.email || "",
-                        "contact": appState.currentUser.mobile || ""
-                    },
-                    "notes": {
-                        "address": appState.currentUser.address || "Not provided",
-                        "userId": appState.currentUser.uid
-                    },
-                    "theme": {
-                        "color": "#00FFFF" // Neon Cyan
-                    },
-                    "modal": {
-                        "ondismiss": function(){
-                            console.log('Razorpay checkout form closed');
-                            paymentBtn.disabled = false;
-                            paymentBtn.textContent = 'Pay ₹1 to Unlock';
-                        }
-                    }
-                };
-
-                // Step 3: Razorpay Checkout को शुरू करें
-                const rzp = new Razorpay(options);
-
-                rzp.on('payment.failed', function (response){
-                        console.error("Razorpay payment failed", response);
-                        alert("Payment Failed: " + response.error.description + " (Code: " + response.error.code + ")");
-                        paymentBtn.disabled = false;
-                        paymentBtn.textContent = 'Pay ₹1 to Unlock';
-                });
-
-                rzp.open();
-
-            } catch (error) {
-                console.error("Payment initiation error:", error);
-                alert("Could not start payment. Please try again. " + error.message);
-                paymentBtn.disabled = false;
-                paymentBtn.textContent = 'Pay ₹1 to Unlock';
-            }
-        }
-
 
         function initializeHistoryScreen() {
             const clearButton = document.getElementById('history-date-button');
@@ -4339,7 +4263,7 @@
             console.log(`[YT Player] Creating new creator player for video ID: ${videoId} in container: #${containerId}`);
             appState.creatorPagePlayers[type] = new YT.Player(containerId, {
                 height: '100%',
-               docststdth: '100%',
+                width: '100%',
                 videoId: videoId,
                 playerVars: {
                     'autoplay': 1,
@@ -4374,6 +4298,169 @@
         // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
         // =======================================================
         
+        // =======================================================
+        // ★★★ NEW: REWARD GAME LOGIC - START ★★★
+        // =======================================================
+        const rewardGameManager = {
+            isRunning: false,
+            gameLoopTimeout: null,
+            questionTimeout: null,
+            state: {
+                eventHappened: false,
+                expectedAnswer: 'no', // 'yes' or 'no'
+                eventType: null, // 'light' or 'insect'
+            },
+
+            // Game loop to trigger events randomly
+            startGameLoop: function() {
+                if (this.isRunning) return;
+                this.isRunning = true;
+                console.log("[Game] Reward game loop started.");
+                this.scheduleNextEvent();
+            },
+
+            scheduleNextEvent: function() {
+                // Random time between 30 and 60 seconds
+                const randomInterval = Math.random() * (60000 - 30000) + 30000;
+                this.gameLoopTimeout = setTimeout(() => {
+                    this.triggerGameEvent();
+                }, randomInterval);
+            },
+
+            // Decide if and what event to trigger
+            triggerGameEvent: function() {
+                if (document.hidden) { // Don't run if tab is not active
+                    this.scheduleNextEvent();
+                    return;
+                }
+                
+                this.state.eventHappened = Math.random() < 0.6; // 60% chance the event actually happens
+                const eventType = Math.random() < 0.5 ? 'light' : 'insect'; // 50/50 chance for light or insect
+                
+                let questionText = '';
+                let insectDidJump = false;
+
+                if (this.state.eventHappened) {
+                    if (eventType === 'light') {
+                        this.state.eventType = 'light';
+                        this.state.expectedAnswer = 'yes';
+                        questionText = "Did the red light flash?";
+                        this.showRedLight();
+                    } else { // insect
+                        this.state.eventType = 'insect';
+                        insectDidJump = Math.random() < 0.5;
+                        this.state.expectedAnswer = insectDidJump ? 'yes' : 'no';
+                        questionText = "Did the insect jump from side to side?";
+                        this.showInsect(insectDidJump);
+                    }
+                } else { // Event did NOT happen
+                     if (eventType === 'light') {
+                        this.state.eventType = 'light';
+                        this.state.expectedAnswer = 'no';
+                        questionText = "Did the red light flash?";
+                    } else { // insect
+                        this.state.eventType = 'insect';
+                        this.state.expectedAnswer = 'no';
+                        questionText = "Did the insect jump from side to side?";
+                    }
+                }
+
+                // Ask the question after a short delay
+                setTimeout(() => {
+                    this.askQuestion(questionText);
+                }, 4000); // Wait 4 seconds for insect animation to finish
+            },
+
+            // Visual effect functions
+            showRedLight: function() {
+                const light = document.createElement('div');
+                light.className = 'game-red-light';
+                // Random position
+                light.style.top = `${Math.random() * 90}%`;
+                light.style.left = `${Math.random() * 90}%`;
+                document.body.appendChild(light);
+                setTimeout(() => {
+                    document.body.removeChild(light);
+                }, 200); // Flash for 200ms
+            },
+
+            showInsect: function(shouldJump) {
+                const insect = document.createElement('div');
+                insect.className = 'game-insect';
+                insect.textContent = '🐜'; // Insect emoji
+                insect.style.left = `${Math.random() * 80 + 10}%`; // Start somewhere in the middle horizontally
+                insect.style.top = '0px';
+
+                if (shouldJump) {
+                    insect.style.animation = 'insect-fall-jump 4s linear forwards';
+                } else {
+                    insect.style.animation = 'insect-fall-straight 4s linear forwards';
+                }
+                
+                document.body.appendChild(insect);
+                
+                insect.addEventListener('animationend', () => {
+                    document.body.removeChild(insect);
+                });
+            },
+
+            // Modal and question logic
+            askQuestion: function(question) {
+                const modal = document.getElementById('game-modal');
+                const questionEl = document.getElementById('game-question');
+                const timerEl = document.getElementById('game-timer');
+
+                questionEl.textContent = question;
+                
+                // Reset timer animation
+                timerEl.style.animation = 'none';
+                timerEl.offsetHeight; // Trigger reflow
+                timerEl.style.animation = 'shrink 1s linear forwards';
+                
+                modal.classList.add('visible');
+
+                this.questionTimeout = setTimeout(() => {
+                    this.handleAnswer('timeout');
+                }, 1000);
+            },
+            
+            handleAnswer: function(userAnswer) {
+                clearTimeout(this.questionTimeout);
+                const modal = document.getElementById('game-modal');
+                if (!modal.classList.contains('visible')) return; // Avoid double triggers
+                
+                modal.classList.remove('visible');
+
+                const correct = userAnswer === this.state.expectedAnswer;
+                
+                if (userAnswer === 'timeout') {
+                    this.showResult('Fail', false);
+                } else {
+                    this.showResult(correct ? 'Pass' : 'Fail', correct);
+                }
+                
+                // Schedule the next event
+                this.scheduleNextEvent();
+            },
+
+            showResult: function(text, isSuccess) {
+                const popup = document.getElementById('game-result-popup');
+                popup.textContent = text;
+                popup.style.backgroundColor = isSuccess ? 'var(--success-green)' : 'var(--error-red)';
+                popup.style.top = '20px';
+                popup.style.opacity = '1';
+
+                setTimeout(() => {
+                    popup.style.top = '-50px';
+                    popup.style.opacity = '0';
+                }, 2000);
+            }
+        };
+        // =======================================================
+        // ★★★ NEW: REWARD GAME LOGIC - END ★★★
+        // =======================================================
+
+
         async function addChannelToList(event, channelId) { /* Unchanged */ }
 
         function renderMyChannelsList() { /* Unchanged */ }
@@ -4391,10 +4478,6 @@
                 item.classList.add('haptic-trigger');
                 item.addEventListener('click', () => {
                     const targetNav = item.getAttribute('data-nav');
-                    if (item.getAttribute('data-locked') === 'true') {
-                        alert("Please complete the payment to unlock this feature.");
-                        return;
-                    }
                     if (item.style.display === 'none') return;
                     let targetScreen;
                     
@@ -4418,15 +4501,8 @@
 
             document.getElementById('get-started-btn')?.addEventListener('click', () => {
                 userHasInteracted = true;
-                // Directly navigate to the information screen for a new user.
-                navigateTo('information-screen');
+                startAppLogic();
             });
-
-            // REMOVED: google-signin-btn listener is no longer needed
-            // document.getElementById('google-signin-btn')?.addEventListener('click', signInWithGoogle);
-
-            // पेमेंट बटन के लिए इवेंट लिसनर
-            document.getElementById('payment-btn')?.addEventListener('click', initiatePayment);
 
             appContainer.addEventListener('click', (event) => {
                 if (!userHasInteracted) {
@@ -4452,12 +4528,8 @@
             });
 
             const openSidebar = () => {
-                if (appState.currentUser.isPaid) {
-                    document.getElementById('main-sidebar').classList.add('open');
-                    document.getElementById('sidebar-overlay').classList.add('open');
-                } else {
-                    alert("Please complete the payment to use features.");
-                }
+                document.getElementById('main-sidebar').classList.add('open');
+                document.getElementById('sidebar-overlay').classList.add('open');
             };
             document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
@@ -4501,6 +4573,10 @@
                     button.classList.add('active');
                 });
             });
+            
+             // ★★★ REWARD GAME EVENT LISTENERS ★★★
+            document.getElementById('game-yes-btn').addEventListener('click', () => rewardGameManager.handleAnswer('yes'));
+            document.getElementById('game-no-btn').addEventListener('click', () => rewardGameManager.handleAnswer('no'));
         });
 
         function initializeMessagingInterface() {
