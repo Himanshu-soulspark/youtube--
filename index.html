@@ -2351,13 +2351,14 @@
                 <button id="get-started-btn" class="get-started-btn haptic-trigger">Get Started</button>
                 <div id="loading-container" style="display: none;">
                     <div class="loader"></div>
-                    <p style="margin-top: 10px;">Checking login status...</p>
+                    <p style="margin-top: 10px;">Loading profile...</p>
                 </div>
                 <p class="creator-credit-new">Made with ❤️ by Udbhav</p>
             </div>
         </div>
 
-        <!-- ★★★ NEW: LOGIN SCREEN ★★★ -->
+        <!-- ★★★ LOGIN SCREEN (COMMENTED OUT AS PER REQUEST) ★★★ -->
+        <!-- 
         <div id="login-screen" class="screen">
             <div class="welcome-center">
                 <h2 class="app-name">Join Shubhzone</h2>
@@ -2369,8 +2370,9 @@
                 </div>
             </div>
         </div>
+        -->
 
-        <!-- ★★★ NEW: PAYMENT SCREEN ★★★ -->
+        <!-- ★★★ PAYMENT SCREEN ★★★ -->
         <div id="payment-screen" class="screen">
             <div class="welcome-center">
                 <h2 class="app-name">Unlock All Features</h2>
@@ -2641,7 +2643,8 @@
     
     <!-- === SCRIPTS (MUST BE AT THE END) === -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <!-- REMOVED: firebase-auth.js is no longer needed -->
+    <!-- <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script> -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
@@ -2666,7 +2669,7 @@
         }
 
         // Firebase सेवाओं को इनिशियलाइज़ करें
-        const auth = firebase.auth();
+        // const auth = firebase.auth(); // REMOVED: No longer needed
         const db = firebase.firestore();
         const storage = firebase.storage();
         const analytics = firebase.analytics();
@@ -3122,17 +3125,17 @@
             navigateTo(previousScreenId, null);
         }
 
-        async function checkUserProfileAndProceed(user) {
-            if (!user) return;
-            appState.currentUser.uid = user.uid;
-            const userRef = db.collection('users').doc(user.uid);
+        async function checkUserProfileAndProceed(userId) {
+            if (!userId) return;
+            appState.currentUser.uid = userId;
+            const userRef = db.collection('users').doc(userId);
             const doc = await userRef.get();
 
             if (doc.exists) {
                 let userData = doc.data();
 
                 if (!userData.referralCode || !userData.referralCode.startsWith('@')) {
-                    userData.referralCode = await generateAndSaveReferralCode(user.uid, userData.name);
+                    userData.referralCode = await generateAndSaveReferralCode(userId, userData.name);
                 }
                 userData.friends = userData.friends || [];
                 appState.currentUser = { ...appState.currentUser, ...userData };
@@ -3160,65 +3163,37 @@
                 }
 
             } else {
-                const initialData = {
-                    uid: user.uid,
-                    name: user.displayName || '',
-                    email: user.email || '',
-                    avatar: user.photoURL || 'https://via.placeholder.com/120/222/FFFFFF?text=+',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    friends: [],
-                    referralCode: await generateAndSaveReferralCode(user.uid, user.displayName || 'user'),
-                    isReferred: false,
-                    isPaid: false // Default payment status
-                };
-                await userRef.set(initialData);
-                appState.currentUser = { ...appState.currentUser, ...initialData };
-                updateProfileUI();
-                
-                // ★★★ PAYMENT CHECK FOR NEW USER ★★★
-                lockNav();
-                navigateTo('payment-screen');
+                // This case should ideally not happen for a returning user with a UID.
+                // It means their data was deleted from Firestore. Treat as a new user.
+                console.warn(`User with UID ${userId} not found in Firestore. Directing to information screen.`);
+                localStorage.removeItem('shubhzone_user_id'); // Clear invalid ID
+                appState.currentUser.uid = null;
+                navigateTo('information-screen');
             }
         }
         
-        // ★★★ FINAL LOGIN FIX ★★★
-        let appInitializationComplete = false;
-        let isHandlingRedirect = false; 
-
+        // ★★★ NEW APP INITIALIZATION (NO AUTH) ★★★
         function initializeApp() {
-            if (appInitializationComplete) return;
-            appInitializationComplete = true;
-
+            const userId = localStorage.getItem('shubhzone_user_id');
             const loadingContainer = document.getElementById('loading-container');
             const getStartedBtn = document.getElementById('get-started-btn');
-            
-            document.querySelectorAll('.nav-item[data-nav="profile"]').forEach(item => item.style.display = 'none');
-            
-            auth.getRedirectResult()
-                .then((result) => {
-                    if (result.user) {
-                        isHandlingRedirect = true;
-                        if(getStartedBtn) getStartedBtn.style.display = 'none';
-                        if(loadingContainer) loadingContainer.style.display = 'flex';
-                        console.log("Redirect result received for user:", result.user.displayName);
-                    }
-                }).catch((error) => {
-                    console.error("Error getting redirect result:", error);
-                    alert("Login failed during redirect. " + error.message);
-                });
 
-            auth.onAuthStateChanged(user => {
-                if (user) {
-                    checkUserProfileAndProceed(user);
-                } else if (!isHandlingRedirect) {
-                    if(getStartedBtn) getStartedBtn.style.display = 'block';
-                    if(loadingContainer) loadingContainer.style.display = 'none';
-                    console.log("No user is signed in. Waiting on Splash/Login screen.");
-                    activateScreen('splash-screen');
-                }
-            });
+            if (userId) {
+                // Returning user
+                getStartedBtn.style.display = 'none';
+                loadingContainer.style.display = 'flex';
+                checkUserProfileAndProceed(userId);
+            } else {
+                // New user
+                getStartedBtn.style.display = 'block';
+                loadingContainer.style.display = 'none';
+                console.log("No user ID found. Waiting on Splash screen for user to start.");
+                activateScreen('splash-screen');
+            }
         }
-
+        
+        /*
+        // COMMENTED OUT: Google Sign-in is no longer used
         async function signInWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             try {
@@ -3228,6 +3203,7 @@
                 alert("Could not start sign in with Google. Error: " + error.message);
             }
         }
+        */
 
 
         function loadUserVideosFromFirebase() {
@@ -3258,6 +3234,18 @@
             saveContinueBtn.disabled = true;
             saveContinueBtn.textContent = 'Saving...';
 
+            let userUid = appState.currentUser.uid;
+            let isNewUser = false;
+
+            // If there's no UID, it's a new user. Generate a UID for them.
+            if (!userUid) {
+                userUid = db.collection("users").doc().id;
+                appState.currentUser.uid = userUid;
+                localStorage.setItem('shubhzone_user_id', userUid);
+                isNewUser = true;
+                console.log("New user detected. Generated UID:", userUid);
+            }
+
             const name = document.getElementById('info-name').value.trim();
             const stateValue = document.getElementById('info-state').value;
             const customState = document.getElementById('custom-state-input').value.trim();
@@ -3272,17 +3260,24 @@
             }
 
             const userData = {
+                uid: userUid,
                 name,
                 mobile: document.getElementById('info-mobile').value.trim(),
                 email: document.getElementById('info-email').value.trim(),
                 address: document.getElementById('info-address').value.trim(),
                 hobby: document.getElementById('info-hobby').value.trim(),
                 state: state,
-                country: document.getElementById('info-country').value === 'custom' ? document.getElementById('custom-country-input').value.trim() : document.getElementById('info-country').value
+                country: document.getElementById('info-country').value === 'custom' ? document.getElementById('custom-country-input').value.trim() : document.getElementById('info-country').value,
+                friends: [],
+                isPaid: false // Default payment status
             };
 
+            if (isNewUser) {
+                userData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            }
+
             if (referralCodeInput) {
-                const referringUser = await processReferral(referralCodeInput, appState.currentUser.uid);
+                const referringUser = await processReferral(referralCodeInput, userUid);
                 if (referringUser) {
                     userData.isReferred = true;
                     userData.referredBy = referringUser.uid;
@@ -3294,7 +3289,7 @@
             const file = profileImageInput.files[0];
             if (file) {
                 try {
-                    const storageRef = storage.ref(`avatars/${appState.currentUser.uid}/${file.name}`);
+                    const storageRef = storage.ref(`avatars/${userUid}/${file.name}`);
                     const snapshot = await storageRef.put(file);
                     userData.avatar = await snapshot.ref.getDownloadURL();
                 } catch (error) {
@@ -3307,22 +3302,25 @@
             }
 
             try {
-                await db.collection('users').doc(appState.currentUser.uid).set(userData, {
+                // Use .set() to create a new document or overwrite an existing one.
+                await db.collection('users').doc(userUid).set(userData, {
                     merge: true
                 });
 
-                const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
+                const userDoc = await db.collection('users').doc(userUid).get();
                 if (!userDoc.data().referralCode) {
-                    await generateAndSaveReferralCode(appState.currentUser.uid, name);
+                    await generateAndSaveReferralCode(userUid, name);
                 }
 
-                const refreshedUserData = (await db.collection('users').doc(appState.currentUser.uid).get()).data();
-                appState.currentUser = { ...appState.currentUser,
-                    ...refreshedUserData
-                };
+                const refreshedUserData = (await db.collection('users').doc(userUid).get()).data();
+                appState.currentUser = { ...appState.currentUser, ...refreshedUserData };
 
                 updateProfileUI();
-                await startAppLogic();
+                
+                // After saving info, user must pay
+                lockNav();
+                navigateTo('payment-screen');
+
             } catch (error) {
                 console.error("Profile save error:", error);
                 alert("Failed to save profile.");
@@ -3682,13 +3680,14 @@
 
         function logoutUser() {
             if (confirm("Are you sure you want to log out?")) {
-                localStorage.clear();
-                auth.signOut().then(() => {
-                    window.location.reload();
-                }).catch(error => {
-                    console.error("Logout failed:", error);
-                    alert("Logout failed.");
-                });
+                // Clear all user-specific data from local storage
+                localStorage.removeItem('shubhzone_user_id');
+                localStorage.removeItem('shubhzone_lastScreen');
+                localStorage.removeItem('shubhzone_addedChannels');
+                localStorage.removeItem('shubhzoneViewingHistory');
+                
+                // Reload the app to go back to the splash screen
+                window.location.reload();
             }
         }
 
@@ -4419,12 +4418,12 @@
 
             document.getElementById('get-started-btn')?.addEventListener('click', () => {
                 userHasInteracted = true;
-                // सीधे गूगल साइन-इन प्रक्रिया शुरू करें
-                signInWithGoogle();
+                // Directly navigate to the information screen for a new user.
+                navigateTo('information-screen');
             });
 
-            // गूगल साइन-इन बटन के लिए इवेंट लिसनर
-            document.getElementById('google-signin-btn')?.addEventListener('click', signInWithGoogle);
+            // REMOVED: google-signin-btn listener is no longer needed
+            // document.getElementById('google-signin-btn')?.addEventListener('click', signInWithGoogle);
 
             // पेमेंट बटन के लिए इवेंट लिसनर
             document.getElementById('payment-btn')?.addEventListener('click', initiatePayment);
