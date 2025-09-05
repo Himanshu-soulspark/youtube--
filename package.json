@@ -7,10 +7,10 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "cashfree-pg": "^4.0.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "firebase-admin": "^12.1.0",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "razorpay": "^2.9.4"
   }
 }
