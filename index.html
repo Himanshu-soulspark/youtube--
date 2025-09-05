@@ -14,8 +14,8 @@
     <!-- Main App Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&display=swap"
         rel="stylesheet">
-    <!-- Cashfree SDK -->
-    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <style>
         /* ================================================= /
@@ -3951,7 +3951,7 @@
             return card;
         }
 
-        // ★★★ PAYMENT GATEWAY FUNCTIONS ★★★
+        // ★★★ PAYMENT GATEWAY FUNCTIONS (NOW WITH RAZORPAY) ★★★
         function lockNav() {
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.setAttribute('data-locked', 'true');
@@ -3968,64 +3968,111 @@
             const paymentBtn = document.getElementById('payment-btn');
             paymentBtn.disabled = true;
             paymentBtn.innerHTML = '<div class="loader"></div>';
-            
+
             try {
-                // Step 1: सर्वर से payment_session_id प्राप्त करें
-                // यह आपके server.js में एक नया एंडपॉइंट होगा
-                const response = await fetch('/create-order', {
+                // Step 1: सर्वर से Razorpay ऑर्डर डिटेल्स प्राप्त करें
+                const orderResponse = await fetch('/create-razorpay-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: appState.currentUser.uid, email: appState.currentUser.email, name: appState.currentUser.name })
+                    body: JSON.stringify({
+                        userId: appState.currentUser.uid,
+                        email: appState.currentUser.email,
+                        name: appState.currentUser.name
+                    })
                 });
 
-                if (!response.ok) throw new Error('Failed to create order on server.');
+                if (!orderResponse.ok) {
+                    const errorText = await orderResponse.text();
+                    throw new Error('Failed to create Razorpay order on server: ' + errorText);
+                }
+
+                const orderData = await orderResponse.json();
                 
-                const data = await response.json();
-                const paymentSessionId = data.payment_session_id;
+                // Step 2: Razorpay ऑप्शन्स कॉन्फ़िगर करें
+                const options = {
+                    "key": "YOUR_RAZORPAY_KEY_ID", // ★★★ अपनी Razorpay Key ID यहाँ डालें ★★★
+                    "amount": orderData.amount, // राशि पैसे में (सर्वर से आनी चाहिए)
+                    "currency": orderData.currency,
+                    "name": "Shubhzone",
+                    "description": "One-time Activation Fee",
+                    "image": "https://i.ibb.co/0RF4GmTZ/Flux-Dev-A-futuristic-social-media-interface-named-Shubhzone-g-1.jpg",
+                    "order_id": orderData.id, // सर्वर से प्राप्त Order ID
+                    "handler": async function (response){
+                        // Step 3: पेमेंट को सर्वर पर वेरिफाई करें
+                        try {
+                            const verifyResponse = await fetch('/verify-razorpay-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    userId: appState.currentUser.uid
+                                })
+                            });
 
-                // Step 2: Cashfree SDK को शुरू करें
-                const cashfree = new Cashfree(paymentSessionId);
+                            if (!verifyResponse.ok) {
+                                throw new Error('Payment verification failed on server.');
+                            }
+                            
+                            const verificationResult = await verifyResponse.json();
 
-                // Step 3: पेमेंट ड्रॉप-इन को दिखाएं
-                cashfree.drop("#payment-screen", {
-                    onSuccess: async (data) => {
-                         console.log("Payment successful", data);
-                         const orderId = data.order.orderId;
-                         
-                         // Step 4: पेमेंट को सर्वर पर वेरिफाई करें
-                         const verifyResponse = await fetch('/verify-payment', {
-                             method: 'POST',
-                             headers: { 'Content-Type': 'application/json' },
-                             body: JSON.stringify({ orderId: orderId, userId: appState.currentUser.uid })
-                         });
+                            if (verificationResult.status === 'success') {
+                                // Step 4: सफल होने पर UI अपडेट करें
+                                alert('Payment Successful! All features are now unlocked.');
+                                appState.currentUser.isPaid = true;
+                                unlockNav();
+                                
+                                // देखें कि प्रोफ़ाइल पूरी है या नहीं
+                                const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
+                                if (userDoc.exists() && userDoc.data().name && userDoc.data().state) {
+                                    startAppLogic();
+                                } else {
+                                    navigateTo('information-screen');
+                                }
+                            } else {
+                                throw new Error('Payment verification returned failure.');
+                            }
 
-                         if (!verifyResponse.ok) throw new Error('Payment verification failed on server.');
-                         
-                         // Step 5: सफल होने पर UI अपडेट करें
-                         alert('Payment Successful! All features are now unlocked.');
-                         appState.currentUser.isPaid = true;
-                         unlockNav();
-                         
-                         // देखें कि प्रोफ़ाइल पूरी है या नहीं
-                         const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
-                         if (userDoc.exists() && userDoc.data().name && userDoc.data().state) {
-                             startAppLogic();
-                         } else {
-                             navigateTo('information-screen');
-                         }
+                        } catch (verifyError) {
+                            console.error("Payment verification error:", verifyError);
+                            alert("Payment successful, but verification failed. Please contact support. " + verifyError.message);
+                            paymentBtn.disabled = false;
+                            paymentBtn.textContent = 'Pay ₹1 to Unlock';
+                        }
                     },
-                    onFailure: (data) => {
-                         console.error("Payment failed", data);
-                         alert("Payment Failed: " + data.order.errorText);
-                         paymentBtn.disabled = false;
-                         paymentBtn.textContent = 'Pay ₹1 to Unlock';
+                    "prefill": {
+                        "name": appState.currentUser.name || "",
+                        "email": appState.currentUser.email || "",
+                        "contact": appState.currentUser.mobile || ""
                     },
-                    onClose: () => {
-                         console.log("Payment modal closed.");
-                         paymentBtn.disabled = false;
-                         paymentBtn.textContent = 'Pay ₹1 to Unlock';
+                    "notes": {
+                        "address": appState.currentUser.address || "Not provided",
+                        "userId": appState.currentUser.uid
+                    },
+                    "theme": {
+                        "color": "#00FFFF" // Neon Cyan
+                    },
+                    "modal": {
+                        "ondismiss": function(){
+                            console.log('Razorpay checkout form closed');
+                            paymentBtn.disabled = false;
+                            paymentBtn.textContent = 'Pay ₹1 to Unlock';
+                        }
                     }
+                };
+
+                // Step 3: Razorpay Checkout को शुरू करें
+                const rzp = new Razorpay(options);
+
+                rzp.on('payment.failed', function (response){
+                        console.error("Razorpay payment failed", response);
+                        alert("Payment Failed: " + response.error.description + " (Code: " + response.error.code + ")");
+                        paymentBtn.disabled = false;
+                        paymentBtn.textContent = 'Pay ₹1 to Unlock';
                 });
+
+                rzp.open();
 
             } catch (error) {
                 console.error("Payment initiation error:", error);
@@ -4293,7 +4340,7 @@
             console.log(`[YT Player] Creating new creator player for video ID: ${videoId} in container: #${containerId}`);
             appState.creatorPagePlayers[type] = new YT.Player(containerId, {
                 height: '100%',
-                width: '100%',
+               docststdth: '100%',
                 videoId: videoId,
                 playerVars: {
                     'autoplay': 1,
@@ -4372,8 +4419,8 @@
 
             document.getElementById('get-started-btn')?.addEventListener('click', () => {
                 userHasInteracted = true;
-                // Get Started बटन अब सीधे लॉगिन स्क्रीन पर ले जाएगा
-                navigateTo('login-screen');
+                // सीधे गूगल साइन-इन प्रक्रिया शुरू करें
+                signInWithGoogle();
             });
 
             // गूगल साइन-इन बटन के लिए इवेंट लिसनर
