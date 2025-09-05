@@ -1,5 +1,5 @@
 // ====================================================================
-// === Shubhzone - API Server (Node.js) - ★★★ FINAL PAYMENT VERSION ★★★ ===
+// === Shubhzone - API Server (Node.js) - ★★★ FINAL & FOOLPROOF VERSION ★★★ ===
 // ====================================================================
 
 // 1. ज़रूरी पैकेज इम्पोर्ट करें
@@ -8,13 +8,18 @@ const fetch = require('node-fetch');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const path = require('path');
-const { Cashfree } = require('cashfree-pg'); // ★★★ NEW: Cashfree पैकेज इम्पोर्ट करें
+const { Cashfree } = require('cashfree-pg');
 
-// 2. Firebase एडमिन को शुरू करें
+// 2. Firebase एडमिन को शुरू करें (नए और बेहतर तरीके से)
 let db; 
 try {
-    // Render.com पर secret file का path यही होता है
-    const serviceAccount = require('/etc/secrets/firebase-credentials.json');
+    if (!process.env.FIREBASE_CREDENTIALS_JSON) {
+        throw new Error("FIREBASE_CREDENTIALS_JSON एनवायरनमेंट वेरिएबल सेट नहीं है।");
+    }
+    // ★★★★★★★★★★ यही है असली समाधान ★★★★★★★★★★
+    // अब हम फाइल की जगह सीधे एनवायरनमेंट वेरिएबल से JSON को पढ़ेंगे।
+    const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
+
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
@@ -22,14 +27,13 @@ try {
     console.log("Firebase Admin SDK सफलतापूर्वक शुरू हो गया है।");
 } catch (error) {
     console.error("Firebase Admin SDK शुरू करने में विफल:", error.message);
-    console.log("ध्यान दें: यदि आप लोकल मशीन पर चल रहे हैं, तो serviceAccount.json फाइल का path सही करें।");
 }
 
 // 3. सर्वर सेटअप करें
 const app = express();
 const port = process.env.PORT || 3000;
 app.use(cors());
-app.use(express.json()); // ★★★ NEW: JSON बॉडी को पढ़ने के लिए ज़रूरी है
+app.use(express.json());
 
 // 4. Environment Variables से सभी API कुंजियाँ पढ़ें
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
@@ -37,12 +41,18 @@ const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
 
 // 5. Cashfree को कॉन्फ़िगर करें
-Cashfree.XClientId = CASHFREE_APP_ID;
-Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = Cashfree.Environment.PRODUCTION; // या Cashfree.Environment.SANDBOX टेस्टिंग के लिए
+if (CASHFREE_APP_ID && CASHFREE_SECRET_KEY) {
+    Cashfree.XClientId = CASHFREE_APP_ID;
+    Cashfree.XClientSecret = CASHFREE_SECRET_KEY;
+    Cashfree.XEnvironment = Cashfree.Environment.PRODUCTION; // या Cashfree.Environment.SANDBOX टेस्टिंग के लिए
+    console.log("Cashfree SDK कॉन्फ़िगर हो गया है।");
+} else {
+    console.warn("Cashfree credentials एनवायरनमेंट में नहीं मिले। पेमेंट वाले रूट्स काम नहीं करेंगे।");
+}
+
 
 // ====================================================================
-// ★★★ पेमेंट गेटवे के लिए नए API रूट्स ★★★
+// ★★★ पेमेंट गेटवे के लिए API रूट्स ★★★
 // ====================================================================
 
 // 6. नया ऑर्डर बनाने के लिए रूट
@@ -65,7 +75,8 @@ app.post('/create-order', async (req, res) => {
                 customer_name: name || "Shubhzone User",
             },
             order_meta: {
-                return_url: `https://youtube-7lwy.onrender.com?order_id={order_id}`, // ★★★ अपनी वेबसाइट का सही URL डालें
+                // ★★★ अपनी वेबसाइट का सही URL डालें। Render पर यह shboard.render.com होता है।
+                return_url: `https://shboard.render.com?order_id={order_id}`, 
             }
         };
 
@@ -74,8 +85,8 @@ app.post('/create-order', async (req, res) => {
         res.status(200).json(response.data);
 
     } catch (error) {
-        console.error('Error creating Cashfree order:', error.response.data.message);
-        res.status(500).json({ error: error.response.data.message });
+        console.error('Error creating Cashfree order:', error.response?.data?.message || error.message);
+        res.status(500).json({ error: error.response?.data?.message || "Could not create order." });
     }
 });
 
@@ -88,18 +99,15 @@ app.post('/verify-payment', async (req, res) => {
         }
         
         const response = await Cashfree.PGOrderFetchPayments("2023-08-01", orderId);
-        
-        // पेमेंट की स्थिति जांचें
-        const paymentStatus = response.data[0]?.payment_status;
+        const paymentInfo = response.data && response.data[0];
 
-        if (paymentStatus === "SUCCESS") {
-            // Firestore में यूज़र का isPaid स्टेटस अपडेट करें
+        if (paymentInfo && paymentInfo.payment_status === "SUCCESS") {
             const userRef = db.collection('users').doc(userId);
             await userRef.update({ isPaid: true, paymentOrderId: orderId });
             console.log(`Payment verified for user ${userId}. Status updated to paid.`);
             res.status(200).json({ success: true, message: "Payment verified and user updated." });
         } else {
-            console.warn(`Payment verification failed for order ${orderId}. Status: ${paymentStatus}`);
+            console.warn(`Payment verification failed for order ${orderId}. Status: ${paymentInfo?.payment_status}`);
             res.status(400).json({ success: false, message: "Payment not successful." });
         }
 
@@ -111,7 +119,7 @@ app.post('/verify-payment', async (req, res) => {
 
 
 // ====================================================================
-// ★★★ आपका मौजूदा YouTube API रूट (कोई बदलाव नहीं) ★★★
+// ★★★ YouTube API रूट (कोई बदलाव नहीं) ★★★
 // ====================================================================
 
 app.get('/api/youtube', async (req, res) => {
@@ -146,7 +154,6 @@ app.get('/api/youtube', async (req, res) => {
     }
 
     try {
-        console.log(`YouTube API को कॉल किया जा रहा है (Type: ${type})।`);
         const youtubeResponse = await fetch(youtubeApiUrl, { timeout: 8000 }); 
         
         if (!youtubeResponse.ok) {
@@ -161,11 +168,7 @@ app.get('/api/youtube', async (req, res) => {
             throw new Error(`YouTube API से त्रुटि: ${data.error.message}`);
         }
 
-        await cacheRef.set({
-            data: data,
-            timestamp: Date.now()
-        });
-        console.log(`API कॉल सफल! डेटा Firebase में कैश किया गया और भेजा गया।`);
+        await cacheRef.set({ data: data, timestamp: Date.now() });
         return res.status(200).json(data);
 
     } catch (error) {
@@ -174,11 +177,33 @@ app.get('/api/youtube', async (req, res) => {
         try {
             const cachedDoc = await cacheRef.get();
             if (cachedDoc.exists) {
-                console.log(`API विफलता के कारण बैकअप कैश का उपयोग किया गया। डेटा Firebase से भेजा गया।`);
                 return res.status(200).json(cachedDoc.data().data);
             } else {
-                console.error("API विफल हो गई और इस रिक्वेस्ट के लिए कोई कैश भी उपलब्ध नहीं है।");
                 return res.status(503).json({ error: "Service unavailable and no cache found." });
             }
         } catch (cacheError) {
-            console.error("API विफलता के बाद कैश पढ़ने में भी त्रुटि:", 
+            return res.status(500).json({ error: "API and cache both failed." });
+        }
+    }
+});
+
+// ====================================================================
+// ★★★ स्टैटिक फाइलें और सर्वर स्टार्टअप ★★★
+// ====================================================================
+
+// 8. स्टैटिक फाइलें सर्व करें (जैसे आपका index.html)
+const publicPath = path.join(__dirname, '');
+app.use(express.static(publicPath));
+
+// 9. किसी भी अन्य रिक्वेस्ट के लिए index.html भेजें ताकि आपका ऐप हमेशा लोड हो
+app.get('*', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
+
+// 10. सर्वर शुरू करें
+app.listen(port, () => {
+    console.log("/////////////////////////////////////////////////////");
+    console.log("===> 🚀 Shubhzone सर्वर सफलतापूर्वक चल रहा है! 🚀");
+    console.log(`===> पोर्ट ${port} पर सुना जा रहा है।`);
+    console.log("/////////////////////////////////////////////////////");
+});
