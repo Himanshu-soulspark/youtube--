@@ -14,12 +14,14 @@
     <!-- Main App Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Caveat&display=swap"
         rel="stylesheet">
+    <!-- Cashfree SDK -->
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 
     <style>
         /* ================================================= /
-        / === Shubhzone App Styles (Code 2) - FINAL v6.0 === /
-        / === MODIFIED AS PER USER REQUEST - AUG 2025    === /
-        / === SOLVED: Styles for Reward System & UI/UX   === /
+        / === Shubhzone App Styles (Code 2) - FINAL v7.0 === /
+        / === MODIFIED AS PER USER REQUEST - SEP 2025    === /
+        / === SOLVED: Login Loop, Payment Gate, Search   === /
         / ================================================= */
 
         /* Design Style Guide */
@@ -171,14 +173,17 @@
 
         #splash-screen,
         #information-screen,
-        #login-screen {
+        #login-screen,
+        #payment-screen {
             padding: 20px;
             background-color: var(--background);
             z-index: 11;
         }
         
-        #login-screen {
+        #login-screen,
+        #payment-screen {
             justify-content: center;
+            text-align: center;
         }
 
         #information-screen {
@@ -496,7 +501,7 @@
             color: var(--text-primary);
             font-weight: 700;
             cursor: pointer;
-            transition: background-color: 0.3s ease;
+            transition: background-color 0.3s ease;
             width: 100%;
             padding: 12px 15px;
             border: none;
@@ -605,6 +610,16 @@
             height: 100%;
             padding-top: 5px;
         }
+        
+        .nav-item[data-locked="true"] {
+            color: var(--text-disabled);
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+        
+        .nav-item[data-locked="true"] i {
+            color: var(--text-disabled);
+        }
 
         .nav-item.active {
             color: transparent;
@@ -619,6 +634,15 @@
             -webkit-background-clip: text;
             background-clip: text;
         }
+        
+        .nav-item[data-locked="true"].active i,
+        .nav-item[data-locked="true"].active {
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            color: var(--text-disabled);
+        }
+
 
         .nav-item i {
             font-size: 1.5em;
@@ -1330,7 +1354,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color: 0.2s ease;
+            transition: background-color 0.2s ease;
         }
 
         #long-video-search-btn:hover,
@@ -2100,7 +2124,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color: 0.2s;
+            transition: background-color 0.2s;
         }
 
         .player-controls-header button:hover {
@@ -2327,7 +2351,7 @@
                 <button id="get-started-btn" class="get-started-btn haptic-trigger">Get Started</button>
                 <div id="loading-container" style="display: none;">
                     <div class="loader"></div>
-                    <p style="margin-top: 10px;">Loading Videos, Please Wait...</p>
+                    <p style="margin-top: 10px;">Checking login status...</p>
                 </div>
                 <p class="creator-credit-new">Made with ❤️ by Udbhav</p>
             </div>
@@ -2345,6 +2369,20 @@
                 </div>
             </div>
         </div>
+
+        <!-- ★★★ NEW: PAYMENT SCREEN ★★★ -->
+        <div id="payment-screen" class="screen">
+            <div class="welcome-center">
+                <h2 class="app-name">Unlock All Features</h2>
+                <p class="tagline" style="margin-top: 15px; font-size: 1em;">To access all features of Shubhzone, a one-time activation fee is required.</p>
+                <div style="margin-top: 40px; width: 100%; padding: 0 20px;">
+                    <button id="payment-btn" class="continue-btn haptic-trigger" style="width: 100%; padding: 15px; border-radius: 8px; font-size: 1.2em;">
+                        Pay ₹1 to Unlock
+                    </button>
+                </div>
+            </div>
+        </div>
+
 
         <!-- === INFORMATION SCREEN === -->
         <div id="information-screen" class="screen">
@@ -2753,6 +2791,7 @@
                 state: "",
                 country: "",
                 referralCode: null,
+                isPaid: false, // Payment status
                 likedVideos: [],
                 friends: [],
                 addedChannels: [],
@@ -2828,9 +2867,7 @@
             // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
             // ★★★ FINAL FIX: सर्वर का URL ठीक किया गया ★★★
             // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-            // यह सर्वर को हमेशा उसी डोमेन पर कॉल करेगा जिस पर ऐप चल रहा है।
-            // let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`; // <-- यह गलत था
-            let url = `/api/youtube?type=${type}`; // <-- यह सही तरीका है। यह हमेशा shboard.render.com पर ही रिक्वेस्ट भेजेगा।
+            let url = `/api/youtube?type=${type}`;
 
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
@@ -2838,7 +2875,7 @@
                 }
             }
             
-            console.log(`[API] सही सर्वर से डेटा लाया जा रहा है: ${url}`);
+            console.log(`[API] Fetching data from server: ${url}`);
 
             try {
                 const response = await fetch(url);
@@ -2860,7 +2897,7 @@
                 
                 return data;
             } catch (error) {
-                console.error(`सर्वर से डेटा लाने में गंभीर त्रुटि (${type}):`, error);
+                console.error(`Critical error fetching from server (${type}):`, error);
                 if (type === 'search') {
                      const grid = document.getElementById('long-video-grid');
                      if(grid) grid.innerHTML = '<p class="static-message">Could not load videos. Please check your connection or API key.</p>';
@@ -3108,11 +3145,18 @@
                     appState.viewingHistory = JSON.parse(savedHistory);
                 }
                 updateProfileUI();
-
-                if (userData.name && userData.state) {
-                    await startAppLogic();
+                
+                // ★★★ PAYMENT CHECK ★★★
+                if(appState.currentUser.isPaid) {
+                    unlockNav();
+                    if (userData.name && userData.state) {
+                         await startAppLogic();
+                    } else {
+                         navigateTo('information-screen');
+                    }
                 } else {
-                    navigateTo('information-screen');
+                    lockNav();
+                    navigateTo('payment-screen');
                 }
 
             } else {
@@ -3125,30 +3169,37 @@
                     friends: [],
                     referralCode: await generateAndSaveReferralCode(user.uid, user.displayName || 'user'),
                     isReferred: false,
+                    isPaid: false // Default payment status
                 };
                 await userRef.set(initialData);
                 appState.currentUser = { ...appState.currentUser, ...initialData };
                 updateProfileUI();
-                navigateTo('information-screen');
+                
+                // ★★★ PAYMENT CHECK FOR NEW USER ★★★
+                lockNav();
+                navigateTo('payment-screen');
             }
         }
         
-        // ★★★ FINAL FIX START ★★★
+        // ★★★ FINAL LOGIN FIX ★★★
         let appInitializationComplete = false;
-        let isHandlingRedirect = false; // यह ट्रैक करेगा कि क्या हम गूगल से वापस आए हैं
+        let isHandlingRedirect = false; 
 
         function initializeApp() {
             if (appInitializationComplete) return;
             appInitializationComplete = true;
 
+            const loadingContainer = document.getElementById('loading-container');
+            const getStartedBtn = document.getElementById('get-started-btn');
+            
             document.querySelectorAll('.nav-item[data-nav="profile"]').forEach(item => item.style.display = 'none');
             
-            // यह सबसे पहले चलना चाहिए
             auth.getRedirectResult()
                 .then((result) => {
                     if (result.user) {
-                        // यूज़र ने सफलतापूर्वक लॉगिन कर लिया है। अब onAuthStateChanged उसे संभाल लेगा।
-                        isHandlingRedirect = true; // हम रीडायरेक्ट को संभाल रहे हैं
+                        isHandlingRedirect = true;
+                        if(getStartedBtn) getStartedBtn.style.display = 'none';
+                        if(loadingContainer) loadingContainer.style.display = 'flex';
                         console.log("Redirect result received for user:", result.user.displayName);
                     }
                 }).catch((error) => {
@@ -3156,26 +3207,21 @@
                     alert("Login failed during redirect. " + error.message);
                 });
 
-            // यह हमेशा यूज़र की स्थिति को सुनता रहेगा
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    // यूज़र लॉग इन है (चाहे सीधे या रीडायरेक्ट से)
                     checkUserProfileAndProceed(user);
                 } else if (!isHandlingRedirect) {
-                    // यूज़र लॉग इन नहीं है और हम रीडायरेक्ट का इंतज़ार भी नहीं कर रहे हैं
+                    if(getStartedBtn) getStartedBtn.style.display = 'block';
+                    if(loadingContainer) loadingContainer.style.display = 'none';
                     console.log("No user is signed in. Waiting on Splash/Login screen.");
                     activateScreen('splash-screen');
                 }
-                // अगर isHandlingRedirect true है, तो हम कुछ नहीं करेंगे और इंतज़ार करेंगे
-                // क्योंकि यूज़र की जानकारी आने में थोड़ा समय लग सकता है।
             });
         }
-        // ★★★ FINAL FIX END ★★★
 
         async function signInWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             try {
-                // पॉप-अप की जगह रीडायरेक्ट का उपयोग करें, जो मोबाइल पर बेहतर काम करता है
                 await auth.signInWithRedirect(provider);
             } catch (error) {
                 console.error("Google Sign-in Error:", error);
@@ -3756,8 +3802,12 @@
             let query;
             if (category.toLowerCase() === 'trending') {
                 query = 'trending videos';
-            } else {
-                query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
+            } else if (category.toLowerCase() === 'all') {
+                // ★★★ YOUTUBE SEARCH FIX ★★★
+                query = 'latest trending videos'; // "All" के लिए एक निश्चित खोज
+            }
+            else {
+                query = category;
             }
 
             appState.longVideoSearchContext = {
@@ -3779,7 +3829,7 @@
             if (!carouselWrapper) return;
             carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
             const data = await fetchFromYouTubeAPI('search', {
-                q: 'latest trending videos',
+                q: 'latest movie trailers',
                 videoDuration: 'long',
                 maxResults: 10
             });
@@ -3900,6 +3950,91 @@
             `;
             return card;
         }
+
+        // ★★★ PAYMENT GATEWAY FUNCTIONS ★★★
+        function lockNav() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.setAttribute('data-locked', 'true');
+            });
+        }
+
+        function unlockNav() {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.setAttribute('data-locked', 'false');
+            });
+        }
+        
+        async function initiatePayment() {
+            const paymentBtn = document.getElementById('payment-btn');
+            paymentBtn.disabled = true;
+            paymentBtn.innerHTML = '<div class="loader"></div>';
+            
+            try {
+                // Step 1: सर्वर से payment_session_id प्राप्त करें
+                // यह आपके server.js में एक नया एंडपॉइंट होगा
+                const response = await fetch('/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: appState.currentUser.uid, email: appState.currentUser.email, name: appState.currentUser.name })
+                });
+
+                if (!response.ok) throw new Error('Failed to create order on server.');
+                
+                const data = await response.json();
+                const paymentSessionId = data.payment_session_id;
+
+                // Step 2: Cashfree SDK को शुरू करें
+                const cashfree = new Cashfree(paymentSessionId);
+
+                // Step 3: पेमेंट ड्रॉप-इन को दिखाएं
+                cashfree.drop("#payment-screen", {
+                    onSuccess: async (data) => {
+                         console.log("Payment successful", data);
+                         const orderId = data.order.orderId;
+                         
+                         // Step 4: पेमेंट को सर्वर पर वेरिफाई करें
+                         const verifyResponse = await fetch('/verify-payment', {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json' },
+                             body: JSON.stringify({ orderId: orderId, userId: appState.currentUser.uid })
+                         });
+
+                         if (!verifyResponse.ok) throw new Error('Payment verification failed on server.');
+                         
+                         // Step 5: सफल होने पर UI अपडेट करें
+                         alert('Payment Successful! All features are now unlocked.');
+                         appState.currentUser.isPaid = true;
+                         unlockNav();
+                         
+                         // देखें कि प्रोफ़ाइल पूरी है या नहीं
+                         const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
+                         if (userDoc.exists() && userDoc.data().name && userDoc.data().state) {
+                             startAppLogic();
+                         } else {
+                             navigateTo('information-screen');
+                         }
+                    },
+                    onFailure: (data) => {
+                         console.error("Payment failed", data);
+                         alert("Payment Failed: " + data.order.errorText);
+                         paymentBtn.disabled = false;
+                         paymentBtn.textContent = 'Pay ₹1 to Unlock';
+                    },
+                    onClose: () => {
+                         console.log("Payment modal closed.");
+                         paymentBtn.disabled = false;
+                         paymentBtn.textContent = 'Pay ₹1 to Unlock';
+                    }
+                });
+
+            } catch (error) {
+                console.error("Payment initiation error:", error);
+                alert("Could not start payment. Please try again. " + error.message);
+                paymentBtn.disabled = false;
+                paymentBtn.textContent = 'Pay ₹1 to Unlock';
+            }
+        }
+
 
         function initializeHistoryScreen() {
             const clearButton = document.getElementById('history-date-button');
@@ -4210,6 +4345,10 @@
                 item.classList.add('haptic-trigger');
                 item.addEventListener('click', () => {
                     const targetNav = item.getAttribute('data-nav');
+                    if (item.getAttribute('data-locked') === 'true') {
+                        alert("Please complete the payment to unlock this feature.");
+                        return;
+                    }
                     if (item.style.display === 'none') return;
                     let targetScreen;
                     
@@ -4240,6 +4379,9 @@
             // गूगल साइन-इन बटन के लिए इवेंट लिसनर
             document.getElementById('google-signin-btn')?.addEventListener('click', signInWithGoogle);
 
+            // पेमेंट बटन के लिए इवेंट लिसनर
+            document.getElementById('payment-btn')?.addEventListener('click', initiatePayment);
+
             appContainer.addEventListener('click', (event) => {
                 if (!userHasInteracted) {
                     userHasInteracted = true;
@@ -4264,8 +4406,12 @@
             });
 
             const openSidebar = () => {
-                document.getElementById('main-sidebar').classList.add('open');
-                document.getElementById('sidebar-overlay').classList.add('open');
+                if (appState.currentUser.isPaid) {
+                    document.getElementById('main-sidebar').classList.add('open');
+                    document.getElementById('sidebar-overlay').classList.add('open');
+                } else {
+                    alert("Please complete the payment to use features.");
+                }
             };
             document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
