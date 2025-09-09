@@ -2248,78 +2248,6 @@
             transform: translateY(2px);
             border-bottom-width: 2px;
         }
-        
-        /* ★★★★★★★★★★ नए पेमेंट स्क्रीन के लिए स्टाइल START ★★★★★★★★★★ */
-        #payment-screen .content-area {
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            padding: 80px 20px 20px 20px;
-        }
-        .payment-card-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-        .payment-card {
-            background-color: var(--secondary-background);
-            border: 1px solid rgba(var(--primary-neon-rgb), 0.2);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-        .payment-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0 20px rgba(var(--primary-neon-rgb), 0.3);
-            border-color: var(--primary-neon);
-        }
-        .payment-card h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 1.5em;
-            color: var(--primary-neon);
-        }
-        .payment-card .price {
-            font-size: 2.5em;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-        .payment-card .price .currency {
-            font-size: 0.5em;
-            vertical-align: super;
-        }
-        .payment-card .duration {
-            font-size: 1em;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-        }
-        .payment-card .buy-btn {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background-color: var(--primary-neon);
-            color: var(--background);
-            font-weight: 700;
-            font-size: 1.1em;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .payment-card .buy-btn:hover {
-            opacity: 0.9;
-        }
-        .payment-card.trial-card {
-             border-color: var(--success-green);
-        }
-        .payment-card.trial-card h3 {
-            color: var(--success-green);
-        }
-        .payment-card.trial-card .buy-btn {
-            background-color: var(--success-green);
-        }
-        /* ★★★★★★★★★★ नए पेमेंट स्क्रीन के लिए स्टाइल END ★★★★★★★★★★ */
-
 
         /* ★★★★★★★★★★ REWARD GAME STYLES START ★★★★★★★★★★ */
         .game-red-light {
@@ -2469,11 +2397,6 @@
             <i class="fas fa-user" style="margin-right: 15px;"></i>
             <span>Profile</span>
         </div>
-        
-        <div id="sidebar-wallet-btn" class="sidebar-option haptic-trigger">
-            <i class="fas fa-wallet" style="margin-right: 15px;"></i>
-            <span>Wallet / Premium</span>
-        </div>
 
         <a href="https://shubhzone.onrender.com" target="_blank" rel="noopener noreferrer"
             class="premium-features-card haptic-trigger">
@@ -2604,64 +2527,34 @@
                         placeholder="Please specify your country">
                 </div>
                 <div class="button-container">
-                    <button id="save-continue-btn" class="continue-btn haptic-trigger">Continue</button>
+                    <button id="save-continue-btn" class="continue-btn haptic-trigger"
+                        onclick="saveAndContinue()">Continue</button>
                     <button class="logout-btn haptic-trigger" onclick="logoutUser()">Logout</button>
                 </div>
             </div>
         </div>
-        
-        <div id="payment-screen" class="screen">
-            <div class="screen-header">
-                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-                <span class="header-title">Choose Your Plan</span>
-            </div>
-            <main class="content-area">
-                <div class="payment-card-container">
-                    <div class="payment-card trial-card">
-                        <h3>Free Trial</h3>
-                        <div class="price"><span class="currency">₹</span>1</div>
-                        <div class="duration">One-Time Authorization Fee</div>
-                        <button class="buy-btn haptic-trigger" data-plan-id="trial_1" data-amount="100">Start Trial</button>
-                    </div>
-                    <div class="payment-card">
-                        <h3>Pro</h3>
-                        <div class="price"><span class="currency">₹</span>150</div>
-                        <div class="duration">Per Month</div>
-                        <button class="buy-btn haptic-trigger" data-plan-id="pro_150" data-amount="15000">Buy Now</button>
-                    </div>
-                    <div class="payment-card">
-                        <h3>Super Pro</h3>
-                        <div class="price"><span class="currency">₹</span>270</div>
-                        <div class="duration">For 2 Months (Save 10%)</div>
-                        <button class="buy-btn haptic-trigger" data-plan-id="super_270" data-amount="27000">Buy Now</button>
-                    </div>
-                    <div class="payment-card">
-                        <h3>Ultimate Pro</h3>
-                        <div class="price"><span class="currency">₹</span>400</div>
-                        <div class="duration">For 5 Months (Best Value)</div>
-                        <button class="buy-btn haptic-trigger" data-plan-id="ultimate_400" data-amount="40000">Buy Now</button>
-                    </div>
-                </div>
-                 <p style="text-align: center; color: var(--text-secondary); margin-top: 20px; font-size: 0.9em;">
-                    Note: The ₹1 trial is an authorization charge. After 24 hours, a charge of ₹150 will be initiated as per terms.
-                 </p>
-            </main>
-        </div>
 
-
+        <!-- ★★★ नया बदलाव: नया खाली होम स्क्रीन ★★★ -->
         <div id="main-home-screen" class="screen">
+            
+            <!-- ★★★★★★★★★★ आपके अनुरोध के अनुसार यह नया सेक्शन जोड़ा गया है ★★★★★★★★★★ -->
             <div style="flex-grow: 1; width: 100%; overflow-y: auto;">
                 <div class="home-grid-container">
+                    <!-- कार्ड 1 -->
                     <div class="home-grid-card">
                         <img src="https://i.ibb.co/fz4R70tD/Leonardo-Phoenix-10-An-animated-scene-of-a-happy-young-boy-rec-3.jpg" alt="Reward Section">
                         <button class="btn-3d haptic-trigger">Reward</button>
                     </div>
+                    <!-- कार्ड 2 -->
                     <div class="home-grid-card">
                         <img src="https://i.ibb.co/JWkN2C8z/Leonardo-Phoenix-10-A-beautiful-young-girl-stylish-and-modern-0.jpg" alt="Profile Section">
                         <button class="btn-3d haptic-trigger">Profile</button>
                     </div>
                 </div>
+                 <!-- आप चाहें तो ग्रिड के नीचे और भी कंटेंट जोड़ सकते हैं -->
             </div>
+            <!-- ★★★★★★★★★★ नया सेक्शन यहाँ खत्म होता है ★★★★★★★★★★ -->
+
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
@@ -2711,6 +2604,7 @@
                     <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
                 </div>
                 <div id="long-video-grid"></div>
+                <!-- "Load More" button is dynamically added here by script.js -->
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
@@ -2805,6 +2699,7 @@
                 <div id="user-short-video-grid"></div>
                 <div id="user-long-video-grid" style="display: none;"></div>
             </div>
+            <!-- No nav bar here as it's a deep-link screen -->
         </div>
 
         <!-- === CREATOR PAGE SCREEN === -->
@@ -2815,11 +2710,13 @@
                 <div id="creator-page-tabs"></div>
             </div>
             <div id="creator-page-content" class="content-area">
+                <!-- Content injected by JS -->
             </div>
         </div>
 
-    </div> 
+    </div> <!-- End of .app-container -->
     
+    <!-- ★★★★★★★★★★ REWARD GAME HTML START ★★★★★★★★★★ -->
     <div id="game-modal" class="game-modal-overlay">
         <div class="game-modal-content">
             <p id="game-question">Did the red light flash?</p>
@@ -2831,9 +2728,9 @@
         </div>
     </div>
     <div id="game-result-popup"></div>
+    <!-- ★★★★★★★★★★ REWARD GAME HTML END ★★★★★★★★★★ -->
 
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    
+    <!-- === SCRIPTS (MUST BE AT THE END) === -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -2865,40 +2762,9 @@
         const storage = firebase.storage();
         const analytics = firebase.analytics();
 
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // ★★★ ज़रूरी सुधार 1: `processReferral` फ़ंक्शन को यहाँ जोड़ा गया है ★★★
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        async function processReferral(referralCode, newUserId) {
-            try {
-                if (!referralCode.startsWith('@')) {
-                    console.log("Invalid referral code format.");
-                    return null;
-                }
-                const usersRef = db.collection('users');
-                const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
-
-                if (snapshot.empty) {
-                    console.log('No user found with this referral code.');
-                    return null;
-                }
-                
-                const referringUserDoc = snapshot.docs[0];
-                const referringUserId = referringUserDoc.id;
-
-                if (referringUserId === newUserId) {
-                    console.log("User cannot refer themselves.");
-                    return null;
-                }
-                
-                console.log(`Referral successful. Referred by: ${referringUserId}`);
-                // आप चाहें तो यहाँ रेफ़र करने वाले यूज़र को रिवॉर्ड देने का लॉजिक भी जोड़ सकते हैं।
-                // await db.collection('users').doc(referringUserId).update({ ... });
-                return { uid: referringUserId, ...referringUserDoc.data() };
-            } catch (error) {
-                console.error("Error processing referral:", error);
-                return null;
-            }
-        }
+        // =================================================
+        // ★★★ Helper Functions - START ★★★
+        // =================================================
 
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
@@ -2963,11 +2829,9 @@
             }
 
             try {
-                // ★★★ ज़रूरी सुधार 2: यहाँ 'update' की जगह 'set' with merge किया गया है ★★★
-                // ताकि अगर डॉक्यूमेंट मौजूद न हो तो एरर न आए।
-                await db.collection('users').doc(uid).set({
+                await db.collection('users').doc(uid).update({
                     referralCode: referralCode
-                }, { merge: true });
+                });
                 console.log(`Generated Referral Code: ${referralCode}`);
                 return referralCode;
             } catch (error) {
@@ -3000,6 +2864,10 @@
             const match = url.match(regex);
             return match ? match[1] : null;
         }
+
+        // =================================================
+        // ★★★ Helper Functions - END ★★★
+        // =================================================
 
         let appState = {
             currentUser: {
@@ -3068,6 +2936,7 @@
             specialVideoPlayer: null,
         };
 
+
         let isYouTubeApiReady = false;
         let players = {};
         let videoObserver;
@@ -3077,15 +2946,29 @@
         let hapticFeedbackEnabled = true;
         let youtubePlayerQueue = [];
 
+        // =============================================================================
+        // ★★★ YOUTUBE API INTEGRATION (REFACTORED & WITH FIREBASE CACHING) - START ★★★
+        // =============================================================================
+
         let currentVideoCache = new Map();
         
         async function fetchFromYouTubeAPI(type, params) {
-            let url = `/api/youtube?type=${type}`;
+            
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            // ★★★ FINAL FIX: सर्वर का URL ठीक किया गया ★★★
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            // यह सर्वर को हमेशा उसी डोमेन पर कॉल करेगा जिस पर ऐप चल रहा है।
+            // let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`; // <-- यह गलत था
+            let url = `/api/youtube?type=${type}`; // <-- यह सही तरीका है। यह हमेशा shboard.render.com पर ही रिक्वेस्ट भेजेगा।
+
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
                     url += `&${key}=${encodeURIComponent(params[key])}`;
                 }
             }
+            
+            console.log(`[API] सही सर्वर से डेटा लाया जा रहा है: ${url}`);
+
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
@@ -3106,10 +2989,12 @@
                 
                 return data;
             } catch (error) {
-                console.error(`Error fetching from server API (${type}):`, error);
+                console.error(`सर्वर से डेटा लाने में गंभीर त्रुटि (${type}):`, error);
                 if (type === 'search') {
                      const grid = document.getElementById('long-video-grid');
-                     if(grid) grid.innerHTML = '<p class="static-message">Could not load videos.</p>';
+                     if(grid) grid.innerHTML = '<p class="static-message">Could not load videos. Please check your connection or API key.</p>';
+                     const carousel = document.getElementById('long-video-carousel-wrapper');
+                     if(carousel) carousel.innerHTML = '<p class="static-message">Could not load trending videos.</p>';
                 }
                 return {
                     error: error.message,
@@ -3129,7 +3014,7 @@
             }
 
             if (videos.length === 0 && !append) {
-                grid.innerHTML = '<p class="static-message">No videos found.</p>';
+                grid.innerHTML = '<p class="static-message">No videos found. Try a different search or category.</p>';
                 if (loadMoreBtn) loadMoreBtn.style.display = 'none';
                 return;
             }
@@ -3154,35 +3039,69 @@
             if (!loadMoreBtn || loadMoreBtn.disabled) return;
             loadMoreBtn.disabled = true;
             loadMoreBtn.textContent = "Loading...";
-            const { type, value } = appState.longVideoSearchContext;
-            const params = { pageToken: appState.youtubeNextPageTokens.long, videoDuration: 'long' };
-            if (type === 'channel') { params.channelId = value; } else { params.q = value; }
+
+            const {
+                type,
+                value
+            } = appState.longVideoSearchContext;
+            
+            const params = {
+                pageToken: appState.youtubeNextPageTokens.long,
+                videoDuration: 'long'
+            };
+
+            if (type === 'channel') {
+                params.channelId = value;
+            } else { 
+                params.q = value;
+            }
+
             const data = await fetchFromYouTubeAPI('search', params);
+
             appState.youtubeNextPageTokens.long = data.nextPageToken || null;
-            if (data.items) { renderYouTubeLongVideos(data.items, true); }
+            if (data.items) {
+                renderYouTubeLongVideos(data.items, true);
+            }
+
             if (loadMoreBtn) {
                 loadMoreBtn.disabled = false;
                 loadMoreBtn.textContent = "Load More";
-                if (!appState.youtubeNextPageTokens.long) { loadMoreBtn.style.display = 'none'; }
+                if (!appState.youtubeNextPageTokens.long) {
+                    loadMoreBtn.style.display = 'none';
+                }
             }
         }
 
         async function playYouTubeVideoFromCard(videoId) {
             let video = currentVideoCache.get(videoId);
             if (!video) {
-                const data = await fetchFromYouTubeAPI('videoDetails', { id: videoId });
+                console.warn("Video details not in cache for ID:", videoId, ". Fetching...");
+                const data = await fetchFromYouTubeAPI('videoDetails', {
+                    id: videoId
+                });
                 if (data.items && data.items[0]) {
                     video = data.items[0];
                     currentVideoCache.set(videoId, video);
                 } else {
-                    alert("Video details could not be loaded.");
+                    alert("Video details could not be loaded. Please try again.");
                     return;
                 }
             }
+
             const channelId = video.snippet.channelId;
-            navigateTo('creator-page-screen', { creatorId: channelId, startWith: 'play', videoId: videoId });
+
+            navigateTo('creator-page-screen', {
+                creatorId: channelId,
+                startWith: 'play',
+                videoId: videoId
+            });
         }
 
+        // =============================================================================
+        // ★★★ YOUTUBE API INTEGRATION (REFACTORED & WITH FIREBASE CACHING) - END ★★★
+        // =============================================================================
+
+        // DOM Elements
         const appContainer = document.getElementById('app-container');
         const screens = document.querySelectorAll('.screen');
         const profileImageInput = document.getElementById('profile-image-input');
@@ -3195,9 +3114,28 @@
         const homeStaticMessageContainer = document.getElementById('home-static-message-container');
         const saveContinueBtn = document.getElementById('save-continue-btn');
 
-        const categories = [ "Trending", "Music", "Gaming", "Movies", "News", "Live", "Sports", "Learning", "Fashion & Beauty", "Comedy", "Entertainment", "Technology", "Cooking", "Travel", "Vlogs", "Podcasts", "Dance", "Animation", "Automotive", "Pets & Animals", "Science", "History", "Documentary", "DIY", "Health & Fitness", "Finance", "Real Estate", "Astrology", "Spirituality", "Motivation", "Bhakti", "Bollywood News", "Tollywood", "Kollywood", "Sandalwood", "Art & Craft", "Booktubers" ];
-        const diverseTopics = [ "latest movie trailers", "viral internet moments", "new tech gadgets 2025", "stand up comedy india", "amazing science experiments", "top music hits 2025", "travel vlogs Europe", "indian street food tour", "DIY home decor low cost", "cricket highlights today", "BGMI gameplay", "political debate india", "easy dinner recipes", "stock market analysis", "yoga for beginners", "hindi web series review", "celebrity interviews", "unboxing new phone", "ghost stories in hindi", "motivational speech sandeep maheshwari" ];
-        function getRandomTopic() { return diverseTopics[Math.floor(Math.random() * diverseTopics.length)]; }
+        const categories = [
+            "Trending", "Music", "Gaming", "Movies", "News", "Live", "Sports",
+            "Learning", "Fashion & Beauty", "Comedy", "Entertainment", "Technology",
+            "Cooking", "Travel", "Vlogs", "Podcasts", "Dance", "Animation",
+            "Automotive", "Pets & Animals", "Science", "History", "Documentary",
+            "DIY", "Health & Fitness", "Finance", "Real Estate", "Astrology",
+            "Spirituality", "Motivation", "Bhakti", "Bollywood News", "Tollywood",
+            "Kollywood", "Sandalwood", "Art & Craft", "Booktubers"
+        ];
+        const diverseTopics = [
+            "latest movie trailers", "viral internet moments", "new tech gadgets 2025",
+            "stand up comedy india", "amazing science experiments", "top music hits 2025",
+            "travel vlogs Europe", "indian street food tour", "DIY home decor low cost",
+            "cricket highlights today", "BGMI gameplay", "political debate india",
+            "easy dinner recipes", "stock market analysis", "yoga for beginners",
+            "hindi web series review", "celebrity interviews", "unboxing new phone",
+            "ghost stories in hindi", "motivational speech sandeep maheshwari"
+        ];
+
+        function getRandomTopic() {
+            return diverseTopics[Math.floor(Math.random() * diverseTopics.length)];
+        }
 
         function activateScreen(screenId) {
             document.querySelectorAll('.screen').forEach(screen => {
@@ -3214,9 +3152,48 @@
 
         function navigateTo(nextScreenId, payload = null) {
             if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && nextScreenId !== 'creator-page-screen') return;
-            if (nextScreenId !== 'splash-screen' && nextScreenId !== 'information-screen') { localStorage.setItem('shubhzone_lastScreen', nextScreenId); }
-            if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) { appState.navigationStack.push(nextScreenId); }
-            if (appState.currentScreen === 'home-screen' && activePlayerId && players[activePlayerId]) { pauseActivePlayer(); }
+
+            if (nextScreenId !== 'splash-screen' && nextScreenId !== 'information-screen') {
+                localStorage.setItem('shubhzone_lastScreen', nextScreenId);
+            }
+
+            if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
+                appState.navigationStack.push(nextScreenId);
+            }
+
+            if (appState.currentScreen === 'home-screen' && activePlayerId && players[activePlayerId]) {
+                pauseActivePlayer();
+            }
+            if (appState.currentScreen === 'creator-page-screen') {
+                if (appState.creatorPagePlayers.long) {
+                    appState.creatorPagePlayers.long.destroy();
+                    appState.creatorPagePlayers.long = null;
+                }
+                const creatorContent = document.getElementById('creator-page-content');
+                if (creatorContent) creatorContent.innerHTML = '';
+                document.getElementById('app-container').classList.remove('fullscreen-active');
+            }
+            activePlayerId = null;
+
+            appState.currentScreenPayload = payload;
+            activateScreen(nextScreenId);
+            
+            // Initialize screen-specific logic
+            if (nextScreenId === 'profile-screen') loadUserVideosFromFirebase();
+            if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
+            if (nextScreenId === 'history-screen') initializeHistoryScreen();
+            if (nextScreenId === 'home-screen') setupShortsScreen();
+            if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
+                initializeCreatorPage(payload);
+            }
+            if (nextScreenId === 'friends-screen') {
+                populateAddFriendsList();
+                populateFriendRequestsList();
+                populateMembersList();
+            }
+        }
+
+        function navigateBack() {
             if (appState.currentScreen === 'creator-page-screen') {
                 if (appState.creatorPagePlayers.long) {
                     appState.creatorPagePlayers.long.destroy();
@@ -3224,22 +3201,16 @@
                 }
                 document.getElementById('app-container').classList.remove('fullscreen-active');
             }
-            activePlayerId = null;
-            appState.currentScreenPayload = payload;
-            activateScreen(nextScreenId);
-            if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
-            if (nextScreenId === 'home-screen') setupShortsScreen();
-            if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) { initializeCreatorPage(payload); }
-        }
 
-        function navigateBack() {
-            if (appState.currentScreen === 'creator-page-screen') {
-                if (appState.creatorPagePlayers.long) { appState.creatorPagePlayers.long.destroy(); appState.creatorPagePlayers.long = null; }
-                document.getElementById('app-container').classList.remove('fullscreen-active');
+            if (appState.navigationStack.length <= 1) {
+                navigateTo('main-home-screen'); // वापस होम पर जाएं
+                return;
             }
-            if (appState.navigationStack.length <= 1) { navigateTo('main-home-screen'); return; }
+
             appState.navigationStack.pop();
+
             const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'main-home-screen';
+
             navigateTo(previousScreenId, null);
         }
 
@@ -3251,35 +3222,71 @@
 
             if (doc.exists) {
                 let userData = doc.data();
+
                 if (!userData.referralCode || !userData.referralCode.startsWith('@')) {
                     userData.referralCode = await generateAndSaveReferralCode(user.uid, userData.name);
                 }
-                appState.currentUser = { ...appState.currentUser, ...userData };
+                userData.friends = userData.friends || [];
+                appState.currentUser = { ...appState.currentUser,
+                    ...userData
+                };
+
+                const savedChannels = localStorage.getItem('shubhzone_addedChannels');
+                appState.currentUser.addedChannels = savedChannels ? JSON.parse(savedChannels) : [];
+
+                const savedHistory = localStorage.getItem('shubhzoneViewingHistory');
+                if (savedHistory) {
+                    appState.viewingHistory = JSON.parse(savedHistory);
+                }
                 updateProfileUI();
 
                 if (userData.name && userData.state) {
-                    if (!userData.isPaid) { navigateTo('payment-screen'); } else { await startAppLogic(); }
+                    await startAppLogic();
                 } else {
                     navigateTo('information-screen');
                 }
+
             } else {
-                const initialData = { uid: user.uid, name: '', email: user.email || '', avatar: user.photoURL || 'https://via.placeholder.com/120/222/FFFFFF?text=+', createdAt: firebase.firestore.FieldValue.serverTimestamp(), friends: [], referralCode: null, isReferred: false, isPaid: false };
+                const initialData = {
+                    uid: user.uid,
+                    name: '',
+                    email: user.email || '',
+                    avatar: user.photoURL || 'https://via.placeholder.com/120/222/FFFFFF?text=+',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    friends: [],
+                    referralCode: await generateAndSaveReferralCode(user.uid, user.displayName || 'user'),
+                    isReferred: false,
+                };
                 await userRef.set(initialData);
-                initialData.referralCode = await generateAndSaveReferralCode(user.uid, user.displayName || 'user');
-                appState.currentUser = { ...appState.currentUser, ...initialData };
+                appState.currentUser = { ...appState.currentUser,
+                    ...initialData
+                };
                 updateProfileUI();
                 navigateTo('information-screen');
             }
         }
 
         let appInitializationComplete = false;
+
         function initializeApp() {
             if (appInitializationComplete) return;
             appInitializationComplete = true;
+
+            document.querySelectorAll('.nav-item[data-nav="profile"]').forEach(item => item.style.display = 'none');
+
             auth.onAuthStateChanged(user => {
-                if (user) { checkUserProfileAndProceed(user); } else { auth.signInAnonymously().catch(error => console.error("Anonymous sign-in failed:", error)); }
+                if (user) {
+                    checkUserProfileAndProceed(user);
+                } else {
+                    auth.signInAnonymously().catch(error => console.error("Anonymous sign-in failed:", error));
+                }
             });
+
             activateScreen('splash-screen');
+        }
+
+        function loadUserVideosFromFirebase() {
+            renderUserProfileVideos();
         }
 
         function updateNavActiveState(activeNav) {
@@ -3290,24 +3297,30 @@
             });
         }
 
-        profileImageInput.addEventListener('change', function() { if (this.files[0]) { const reader = new FileReader(); reader.onload = e => profileImagePreview.src = e.target.result; reader.readAsDataURL(this.files[0]); } });
-        function checkCustom(select, inputId) { document.getElementById(inputId).style.display = select.value === 'custom' ? 'block' : 'none'; }
+        profileImageInput.addEventListener('change', function() {
+            if (this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => profileImagePreview.src = e.target.result;
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+
+        function checkCustom(select, inputId) {
+            document.getElementById(inputId).style.display = select.value === 'custom' ? 'block' : 'none';
+        }
 
         async function saveAndContinue() {
-            if (!appState.currentUser || !appState.currentUser.uid) {
-                alert("Authentication error. Please wait a moment and try again.");
-                return;
-            }
             saveContinueBtn.disabled = true;
             saveContinueBtn.textContent = 'Saving...';
 
             const name = document.getElementById('info-name').value.trim();
             const stateValue = document.getElementById('info-state').value;
-            const state = stateValue === 'custom' ? document.getElementById('custom-state-input').value.trim() : stateValue;
+            const customState = document.getElementById('custom-state-input').value.trim();
+            const state = stateValue === 'custom' ? customState : stateValue;
             const referralCodeInput = document.getElementById('info-referral').value.trim();
 
             if (!name || !state) {
-                alert('Please enter your name and state.');
+                alert('Please enter your name and select your state.');
                 saveContinueBtn.disabled = false;
                 saveContinueBtn.textContent = 'Continue';
                 return;
@@ -3341,6 +3354,7 @@
                     userData.avatar = await snapshot.ref.getDownloadURL();
                 } catch (error) {
                     console.error("Avatar upload error:", error);
+                    alert("Failed to upload profile picture.");
                     saveContinueBtn.disabled = false;
                     saveContinueBtn.textContent = 'Continue';
                     return;
@@ -3348,20 +3362,33 @@
             }
 
             try {
-                await db.collection('users').doc(appState.currentUser.uid).set(userData, { merge: true });
+                await db.collection('users').doc(appState.currentUser.uid).set(userData, {
+                    merge: true
+                });
+
+                const userDoc = await db.collection('users').doc(appState.currentUser.uid).get();
+                if (!userDoc.data().referralCode) {
+                    await generateAndSaveReferralCode(appState.currentUser.uid, name);
+                }
+
                 const refreshedUserData = (await db.collection('users').doc(appState.currentUser.uid).get()).data();
-                appState.currentUser = { ...appState.currentUser, ...refreshedUserData };
+                appState.currentUser = { ...appState.currentUser,
+                    ...refreshedUserData
+                };
+
                 updateProfileUI();
-                navigateTo('payment-screen');
+                await startAppLogic();
             } catch (error) {
                 console.error("Profile save error:", error);
+                alert("Failed to save profile.");
                 saveContinueBtn.disabled = false;
                 saveContinueBtn.textContent = 'Continue';
             }
         }
 
         function updateProfileUI() {
-            document.getElementById('profile-header-avatar').src = appState.currentUser.avatar || "https://via.placeholder.com/50/222/FFFFFF?text=+";
+            const profileHeaderAvatar = document.getElementById('profile-header-avatar');
+            if (profileHeaderAvatar) profileHeaderAvatar.src = appState.currentUser.avatar || "https://via.placeholder.com/50/222/FFFFFF?text=+";
             profileImagePreview.src = appState.currentUser.avatar || "https://via.placeholder.com/120/222/FFFFFF?text=+";
             document.getElementById('info-name').value = appState.currentUser.name || '';
             document.getElementById('info-mobile').value = appState.currentUser.mobile || '';
@@ -3374,103 +3401,1231 @@
 
         let appStartLogicHasRun = false;
         const startAppLogic = async () => {
-            if (!appState.currentUser || !appState.currentUser.uid) { setTimeout(startAppLogic, 100); return; }
-            if (appStartLogicHasRun) { return; }
+            if (!appState.currentUser || !appState.currentUser.uid) {
+                console.warn("User data not ready yet, retrying in 100ms...");
+                setTimeout(startAppLogic, 100);
+                return;
+            }
+
+            if (appStartLogicHasRun && appState.currentScreen !== 'splash-screen' && appState.currentScreen !== 'information-screen') {
+                return;
+            }
             appStartLogicHasRun = true;
-            document.getElementById('get-started-btn').style.display = 'none';
-            document.getElementById('loading-container').style.display = 'flex';
+            console.log("Starting main app logic...");
+
+            const getStartedBtn = document.getElementById('get-started-btn');
+            const loadingContainer = document.getElementById('loading-container');
+            if (getStartedBtn) getStartedBtn.style.display = 'none';
+            if (loadingContainer) loadingContainer.style.display = 'flex';
+
             try {
-                navigateTo('main-home-screen');
+                const screenToNavigate = 'main-home-screen';
+                navigateTo(screenToNavigate);
                 updateNavActiveState('home');
+                
+                // ★★★ REWARD GAME START ★★★
                 rewardGameManager.startGameLoop();
-            } catch (error) { console.error("CRITICAL ERROR during app start:", error); }
+
+
+            } catch (error) {
+                console.error("CRITICAL ERROR during app start:", error);
+                alert("Could not start the app. Please check your connection and try again.");
+                if (loadingContainer) loadingContainer.innerHTML = '<p style="color: var(--error-red);">App failed to start.</p>';
+            }
         };
-        
-        async function initiatePayment(planId, amountInPaise, buttonElement) {
-            if (!appState.currentUser || !appState.currentUser.uid) { alert("You must be logged in to make a payment."); return; }
-            const originalButtonText = buttonElement.textContent;
-            buttonElement.disabled = true;
-            buttonElement.textContent = "Processing...";
-            try {
-                const orderResponse = await fetch('/create-razorpay-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: appState.currentUser.uid, amount: amountInPaise, email: appState.currentUser.email, name: appState.currentUser.name })
+
+        function renderVideoSwiper(videos, append = false) {
+            if (!videoSwiper) return;
+
+            if (!append) {
+                videoSwiper.innerHTML = '';
+                Object.values(players).forEach(player => {
+                    if (player && typeof player.destroy === 'function') player.destroy();
                 });
-                if (!orderResponse.ok) { throw new Error('Failed to create order.'); }
-                const orderData = await orderResponse.json();
-                const options = {
-                    key: "rzp_live_RjHqfVpQzXyWgM", 
-                    amount: orderData.amount, currency: orderData.currency, name: "Shubhzone Premium", description: `Payment for Plan: ${planId}`, order_id: orderData.id,
-                    handler: async function (response) {
-                        buttonElement.textContent = "Verifying...";
-                        const verifyResponse = await fetch('/verify-razorpay-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ...response, userId: appState.currentUser.uid })
-                        });
-                        if (verifyResponse.ok) { alert("Payment Successful!"); await startAppLogic(); } else { throw new Error('Payment verification failed.'); }
+                players = {};
+                if (videoObserver) videoObserver.disconnect();
+                setupVideoObserver();
+            }
+
+            if (!videos || videos.length === 0) {
+                if (!append) {
+                    if (homeStaticMessageContainer) {
+                        homeStaticMessageContainer.querySelector('.static-message').textContent = 'No shorts found for this category.';
+                        videoSwiper.appendChild(homeStaticMessageContainer);
+                        homeStaticMessageContainer.style.display = 'flex';
+                    }
+                }
+                return;
+            }
+
+            if (homeStaticMessageContainer) {
+                homeStaticMessageContainer.style.display = 'none';
+            }
+
+            const fragment = document.createDocumentFragment();
+            videos.forEach((video) => {
+                if (!video.id || !video.id.kind || video.id.kind !== 'youtube#video') return;
+                const videoId = video.id?.videoId || video.id;
+                if (!videoId) return;
+
+                const slide = document.createElement('div');
+                slide.className = 'video-slide';
+                slide.dataset.videoId = videoId;
+                slide.dataset.channelId = video.snippet.channelId;
+
+                slide.addEventListener('click', (e) => {
+                    if (e.target.closest('.video-meta-overlay')) return;
+                    togglePlayPause(videoId);
+                });
+
+                const playerHtml = `<div class="player-container" id="player-${videoId}"></div>`;
+                const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
+                const uploaderName = video.snippet.channelTitle;
+                const uploaderAvatar = 'https://via.placeholder.com/40';
+                const title = video.snippet.title;
+
+                const creatorProfileOnClick = `navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })`;
+                const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
+
+                slide.innerHTML = `
+                    <div class="video-preloader" style="background-image: url('${thumbnailUrl}');"><div class="loader"></div></div>
+                    ${playerHtml}
+                    <div class="video-meta-overlay">
+                        <div class="uploader-info" onclick="${creatorProfileOnClick}"><img src="${uploaderAvatar}" class="uploader-avatar"><span class="uploader-name">${escapeHTML(uploaderName)}</span></div>
+                        <p class="video-title">${escapeHTML(title)}</p>
+                        <button class="add-channel-btn haptic-trigger" onclick="${addChannelOnClick}"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                `;
+                fragment.appendChild(slide);
+                videoObserver.observe(slide);
+            });
+            videoSwiper.appendChild(fragment);
+
+            const oldTrigger = document.getElementById('shorts-load-more-trigger');
+            if (oldTrigger) oldTrigger.remove();
+
+            if (appState.youtubeNextPageTokens.shorts) {
+                const trigger = document.createElement('div');
+                trigger.id = 'shorts-load-more-trigger';
+                trigger.innerHTML = `<div class="loader-container" style="padding: 20px 0;"><div class="loader"></div></div>`;
+                videoSwiper.appendChild(trigger);
+                videoObserver.observe(trigger);
+            }
+        }
+
+        function onPlayerError(event) {
+            const videoId = event.target.getVideoData().video_id;
+            console.error(`[YT Player Error] Video ID: ${videoId}, Error Code: ${event.data}`);
+            
+            const iframe = event.target.getIframe();
+            if (iframe && iframe.parentElement) {
+                const container = iframe.parentElement;
+                container.innerHTML = `<div style="color:white; text-align:center; padding: 20px; font-size: 1.1em; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%;">
+                    <p>Could Not Play Video</p>
+                    <p style="font-size:0.8em; color: #aaa;">(Error Code: ${event.data})</p>
+                </div>`;
+            }
+        }
+
+        function onYouTubeIframeAPIReady() {
+            console.log("[YT API] YouTube IFrame API is ready.");
+            isYouTubeApiReady = true;
+
+            console.log(`[YT API] Processing ${youtubePlayerQueue.length} queued player requests.`);
+            youtubePlayerQueue.forEach(request => {
+                console.log(`[YT API] Creating queued player for container: ${request.containerId}`);
+                if (request.type === 'shorts') {
+                    createPlayerForSlide(request.slide, true);
+                } else if (request.type === 'long') {
+                    initializeCreatorPagePlayer(request.videoId, request.containerId, 'long', true);
+                }
+            });
+            youtubePlayerQueue = [];
+        }
+
+        function onPlayerReady(event) {
+            const iframe = event.target.getIframe();
+            const videoId = event.target.getVideoData().video_id;
+            console.log(`[YT Player] Player ready for video ID: ${videoId}`);
+            const slide = iframe.closest('.video-slide');
+            if (slide) {
+                const preloader = slide.querySelector('.video-preloader');
+                if (preloader) preloader.style.display = 'none';
+            }
+            if (userHasInteracted) {
+                event.target.unMute();
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            const iframe = event.target.getIframe();
+            if (!iframe) return;
+            const isCreatorPlayer = iframe.id === 'creator-page-player-long';
+            if (isCreatorPlayer) {
+                handleCreatorPlayerStateChange(event);
+            }
+        }
+
+        function addVideoToHistory(videoData) {
+            if (!videoData || !videoData.id) return;
+            const videoId = videoData.id.videoId || videoData.id;
+
+            const historyItem = {
+                id: videoId,
+                watchedAt: new Date().toISOString(),
+                title: videoData.snippet.title,
+                channelTitle: videoData.snippet.channelTitle,
+                channelId: videoData.snippet.channelId,
+                thumbnailUrl: videoData.snippet.thumbnails.medium.url,
+                videoLengthType: 'short'
+            };
+
+            const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId);
+            if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1);
+            appState.viewingHistory.unshift(historyItem);
+            if (appState.viewingHistory.length > 100) appState.viewingHistory.pop();
+            localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
+        }
+
+        function addLongVideoToHistory(videoData) {
+            if (!videoData || !videoData.id) return;
+            const videoId = videoData.id.videoId || videoData.id;
+            const historyItem = {
+                id: videoId,
+                watchedAt: new Date().toISOString(),
+                title: videoData.snippet.title,
+                channelTitle: videoData.snippet.channelTitle,
+                channelId: videoData.snippet.channelId,
+                thumbnailUrl: videoData.snippet.thumbnails.medium.url,
+                videoLengthType: 'long'
+            };
+            const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId);
+            if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1);
+            appState.viewingHistory.unshift(historyItem);
+            if (appState.viewingHistory.length > 100) appState.viewingHistory.pop();
+            localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
+        }
+
+        function togglePlayPause(videoId) {
+            const player = players[videoId];
+            if (!player || typeof player.getPlayerState !== 'function') return;
+            const state = player.getPlayerState();
+            if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+
+        function playActivePlayer(videoId) {
+            if (!videoId) return;
+            if (activePlayerId && activePlayerId !== videoId) {
+                pauseActivePlayer();
+            }
+            activePlayerId = videoId;
+            const videoData = currentVideoCache.get(videoId);
+            if (videoData) addVideoToHistory(videoData);
+
+            const player = players[videoId];
+            if (!player || typeof player.playVideo !== 'function' || !player.getIframe() || !document.body.contains(player.getIframe())) {
+                const slide = document.querySelector(`.video-slide[data-video-id="${videoId}"]`);
+                if (slide) createPlayerForSlide(slide);
+                return;
+            }
+
+            player.unMute();
+            player.playVideo();
+        }
+
+        function pauseActivePlayer() {
+            if (!activePlayerId) return;
+            const player = players[activePlayerId];
+            if (player && typeof player.pauseVideo === 'function') {
+                if (player.getPlayerState() === YT.PlayerState.PLAYING || player.getPlayerState() === YT.PlayerState.BUFFERING) {
+                    player.pauseVideo();
+                }
+            }
+        }
+
+        function createPlayerForSlide(slide, forceCreation = false) {
+            const videoId = slide.dataset.videoId;
+            if (!isYouTubeApiReady && !forceCreation) {
+                console.log(`[YT Player] API not ready. Queuing player for video ID: ${videoId}`);
+                if (!youtubePlayerQueue.some(item => item.videoId === videoId)) {
+                    youtubePlayerQueue.push({
+                        type: 'shorts',
+                        slide: slide,
+                        videoId: videoId
+                    });
+                }
+                return;
+            }
+
+
+            if (players[videoId]) {
+                if (typeof players[videoId].playVideo === 'function') {
+                    console.log(`[YT Player] Player for ${videoId} already exists. Playing.`);
+                    playActivePlayer(videoId);
+                }
+                return;
+            }
+
+            const playerId = `player-${videoId}`;
+            const playerElement = document.getElementById(playerId);
+            if (!playerElement || playerElement.tagName === 'IFRAME') return;
+
+            console.log(`[YT Player] Creating new shorts player for video ID: ${videoId}`);
+            players[videoId] = new YT.Player(playerId, {
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0,
+                    'mute': userHasInteracted ? 0 : 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'modestbranding': 1,
+                    'loop': 1,
+                    'playlist': videoId,
+                    'fs': 0,
+                    'iv_load_policy': 3,
+                    'origin': window.location.origin
+                },
+                events: {
+                    'onReady': (event) => {
+                        onPlayerReady(event);
+                        const slideRect = slide.getBoundingClientRect();
+                        const isInView = slideRect.top >= 0 && slideRect.bottom <= window.innerHeight;
+                        if (isInView) {
+                            playActivePlayer(videoId);
+                        }
                     },
-                    prefill: { name: appState.currentUser.name, email: appState.currentUser.email, contact: appState.currentUser.mobile },
-                    theme: { color: "#00FFFF" }
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        function setupVideoObserver() {
+            if (videoObserver) videoObserver.disconnect();
+            if (!videoSwiper) return;
+            const options = {
+                root: videoSwiper,
+                threshold: 0.8
+            };
+            videoObserver = new IntersectionObserver(async (entries) => {
+                for (const entry of entries) {
+                    if (entry.target.id === 'shorts-load-more-trigger') {
+                        if (entry.isIntersecting) {
+                            videoObserver.unobserve(entry.target);
+                            await loadMoreShorts();
+                        }
+                        continue;
+                    }
+                    if (entry.target.classList.contains('native-ad-slide')) continue;
+                    const videoId = entry.target.dataset.videoId;
+                    if (!videoId) continue;
+
+                    if (entry.isIntersecting) {
+                        playActivePlayer(videoId);
+                    } else {
+                        if (videoId === activePlayerId) {
+                            pauseActivePlayer();
+                            activePlayerId = null;
+                        }
+                    }
+                }
+            }, options);
+        }
+
+        function logoutUser() {
+            if (confirm("Are you sure you want to log out?")) {
+                localStorage.clear();
+                auth.signOut().then(() => {
+                    window.location.reload();
+                }).catch(error => {
+                    console.error("Logout failed:", error);
+                    alert("Logout failed.");
+                });
+            }
+        }
+
+        function renderCategoriesInBar() {
+            const scroller = document.getElementById('category-scroller');
+            const longScroller = document.getElementById('long-video-category-scroller');
+            [scroller, longScroller].forEach(s => {
+                if (!s) return;
+                s.innerHTML = '';
+                const allChip = document.createElement('div');
+                allChip.className = 'category-chip active haptic-trigger';
+                allChip.textContent = 'All';
+                allChip.dataset.category = "All";
+                allChip.onclick = () => filterVideosByCategory(s.id, 'All', allChip);
+                s.appendChild(allChip);
+                categories.forEach(category => {
+                    const chip = document.createElement('div');
+                    chip.className = 'category-chip haptic-trigger';
+                    chip.textContent = category;
+                    chip.dataset.category = category;
+                    chip.onclick = () => filterVideosByCategory(s.id, category, chip);
+                    s.appendChild(chip);
+                });
+            });
+        }
+
+        function filterVideosByCategory(scrollerId, category, element) {
+            const scroller = document.getElementById(scrollerId);
+            if (!scroller) return;
+            scroller.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            const searchInput = document.getElementById('long-video-search-input');
+            if (searchInput) searchInput.value = '';
+
+            if (scrollerId === 'category-scroller') {
+                if (activePlayerId) pauseActivePlayer();
+                activePlayerId = null;
+                setupShortsScreen(category);
+            } else {
+                populateLongVideoGrid(category);
+            }
+        }
+
+        function renderUserProfileVideos() {
+            const shortGrid = document.getElementById('user-short-video-grid');
+            const longGrid = document.getElementById('user-long-video-grid');
+            const message = '<p class="static-message" style="color: var(--text-secondary); grid-column: 1 / -1;">Video uploads are no longer supported. All content is from YouTube.</p>';
+            if (shortGrid) shortGrid.innerHTML = message;
+            if (longGrid) longGrid.innerHTML = message;
+        }
+
+        async function setupShortsScreen(category = 'All') {
+            const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
+            if (homeStaticMessageContainer) {
+                videoSwiper.innerHTML = '';
+                videoSwiper.appendChild(homeStaticMessageContainer);
+                homeStaticMessageContainer.style.display = 'flex';
+                homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div>'; // सिर्फ लोडर दिखाएं
+            }
+
+            const data = await fetchFromYouTubeAPI('search', {
+                q: query,
+                videoDuration: 'short'
+            });
+            appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
+            if (data.items && data.items.length > 0) {
+                renderVideoSwiper(data.items, false);
+            } else {
+                renderVideoSwiper([], false);
+            }
+        }
+
+        async function loadMoreShorts() {
+            const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
+            const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
+            const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
+            const data = await fetchFromYouTubeAPI('search', {
+                q: query,
+                videoDuration: 'short',
+                pageToken: appState.youtubeNextPageTokens.shorts
+            });
+
+            appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
+            if (data.items) {
+                renderVideoSwiper(data.items, true);
+            }
+        }
+
+        async function setupLongVideoScreen() {
+            renderCategoriesInBar();
+            await renderTrendingCarousel();
+            await populateLongVideoGrid('Trending');
+            const gridContainer = document.querySelector('.long-video-screen-content');
+            let loadMoreBtn = document.getElementById('long-video-load-more-btn');
+            if (!loadMoreBtn && gridContainer) {
+                loadMoreBtn = document.createElement('button');
+                loadMoreBtn.id = 'long-video-load-more-btn';
+                loadMoreBtn.className = 'haptic-trigger';
+                loadMoreBtn.textContent = 'Load More';
+                loadMoreBtn.style.display = 'none';
+                loadMoreBtn.onclick = loadMoreLongVideos;
+                gridContainer.appendChild(loadMoreBtn);
+            }
+        }
+
+        async function populateLongVideoGrid(category = 'All') {
+            const grid = document.getElementById('long-video-grid');
+            if (!grid) return;
+            grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            let query;
+            if (category.toLowerCase() === 'trending') {
+                query = 'trending videos';
+            } else {
+                query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
+            }
+
+            appState.longVideoSearchContext = {
+                type: 'query',
+                value: query
+            };
+
+            const data = await fetchFromYouTubeAPI('search', {
+                q: query,
+                videoDuration: 'long'
+            });
+
+            appState.youtubeNextPageTokens.long = data.nextPageToken || null;
+            renderYouTubeLongVideos(data.items || [], false);
+        }
+
+        async function renderTrendingCarousel() {
+            const carouselWrapper = document.getElementById('long-video-carousel-wrapper');
+            if (!carouselWrapper) return;
+            carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
+            const data = await fetchFromYouTubeAPI('search', {
+                q: 'latest trending videos',
+                videoDuration: 'long',
+                maxResults: 10
+            });
+
+            if (data.items && data.items.length > 0) {
+                carouselWrapper.innerHTML = data.items.map(video => {
+                    const videoId = video.id?.videoId || video.id;
+                    const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
+                    return `
+                        <div class="carousel-card haptic-trigger" 
+                             style="background-image: url('${escapeHTML(thumbnailUrl)}')"
+                             onclick="playYouTubeVideoFromCard('${videoId}')">
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                carouselWrapper.innerHTML = `<p class="static-message">Could not load trending videos.</p>`;
+            }
+        }
+
+        async function performLongVideoSearch() {
+            const input = document.getElementById('long-video-search-input');
+            let query = input.value.trim();
+            if (!query) return;
+
+            const videoIdFromUrl = extractYouTubeId(query);
+            if (videoIdFromUrl) {
+                playYouTubeVideoFromCard(videoIdFromUrl);
+                return;
+            }
+
+            document.querySelectorAll('#long-video-category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
+
+            const grid = document.getElementById('long-video-grid');
+            if (!grid) return;
+            grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+
+            let searchParams = {
+                videoDuration: 'long'
+            };
+            let finalData;
+
+            try {
+                // पहले चैनल ढूंढने की कोशिश करें
+                const channelData = await fetchFromYouTubeAPI('search', {
+                    q: query,
+                    type: 'channel',
+                    maxResults: 1
+                });
+                let channelId = null;
+                
+                // अगर चैनल मिला और उसका नाम सर्च से मिलता-जुलता है, तो चैनल आईडी इस्तेमाल करें
+                if (channelData.items && channelData.items.length > 0) {
+                    const channelTitle = channelData.items[0].snippet.title.toLowerCase();
+                    const queryLower = query.toLowerCase();
+                    if (channelTitle.includes(queryLower) || queryLower.includes(channelTitle)) {
+                         channelId = channelData.items[0].id.channelId;
+                    }
+                }
+
+                if (channelId) {
+                    console.log(`Channel found: ${channelId}. Searching for videos in this channel.`);
+                    // अब चैनल आईडी से वीडियो खोजें
+                    searchParams.channelId = channelId;
+                     appState.longVideoSearchContext = {
+                        type: 'channel',
+                        value: channelId
+                    };
+                } else {
+                    console.log(`No specific channel found. Performing general video search for: ${query}`);
+                    // अगर कोई विश्वसनीय चैनल नहीं मिलता है, तो सामान्य वीडियो खोज करें
+                    searchParams.q = query;
+                    appState.longVideoSearchContext = {
+                        type: 'query',
+                        value: query
+                    };
+                }
+                
+                finalData = await fetchFromYouTubeAPI('search', searchParams);
+
+            } catch (error) {
+                console.error("Error during search process:", error);
+                finalData = {
+                    items: [],
+                    nextPageToken: null
                 };
-                const rzp = new Razorpay(options);
-                rzp.on('payment.failed', function (response){ alert("Payment Failed: " + response.error.description); });
-                rzp.open();
-            } catch (error) { console.error("Payment error:", error); } finally {
-                buttonElement.disabled = false;
-                buttonElement.textContent = originalButtonText;
+                grid.innerHTML = '<p class="static-message">An error occurred during search.</p>';
+            }
+
+            appState.youtubeNextPageTokens.long = finalData.nextPageToken || null;
+            renderYouTubeLongVideos(finalData.items || [], false);
+        }
+
+
+        function createLongVideoCard(video) {
+            const videoId = video.id?.videoId || video.id;
+            if (!videoId || !video.snippet) return null;
+
+            const card = document.createElement('div');
+            card.className = 'long-video-card';
+            card.dataset.videoId = videoId;
+            card.dataset.channelId = video.snippet.channelId;
+
+            const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
+            const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
+
+            card.innerHTML = `
+                <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')" onclick="playYouTubeVideoFromCard('${videoId}')">
+                    <i class="fas fa-play play-icon-overlay"></i>
+                </div>
+                <div class="long-video-info-container">
+                    <div class="long-video-details" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })">
+                        <span class="long-video-name">${escapeHTML(video.snippet.title)}</span>
+                        <span class="long-video-uploader">${escapeHTML(video.snippet.channelTitle)}</span>
+                    </div>
+                </div>
+                <button class="add-channel-btn-long-grid haptic-trigger" onclick="${addChannelOnClick}"><i class="fas fa-plus"></i> Add Channel</button>
+            `;
+            return card;
+        }
+
+        function initializeHistoryScreen() {
+            const clearButton = document.getElementById('history-date-button');
+            if (clearButton) {
+                clearButton.innerHTML = `<i class="fas fa-trash-alt"></i> Clear All`;
+                clearButton.onclick = clearAllHistory;
+            }
+            appState.viewingHistory = JSON.parse(localStorage.getItem('shubhzoneViewingHistory') || '[]');
+            renderHistoryShortsScroller();
+            renderHistoryLongVideoList();
+        }
+
+        function renderHistoryShortsScroller() { /* Unchanged */ }
+
+        function renderHistoryLongVideoList() { /* Unchanged */ }
+
+        function clearAllHistory() { /* Unchanged */ }
+
+        function deleteFromHistory(videoId) { /* Unchanged */ }
+
+        async function populateAddFriendsList(featuredUser = null) {
+            const userListContainer = document.getElementById('add-friend-user-list');
+            if (!userListContainer) return;
+            userListContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            try {
+                const querySnapshot = await db.collection('users').get();
+                const users = [];
+                querySnapshot.forEach(doc => {
+                    if (doc.id !== appState.currentUser.uid) {
+                        users.push({
+                            id: doc.id,
+                            ...doc.data()
+                        });
+                    }
+                });
+
+                if (users.length === 0) {
+                    userListContainer.innerHTML = '<p class="static-message">No other users found to add.</p>';
+                    return;
+                }
+
+                userListContainer.innerHTML = users.map(user => {
+                    const isFriend = appState.currentUser.friends.includes(user.id);
+                    const buttonHtml = isFriend ?
+                        `<button class="add-button requested" disabled>Friends</button>` :
+                        `<button class="add-button" onclick="sendFriendRequest('${user.id}', this)">Add</button>`;
+
+                    return `
+                        <div class="holographic-card">
+                            <div class="profile-pic" onclick="showEnlargedImage('${user.avatar}')">
+                                <img src="${user.avatar || 'https://via.placeholder.com/50'}" alt="Profile Pic">
+                            </div>
+                            <div class="info">
+                                <div class="name">${escapeHTML(user.name || 'Unnamed User')}</div>
+                                <div class="subtext">${escapeHTML(user.referralCode || '@' + user.id.substring(0,6))}</div>
+                            </div>
+                            ${buttonHtml}
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error("Error fetching users:", error);
+                userListContainer.innerHTML = '<p class="static-message">Could not load users. Please try again later.</p>';
+            }
+        }
+        async function searchUser() { /* Unchanged */ }
+        async function sendFriendRequest(receiverId, buttonElement) { /* Unchanged */ }
+        async function populateFriendRequestsList() { /* Unchanged */ }
+        async function acceptFriendRequest(event, requestId, senderId) { /* Unchanged */ }
+        async function rejectFriendRequest(event, requestId) { /* Unchanged */ }
+        async function populateMembersList() { /* Unchanged */ }
+        async function startChat(friendId, friendName, friendAvatar) { /* Unchanged */ }
+        async function sendMessage() { /* Unchanged */ }
+
+        function loadChatMessages(chatId) { /* Unchanged */ }
+
+        // =======================================================
+        // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - START ★★★
+        // =======================================================
+
+        async function initializeCreatorPage(payload) {
+            const {
+                creatorId,
+                startWith = 'home',
+                videoId
+            } = payload;
+            appState.creatorPage.currentChannelId = creatorId;
+
+            if (startWith === 'play' && videoId) {
+                showCreatorPlayerView(videoId);
+                return;
+            }
+
+            appState.creatorPage.currentView = 'channel';
+            const creatorPageHeader = document.getElementById('creator-page-screen').querySelector('.screen-header');
+            const creatorPageTabsContainer = document.getElementById('creator-page-tabs');
+            const creatorPageContent = document.getElementById('creator-page-content');
+
+            creatorPageHeader.style.display = 'flex';
+            creatorPageTabsContainer.style.display = 'flex';
+            creatorPageContent.innerHTML = '';
+            creatorPageContent.classList.remove('player-active');
+
+            creatorPageTabsContainer.innerHTML = `
+                <button class="creator-page-tab-btn haptic-trigger" data-type="home">Home</button>
+                <button class="creator-page-tab-btn haptic-trigger" data-type="videos">Videos</button>
+                <button class="creator-page-tab-btn haptic-trigger" data-type="shorts">Shorts</button>
+                <button class="creator-page-tab-btn haptic-trigger" data-type="playlists">Playlists</button>
+            `;
+
+            creatorPageTabsContainer.querySelectorAll('.creator-page-tab-btn').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    creatorPageTabsContainer.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    loadCreatorPageContent({ ...payload,
+                        startWith: tab.dataset.type,
+                        videoId: null
+                    });
+                });
+            });
+
+            const effectiveStartWith = (startWith === 'videos') ? 'home' : startWith;
+            const initialTab = creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="${effectiveStartWith}"]`) || creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="home"]`);
+            if (initialTab) initialTab.classList.add('active');
+
+            await loadCreatorPageContent({ ...payload,
+                startWith: effectiveStartWith
+            });
+        }
+
+        async function loadCreatorPageContent(payload) {
+            const {
+                creatorId,
+                startWith,
+                playlistId
+            } = payload;
+            const contentArea = document.getElementById('creator-page-content');
+            contentArea.innerHTML = '<div class="loader-container" style="height: 100%;"><div class="loader"></div></div>';
+            let data;
+            switch (startWith) {
+                case 'home':
+                case 'videos':
+                    data = await fetchFromYouTubeAPI('search', {
+                        channelId: creatorId,
+                        order: 'date',
+                        videoDuration: 'long'
+                    });
+                    renderCreatorVideoList(contentArea, data.items || [], 'long');
+                    break;
+                case 'shorts':
+                    data = await fetchFromYouTubeAPI('search', {
+                        channelId: creatorId,
+                        videoDuration: 'short',
+                        order: 'date'
+                    });
+                    renderCreatorVideoList(contentArea, data.items || [], 'short');
+                    break;
+                case 'playlists':
+                    data = await fetchFromYouTubeAPI('playlists', {
+                        channelId: creatorId
+                    });
+                    renderCreatorPlaylistList(contentArea, data.items || [], payload);
+                    break;
+                case 'playlistItems':
+                    data = await fetchFromYouTubeAPI('playlistItems', {
+                        playlistId: playlistId
+                    });
+                    renderCreatorVideoList(contentArea, data.items || [], 'long');
+                    break;
+            }
+        }
+
+        function renderCreatorVideoList(container, videos, type) { /* Unchanged */ }
+
+        function renderCreatorPlaylistList(container, playlists, payload) { /* Unchanged */ }
+
+        function showCreatorPlayerView(videoId) {
+            appState.creatorPage.currentView = 'player';
+            const creatorPageScreen = document.getElementById('creator-page-screen');
+            const contentArea = document.getElementById('creator-page-content');
+
+            creatorPageScreen.querySelector('.screen-header').style.display = 'none';
+            contentArea.classList.add('player-active');
+
+            contentArea.innerHTML = `
+                <div id="creator-page-player-container">
+                     <div class="player-controls-header">
+                        <div class="player-back-button haptic-trigger" onclick="navigateBack()">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                        <div class="player-zoom-controls">
+                            <button id="player-zoom-out-btn" class="haptic-trigger">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button id="player-zoom-in-btn" class="haptic-trigger">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                        </div>
+                        <button id="player-rotate-btn" class="haptic-trigger">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="player-wrapper">
+                        <div id="creator-page-player-long"></div>
+                    </div>
+                </div>
+            `;
+
+            initializeCreatorPagePlayer(videoId, 'creator-page-player-long', 'long');
+
+            document.getElementById('player-rotate-btn').addEventListener('click', () => {
+                document.getElementById('app-container').classList.toggle('fullscreen-active');
+            });
+
+            let currentZoom = 1.0;
+            const playerWrapper = contentArea.querySelector('.player-wrapper');
+            const zoomInBtn = document.getElementById('player-zoom-in-btn');
+            const zoomOutBtn = document.getElementById('player-zoom-out-btn');
+
+            zoomInBtn.addEventListener('click', () => {
+                currentZoom = Math.min(2.5, currentZoom + 0.1);
+                playerWrapper.style.transform = `scale(${currentZoom})`;
+            });
+
+            zoomOutBtn.addEventListener('click', () => {
+                currentZoom = Math.max(0.5, currentZoom - 0.1);
+                playerWrapper.style.transform = `scale(${currentZoom})`;
+            });
+        }
+
+        function initializeCreatorPagePlayer(videoId, containerId, type, forceCreation = false) {
+            if (appState.creatorPagePlayers[type]) {
+                console.log(`[YT Player] Destroying existing creator player of type: ${type}`);
+                appState.creatorPagePlayers[type].destroy();
+                appState.creatorPagePlayers[type] = null;
+            }
+
+            const playerContainer = document.getElementById(containerId);
+
+            if (!isYouTubeApiReady && !forceCreation) {
+                console.log(`[YT Player] API not ready. Queuing creator player for video ID: ${videoId}`);
+                youtubePlayerQueue.push({
+                    type: 'long',
+                    videoId: videoId,
+                    containerId: containerId
+                });
+                return;
+            }
+
+            if (!playerContainer) {
+                console.error(`[YT Player] Player container #${containerId} not found in DOM.`);
+                return;
+            }
+
+            console.log(`[YT Player] Creating new creator player for video ID: ${videoId} in container: #${containerId}`);
+            appState.creatorPagePlayers[type] = new YT.Player(containerId, {
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'mute': 0,
+                    'modestbranding': 1,
+                    'fs': 0,
+                    'origin': window.location.origin,
+                    'iv_load_policy': 3
+                },
+                events: {
+                    'onReady': (event) => {
+                        console.log(`[YT Player] Creator player ready for video ID: ${videoId}`);
+                        event.target.playVideo();
+                        event.target.unMute();
+                        const videoData = currentVideoCache.get(videoId);
+                        if (videoData) {
+                            addLongVideoToHistory(videoData);
+                        }
+                    },
+                    'onStateChange': handleCreatorPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        function handleCreatorPlayerStateChange(event) { /* Unchanged */ }
+
+        // =======================================================
+        // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
+        // =======================================================
+        
+        // =======================================================
+        // ★★★ NEW: REWARD GAME LOGIC - START ★★★
+        // =======================================================
+        const rewardGameManager = {
+            isRunning: false,
+            gameLoopTimeout: null,
+            questionTimeout: null,
+            state: {
+                eventHappened: false,
+                expectedAnswer: 'no', // 'yes' or 'no'
+                eventType: null, // 'light' or 'insect'
+            },
+
+            // Game loop to trigger events randomly
+            startGameLoop: function() {
+                if (this.isRunning) return;
+                this.isRunning = true;
+                console.log("[Game] Reward game loop started.");
+                this.scheduleNextEvent();
+            },
+
+            scheduleNextEvent: function() {
+                // Random time between 30 and 60 seconds
+                const randomInterval = Math.random() * (60000 - 30000) + 30000;
+                this.gameLoopTimeout = setTimeout(() => {
+                    this.triggerGameEvent();
+                }, randomInterval);
+            },
+
+            // Decide if and what event to trigger
+            triggerGameEvent: function() {
+                if (document.hidden) { // Don't run if tab is not active
+                    this.scheduleNextEvent();
+                    return;
+                }
+                
+                this.state.eventHappened = Math.random() < 0.6; // 60% chance the event actually happens
+                const eventType = Math.random() < 0.5 ? 'light' : 'insect'; // 50/50 chance for light or insect
+                
+                let questionText = '';
+                let insectDidJump = false;
+
+                if (this.state.eventHappened) {
+                    if (eventType === 'light') {
+                        this.state.eventType = 'light';
+                        this.state.expectedAnswer = 'yes';
+                        questionText = "Did the red light flash?";
+                        this.showRedLight();
+                    } else { // insect
+                        this.state.eventType = 'insect';
+                        insectDidJump = Math.random() < 0.5;
+                        this.state.expectedAnswer = insectDidJump ? 'yes' : 'no';
+                        questionText = "Did the insect jump from side to side?";
+                        this.showInsect(insectDidJump);
+                    }
+                } else { // Event did NOT happen
+                     if (eventType === 'light') {
+                        this.state.eventType = 'light';
+                        this.state.expectedAnswer = 'no';
+                        questionText = "Did the red light flash?";
+                    } else { // insect
+                        this.state.eventType = 'insect';
+                        this.state.expectedAnswer = 'no';
+                        questionText = "Did the insect jump from side to side?";
+                    }
+                }
+
+                // Ask the question after a short delay
+                setTimeout(() => {
+                    this.askQuestion(questionText);
+                }, 4000); // Wait 4 seconds for insect animation to finish
+            },
+
+            // Visual effect functions
+            showRedLight: function() {
+                const light = document.createElement('div');
+                light.className = 'game-red-light';
+                // Random position
+                light.style.top = `${Math.random() * 90}%`;
+                light.style.left = `${Math.random() * 90}%`;
+                document.body.appendChild(light);
+                setTimeout(() => {
+                    document.body.removeChild(light);
+                }, 200); // Flash for 200ms
+            },
+
+            showInsect: function(shouldJump) {
+                const insect = document.createElement('div');
+                insect.className = 'game-insect';
+                insect.textContent = '🐜'; // Insect emoji
+                insect.style.left = `${Math.random() * 80 + 10}%`; // Start somewhere in the middle horizontally
+                insect.style.top = '0px';
+
+                if (shouldJump) {
+                    insect.style.animation = 'insect-fall-jump 4s linear forwards';
+                } else {
+                    insect.style.animation = 'insect-fall-straight 4s linear forwards';
+                }
+                
+                document.body.appendChild(insect);
+                
+                insect.addEventListener('animationend', () => {
+                    document.body.removeChild(insect);
+                });
+            },
+
+            // Modal and question logic
+            askQuestion: function(question) {
+                const modal = document.getElementById('game-modal');
+                const questionEl = document.getElementById('game-question');
+                const timerEl = document.getElementById('game-timer');
+
+                questionEl.textContent = question;
+                
+                // Reset timer animation
+                timerEl.style.animation = 'none';
+                timerEl.offsetHeight; // Trigger reflow
+                timerEl.style.animation = 'shrink 1s linear forwards';
+                
+                modal.classList.add('visible');
+
+                this.questionTimeout = setTimeout(() => {
+                    this.handleAnswer('timeout');
+                }, 1000);
+            },
+            
+            handleAnswer: function(userAnswer) {
+                clearTimeout(this.questionTimeout);
+                const modal = document.getElementById('game-modal');
+                if (!modal.classList.contains('visible')) return; // Avoid double triggers
+                
+                modal.classList.remove('visible');
+
+                const correct = userAnswer === this.state.expectedAnswer;
+                
+                if (userAnswer === 'timeout') {
+                    this.showResult('Fail', false);
+                } else {
+                    this.showResult(correct ? 'Pass' : 'Fail', correct);
+                }
+                
+                // Schedule the next event
+                this.scheduleNextEvent();
+            },
+
+            showResult: function(text, isSuccess) {
+                const popup = document.getElementById('game-result-popup');
+                popup.textContent = text;
+                popup.style.backgroundColor = isSuccess ? 'var(--success-green)' : 'var(--error-red)';
+                popup.style.top = '20px';
+                popup.style.opacity = '1';
+
+                setTimeout(() => {
+                    popup.style.top = '-50px';
+                    popup.style.opacity = '0';
+                }, 2000);
+            }
+        };
+        // =======================================================
+        // ★★★ NEW: REWARD GAME LOGIC - END ★★★
+        // =======================================================
+
+
+        async function addChannelToList(event, channelId) { /* Unchanged */ }
+
+        function renderMyChannelsList() { /* Unchanged */ }
+
+        function removeChannelFromList(event, channelId) { /* Unchanged */ }
+
+        function provideHapticFeedback() { /* Unchanged */ }
+
+        function loadHapticPreference() { /* Unchanged */ }
+
+        function showEnlargedImage(imageUrl) { /* Unchanged */ }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.add('haptic-trigger');
+                item.addEventListener('click', () => {
+                    const targetNav = item.getAttribute('data-nav');
+                    if (item.style.display === 'none') return;
+                    let targetScreen;
+                    
+                    switch (targetNav) {
+                        case 'home':
+                            targetScreen = 'main-home-screen';
+                            break;
+                        case 'shorts':
+                            targetScreen = 'home-screen';
+                            break;
+                        default:
+                            targetScreen = `${targetNav}-screen`;
+                    }
+
+                    navigateTo(targetScreen);
+                    updateNavActiveState(targetNav);
+                });
+            });
+
+            initializeApp();
+
+            document.getElementById('get-started-btn')?.addEventListener('click', () => {
+                userHasInteracted = true;
+                startAppLogic();
+            });
+
+            appContainer.addEventListener('click', (event) => {
+                if (!userHasInteracted) {
+                    userHasInteracted = true;
+                    Object.values(players).forEach(p => p && typeof p.unMute === 'function' && p.unMute());
+                    if (appState.creatorPagePlayers.long && typeof appState.creatorPagePlayers.long.unMute === 'function') {
+                        appState.creatorPagePlayers.long.unMute();
+                    }
+                }
+                if (event.target.closest('.haptic-trigger')) provideHapticFeedback();
+            });
+
+            document.getElementById('long-video-search-btn')?.addEventListener('click', performLongVideoSearch);
+            document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performLongVideoSearch();
+            });
+
+            document.querySelector('#creator-page-screen .header-icon-left')?.addEventListener('click', () => navigateBack());
+            initializeMessagingInterface();
+            document.getElementById('add-friend-search-btn')?.addEventListener('click', searchUser);
+            document.getElementById('add-friend-search-input')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchUser();
+            });
+
+            const openSidebar = () => {
+                document.getElementById('main-sidebar').classList.add('open');
+                document.getElementById('sidebar-overlay').classList.add('open');
+            };
+            document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
+            document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
+
+            const profileSidebarBtn = document.getElementById('sidebar-profile-btn');
+            if (profileSidebarBtn) {
+                profileSidebarBtn.addEventListener('click', () => {
+                    navigateTo('profile-screen');
+                    document.getElementById('main-sidebar').classList.remove('open');
+                    document.getElementById('sidebar-overlay').classList.remove('open');
+                });
+            }
+
+            document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
+                document.getElementById('main-sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('open');
+            });
+            document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
+                document.getElementById('main-sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('open');
+            });
+
+            document.getElementById('long-video-history-btn')?.addEventListener('click', () => navigateTo('history-screen'));
+            document.getElementById('back-from-history-btn')?.addEventListener('click', () => navigateBack());
+            document.getElementById('profile-your-zone-btn')?.addEventListener('click', () => navigateTo('information-screen'));
+            document.getElementById('profile-show-shorts-btn')?.addEventListener('click', () => toggleProfileVideoView('short'));
+            document.getElementById('profile-show-longs-btn')?.addEventListener('click', () => toggleProfileVideoView('long'));
+
+            const enlargeModal = document.getElementById('image-enlarge-modal');
+            if (enlargeModal) enlargeModal.addEventListener('click', () => enlargeModal.classList.remove('active'));
+
+            loadHapticPreference();
+
+            document.querySelectorAll('#friends-screen .tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+                    document.querySelectorAll('#friends-screen .tab-content').forEach(content => content.classList.add('hidden'));
+                    document.querySelectorAll('#friends-screen .tab-button').forEach(btn => btn.classList.remove('active'));
+                    const contentToShow = document.getElementById(`${tabId}-content`);
+                    if (contentToShow) contentToShow.classList.remove('hidden');
+                    button.classList.add('active');
+                });
+            });
+            
+             // ★★★ REWARD GAME EVENT LISTENERS ★★★
+            document.getElementById('game-yes-btn').addEventListener('click', () => rewardGameManager.handleAnswer('yes'));
+            document.getElementById('game-no-btn').addEventListener('click', () => rewardGameManager.handleAnswer('no'));
+        });
+
+        function initializeMessagingInterface() {
+            const chatScreen = document.getElementById('chat-screen-overlay');
+            if (!chatScreen) return;
+            chatScreen.querySelector('.back-arrow')?.addEventListener('click', () => chatScreen.classList.remove('active'));
+            const sendButton = chatScreen.querySelector('#send-button');
+            const inputField = chatScreen.querySelector('.input-field');
+
+            sendButton?.addEventListener('click', sendMessage);
+            inputField?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            inputField?.addEventListener('input', () => {
+                if (inputField.value.trim().length > 0) {
+                    sendButton.classList.add('active');
+                } else {
+                    sendButton.classList.remove('active');
+                }
+            });
+        }
+
+        function toggleProfileVideoView(view) {
+            const showShortsBtn = document.getElementById('profile-show-shorts-btn');
+            const showLongsBtn = document.getElementById('profile-show-longs-btn');
+            const shortGrid = document.getElementById('user-short-video-grid');
+            const longGrid = document.getElementById('user-long-video-grid');
+            if (!showShortsBtn || !showLongsBtn || !shortGrid || !longGrid) return;
+
+            if (view === 'short') {
+                showShortsBtn.classList.add('active');
+                showLongsBtn.classList.remove('active');
+                shortGrid.style.display = 'grid';
+                longGrid.style.display = 'none';
+            } else {
+                showShortsBtn.classList.remove('active');
+                showLongsBtn.classList.add('active');
+                shortGrid.style.display = 'none';
+                longGrid.style.display = 'grid';
             }
         }
         
-        // --- The rest of the JS functions are unchanged ---
-        
-        function onYouTubeIframeAPIReady() { isYouTubeApiReady = true; youtubePlayerQueue.forEach(req => { if(req.type === 'shorts'){createPlayerForSlide(req.slide, true)}else{initializeCreatorPagePlayer(req.videoId, req.containerId, 'long', true)} }); youtubePlayerQueue = []; }
-        function onPlayerReady(event) { const slide = event.target.getIframe().closest('.video-slide'); if (slide) { slide.querySelector('.video-preloader').style.display = 'none'; } if (userHasInteracted) { event.target.unMute(); } }
-        function onPlayerStateChange(event) { if (event.target.getIframe().id === 'creator-page-player-long') { handleCreatorPlayerStateChange(event); } }
-        function addVideoToHistory(videoData) { const videoId = videoData.id.videoId || videoData.id; const historyItem = { id: videoId, watchedAt: new Date().toISOString(), title: videoData.snippet.title, channelTitle: videoData.snippet.channelTitle, channelId: videoData.snippet.channelId, thumbnailUrl: videoData.snippet.thumbnails.medium.url, videoLengthType: 'short' }; const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId); if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1); appState.viewingHistory.unshift(historyItem); if (appState.viewingHistory.length > 100) appState.viewingHistory.pop(); localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory)); }
-        function addLongVideoToHistory(videoData) { const videoId = videoData.id.videoId || videoData.id; const historyItem = { id: videoId, watchedAt: new Date().toISOString(), title: videoData.snippet.title, channelTitle: videoData.snippet.channelTitle, channelId: videoData.snippet.channelId, thumbnailUrl: videoData.snippet.thumbnails.medium.url, videoLengthType: 'long' }; const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId); if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1); appState.viewingHistory.unshift(historyItem); if (appState.viewingHistory.length > 100) appState.viewingHistory.pop(); localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory)); }
-        function togglePlayPause(videoId) { const player = players[videoId]; if (!player) return; const state = player.getPlayerState(); if (state === YT.PlayerState.PLAYING) { player.pauseVideo(); } else { player.playVideo(); } }
-        function playActivePlayer(videoId) { if (!videoId) return; if (activePlayerId && activePlayerId !== videoId) { pauseActivePlayer(); } activePlayerId = videoId; const videoData = currentVideoCache.get(videoId); if (videoData) addVideoToHistory(videoData); const player = players[videoId]; if (!player || !player.getIframe()) { const slide = document.querySelector(`.video-slide[data-video-id="${videoId}"]`); if (slide) createPlayerForSlide(slide); return; } player.unMute(); player.playVideo(); }
-        function pauseActivePlayer() { if (!activePlayerId) return; const player = players[activePlayerId]; if (player) { player.pauseVideo(); } }
-        function createPlayerForSlide(slide, force = false) { const videoId = slide.dataset.videoId; if (!isYouTubeApiReady && !force) { youtubePlayerQueue.push({ type: 'shorts', slide: slide, videoId: videoId }); return; } if (players[videoId]) { playActivePlayer(videoId); return; } const playerId = `player-${videoId}`; players[videoId] = new YT.Player(playerId, { height: '100%', width: '100%', videoId: videoId, playerVars: { 'autoplay': 0, 'controls': 0, 'mute': userHasInteracted ? 0 : 1, 'rel': 0, 'showinfo': 0, 'modestbranding': 1, 'loop': 1, 'playlist': videoId, 'fs': 0, 'iv_load_policy': 3 }, events: { 'onReady': (e) => { onPlayerReady(e); if (slide.getBoundingClientRect().top >= 0 && slide.getBoundingClientRect().bottom <= window.innerHeight) { playActivePlayer(videoId); } }, 'onStateChange': onPlayerStateChange } }); }
-        function setupVideoObserver() { if (videoObserver) videoObserver.disconnect(); const options = { root: videoSwiper, threshold: 0.8 }; videoObserver = new IntersectionObserver(async (entries) => { for (const entry of entries) { if (entry.target.id === 'shorts-load-more-trigger') { if (entry.isIntersecting) { videoObserver.unobserve(entry.target); await loadMoreShorts(); } continue; } const videoId = entry.target.dataset.videoId; if (entry.isIntersecting) { playActivePlayer(videoId); } else { if (videoId === activePlayerId) { pauseActivePlayer(); activePlayerId = null; } } } }, options); }
-        function logoutUser() { if (confirm("Are you sure?")) { auth.signOut().then(() => window.location.reload()); } }
-        async function setupShortsScreen(category = 'All') { const query = category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`; if(homeStaticMessageContainer) homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div>'; const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short' }); appState.youtubeNextPageTokens.shorts = data.nextPageToken || null; renderVideoSwiper(data.items || [], false); }
-        async function loadMoreShorts() { const category = document.querySelector('#category-scroller .category-chip.active')?.dataset.category || 'All'; const query = category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`; const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short', pageToken: appState.youtubeNextPageTokens.shorts }); appState.youtubeNextPageTokens.shorts = data.nextPageToken || null; if (data.items) { renderVideoSwiper(data.items, true); } }
-        function renderVideoSwiper(videos, append = false) { if (!videoSwiper) return; if (!append) { videoSwiper.innerHTML = ''; Object.values(players).forEach(p => p.destroy()); players = {}; if (videoObserver) videoObserver.disconnect(); setupVideoObserver(); } if (!videos || videos.length === 0) { if (!append) { if (homeStaticMessageContainer) { homeStaticMessageContainer.querySelector('.static-message').textContent = 'No shorts found.'; videoSwiper.appendChild(homeStaticMessageContainer); } } return; } if (homeStaticMessageContainer) { homeStaticMessageContainer.style.display = 'none'; } const fragment = document.createDocumentFragment(); videos.forEach(video => { if (!video.id || video.id.kind !== 'youtube#video') return; const videoId = video.id.videoId; const slide = document.createElement('div'); slide.className = 'video-slide'; slide.dataset.videoId = videoId; slide.dataset.channelId = video.snippet.channelId; slide.addEventListener('click', e => { if (e.target.closest('.video-meta-overlay')) return; togglePlayPause(videoId); }); const thumbnailUrl = video.snippet.thumbnails.high?.url; const uploaderName = video.snippet.channelTitle; const title = video.snippet.title; slide.innerHTML = `<div class="video-preloader" style="background-image: url('${thumbnailUrl}');"><div class="loader"></div></div><div class="player-container" id="player-${videoId}"></div><div class="video-meta-overlay"><div class="uploader-info" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}' })"><img src="https://via.placeholder.com/40" class="uploader-avatar"><span class="uploader-name">${escapeHTML(uploaderName)}</span></div><p class="video-title">${escapeHTML(title)}</p></div>`; fragment.appendChild(slide); videoObserver.observe(slide); }); videoSwiper.appendChild(fragment); if (appState.youtubeNextPageTokens.shorts) { const trigger = document.createElement('div'); trigger.id = 'shorts-load-more-trigger'; trigger.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`; videoSwiper.appendChild(trigger); videoObserver.observe(trigger); } }
-        async function setupLongVideoScreen() { renderCategoriesInBar(); await renderTrendingCarousel(); await populateLongVideoGrid('Trending'); }
-        async function populateLongVideoGrid(category = 'All') { const grid = document.getElementById('long-video-grid'); if (!grid) return; grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>'; const query = category.toLowerCase() === 'all' ? getRandomTopic() : category; appState.longVideoSearchContext = { type: 'query', value: query }; const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' }); appState.youtubeNextPageTokens.long = data.nextPageToken || null; renderYouTubeLongVideos(data.items || [], false); }
-        async function renderTrendingCarousel() { const carouselWrapper = document.getElementById('long-video-carousel-wrapper'); if (!carouselWrapper) return; carouselWrapper.innerHTML = '<div class="loader-container"><div class="loader"></div></div>'; const data = await fetchFromYouTubeAPI('search', { q: 'latest trending videos', videoDuration: 'long', maxResults: 10 }); if (data.items && data.items.length > 0) { carouselWrapper.innerHTML = data.items.map(video => `<div class="carousel-card" style="background-image: url('${escapeHTML(video.snippet.thumbnails.high?.url)}')" onclick="playYouTubeVideoFromCard('${video.id.videoId}')"></div>`).join(''); } }
-        function createLongVideoCard(video) { const card = document.createElement('div'); card.className = 'long-video-card'; card.innerHTML = `<div class="long-video-thumbnail" style="background-image: url('${escapeHTML(video.snippet.thumbnails.high?.url)}')" onclick="playYouTubeVideoFromCard('${video.id.videoId}')"><i class="fas fa-play play-icon-overlay"></i></div><div class="long-video-info-container" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}' })"><div class="long-video-details"><span class="long-video-name">${escapeHTML(video.snippet.title)}</span><span class="long-video-uploader">${escapeHTML(video.snippet.channelTitle)}</span></div></div>`; return card; }
-        // All other functions remain unchanged.
-        const rewardGameManager = { startGameLoop: () => {}, handleAnswer: () => {} };
-        function initializeCreatorPage() {}
-        function handleCreatorPlayerStateChange() {}
-        function initializeCreatorPagePlayer() {}
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('save-continue-btn')?.addEventListener('click', saveAndContinue);
-            document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', () => { const targetNav = item.getAttribute('data-nav'); let targetScreen = targetNav === 'home' ? 'main-home-screen' : (targetNav === 'shorts' ? 'home-screen' : `${targetNav}-screen`); navigateTo(targetScreen); updateNavActiveState(targetNav); }); });
-            initializeApp();
-            document.getElementById('get-started-btn')?.addEventListener('click', () => { userHasInteracted = true; });
-            appContainer.addEventListener('click', (event) => {
-                if (!userHasInteracted) userHasInteracted = true;
-                const buyButton = event.target.closest('.buy-btn');
-                if (buyButton) { const planId = buyButton.dataset.planId; const amount = parseInt(buyButton.dataset.amount, 10); initiatePayment(planId, amount, buyButton); }
-            });
-            document.getElementById('sidebar-profile-btn')?.addEventListener('click', () => { navigateTo('profile-screen'); document.getElementById('main-sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); });
-            document.getElementById('sidebar-wallet-btn')?.addEventListener('click', () => { navigateTo('payment-screen'); document.getElementById('main-sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); });
-            const openSidebar = () => { document.getElementById('main-sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('open'); };
-            document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
-            document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
-            document.getElementById('close-sidebar-btn')?.addEventListener('click', () => { document.getElementById('main-sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); });
-            document.getElementById('sidebar-overlay')?.addEventListener('click', () => { document.getElementById('main-sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('open'); });
-        });
-        
-        const setAppHeight = () => { document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`); };
+        const setAppHeight = () => {
+            const doc = document.documentElement;
+            doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+        };
         window.addEventListener('resize', setAppHeight);
         setAppHeight();
     </script>
 </body>
+
 </html>
