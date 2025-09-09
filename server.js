@@ -1,26 +1,19 @@
 // ====================================================================
-// === Shubhzone - API Server (Node.js) - ★★★ रसीद (Receipt) की लंबाई की समस्या को ठीक किया गया ★★★ ===
+// === Shubhzone - YouTube API Server (Node.js) - ★★★ FINAL CORRECTED VERSION ★★★ ===
 // ====================================================================
 
-// 1. ज़रूरी पैकेज इम्पोर्ट करें (इसमें कोई बदलाव नहीं)
+// 1. ज़रूरी पैकेज इम्पोर्ट करें
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
 const admin = require('firebase-admin');
 const path = require('path');
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
 
-
-// 2. Firebase एडमिन को शुरू करें (इसमें कोई बदलाव नहीं)
+// 2. Firebase एडमिन को शुरू करें
 let db; 
-try {
-    // यह Render के Environment Variable से आपकी Firebase की key उठाएगा
-    if (!process.env.FIREBASE_CREDENTIALS_JSON) {
-        throw new Error("FIREBASE_CREDENTIALS_JSON एनवायरनमेंट वेरिएबल सेट नहीं है।");
-    }
-    const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS_JSON);
 
+try {
+    const serviceAccount = require('/etc/secrets/firebase-credentials.json');
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
@@ -30,166 +23,15 @@ try {
     console.error("Firebase Admin SDK शुरू करने में विफल:", error.message);
 }
 
-// 3. सर्वर सेटअप करें (इसमें कोई बदलाव नहीं)
+// 3. सर्वर सेटअप करें
 const app = express();
 const port = process.env.PORT || 3000;
 app.use(cors());
-app.use(express.json());
 
-// 4. Environment Variables से सभी API कुंजियाँ पढ़ें (इसमें कोई बदलाव नहीं)
+// 4. Render के Environment Variable से YouTube API कुंजी पढ़ें
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
-
-// 5. Razorpay को कॉन्फ़िगर करें (इसमें कोई बदलाव नहीं)
-let razorpay;
-if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
-    razorpay = new Razorpay({
-        key_id: RAZORPAY_KEY_ID,
-        key_secret: RAZORPAY_KEY_SECRET,
-    });
-    console.log("Razorpay SDK कॉन्फ़िगर हो गया है।");
-} else {
-    console.warn("Razorpay credentials एनवायरनमेंट में नहीं मिले। पेमेंट वाले रूट्स काम नहीं करेंगे।");
-}
-
-
-// ====================================================================
-// ★★★ पेमेंट गेटवे के लिए API रूट्स ★★★
-// ====================================================================
-
-app.post('/create-razorpay-order', async (req, res) => {
-    if (!razorpay) {
-        return res.status(500).json({ error: 'Razorpay credentials not configured on server.' });
-    }
-    
-    try {
-        const { userId, amount, email, name } = req.body;
-
-        if (!userId || !amount) {
-            return res.status(400).json({ error: 'User ID and amount are required.' });
-        }
-
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // ★★★ ज़रूरी सुधार: सिर्फ़ यह एक लाइन बदली गई है ★★★
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // पुरानी लाइन: const orderId = `shubhzone-sub-${userId}-${Date.now()}`; (यह 40 अक्षरों से लंबी थी)
-        // नई लाइन: रसीद (receipt) को छोटा कर दिया गया है ताकि Razorpay एरर न दे।
-        const orderId = `sz-${userId.slice(-8)}-${Date.now().toString(36)}`;
-
-        
-        const options = {
-            amount: amount,
-            currency: "INR",
-            receipt: orderId, // अब यह छोटा और सही रसीद नंबर इस्तेमाल करेगा।
-            payment_capture: 1,
-            notes: {
-                userId: userId,
-                purpose: "Subscription Payment"
-            }
-        };
-
-        const response = await razorpay.orders.create(options);
-        console.log('Razorpay order created:', response);
-        res.status(200).json(response);
-
-    } catch (error) {
-        console.error('Error creating Razorpay order:', error);
-        res.status(500).json({ error: "Could not create order.", details: error.message });
-    }
-});
-
-// पेमेंट को वेरिफाई करने वाला रूट (इसमें कोई बदलाव नहीं)
-app.post('/verify-razorpay-payment', async (req, res) => {
-    try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, userId } = req.body;
-        
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !userId || !db) {
-            return res.status(400).json({ error: 'Missing required parameters or DB not initialized.' });
-        }
-
-        const body = razorpay_order_id + "|" + razorpay_payment_id;
-
-        const expectedSignature = crypto
-            .createHmac('sha256', RAZORPAY_KEY_SECRET)
-            .update(body.toString())
-            .digest('hex');
-        
-        if (expectedSignature === razorpay_signature) {
-            console.log(`Payment signature verified for user ${userId}.`);
-            
-            const userRef = db.collection('users').doc(userId);
-            await userRef.update({ 
-                isPaid: true,
-                subscriptionStatus: 'active',
-                razorpayOrderId: razorpay_order_id,
-                razorpayPaymentId: razorpay_payment_id,
-                autopaySetupComplete: true,
-                subscriptionStartDate: admin.firestore.FieldValue.serverTimestamp()
-            });
-
-            console.log(`User ${userId} status updated to paid.`);
-            res.status(200).json({ status: "success", message: "Payment verified and user updated." });
-
-        } else {
-            console.warn(`Payment verification failed for order ${razorpay_order_id}. Signature mismatch.`);
-            res.status(400).json({ status: "failure", message: "Payment verification failed." });
-        }
-
-    } catch (error) {
-        console.error('Error verifying payment:', error);
-        res.status(500).json({ error: "Internal server error.", details: error.message });
-    }
-});
-
-// ऑटो-पेमेंट चार्ज करने के लिए रूट (इसमें कोई बदलाव नहीं)
-app.post('/charge-autopay', async (req, res) => {
-    if (!razorpay) {
-        return res.status(500).json({ error: 'Razorpay credentials not configured.' });
-    }
-
-    const { userId } = req.body;
-    if (!userId) {
-        return res.status(400).json({ error: 'User ID is required.' });
-    }
-
-    try {
-        const userRef = db.collection('users').doc(userId);
-        const doc = await userRef.get();
-
-        if (!doc.exists || !doc.data().razorpayPaymentId) {
-             return res.status(404).json({ error: 'User or initial payment not found.' });
-        }
-
-        const userData = doc.data();
-
-        if (userData.autopayCharged) {
-            return res.status(400).json({ message: 'Autopay has already been charged for this user.' });
-        }
-        
-        console.log(`Initiating autopay of ₹150 for user: ${userId}`);
-        
-        await userRef.update({
-            autopayCharged: true,
-            autopayChargeDate: admin.firestore.FieldValue.serverTimestamp(),
-            lastChargeAmount: 150
-        });
-
-        console.log(`Successfully recorded autopay charge for user: ${userId}`);
-        res.status(200).json({ success: true, message: `Autopay of ₹150 successfully processed for user ${userId}` });
-
-    } catch (error) {
-        console.error(`Failed to charge autopay for user ${userId}:`, error);
-        res.status(500).json({ error: 'Failed to process autopay charge.', details: error.message });
-    }
-});
-
-
-// ====================================================================
-// ★★★ YouTube API रूट (इसमें कोई बदलाव नहीं किया गया है) ★★★
-// ====================================================================
-
+// 5. मुख्य API रूट
 app.get('/api/youtube', async (req, res) => {
     if (!db || !YOUTUBE_API_KEY) {
         console.error("त्रुटि: Firebase या YouTube API कुंजी कॉन्फ़िगर नहीं है।");
@@ -206,6 +48,8 @@ app.get('/api/youtube', async (req, res) => {
     
     switch (type) {
         case 'search':
+            // ★★★★★★★★★★ यही है असली समाधान ★★★★★★★★★★
+            // हमने यहाँ &type=video जोड़ दिया है ताकि YouTube को हमेशा पता हो कि हम वीडियो ही ढूँढ़ रहे हैं।
             youtubeApiUrl = `${baseUrl}search?part=snippet&type=video&key=${YOUTUBE_API_KEY}&${safeParams}`;
             break;
         case 'videoDetails':
@@ -222,6 +66,7 @@ app.get('/api/youtube', async (req, res) => {
     }
 
     try {
+        console.log(`YouTube API को कॉल किया जा रहा है (Type: ${type})। URL: ${youtubeApiUrl}`);
         const youtubeResponse = await fetch(youtubeApiUrl, { timeout: 8000 }); 
         
         if (!youtubeResponse.ok) {
@@ -236,7 +81,11 @@ app.get('/api/youtube', async (req, res) => {
             throw new Error(`YouTube API से त्रुटि: ${data.error.message}`);
         }
 
-        await cacheRef.set({ data: data, timestamp: Date.now() });
+        await cacheRef.set({
+            data: data,
+            timestamp: Date.now()
+        });
+        console.log(`API कॉल सफल! डेटा Firebase में कैश किया गया और भेजा गया।`);
         return res.status(200).json(data);
 
     } catch (error) {
@@ -245,27 +94,29 @@ app.get('/api/youtube', async (req, res) => {
         try {
             const cachedDoc = await cacheRef.get();
             if (cachedDoc.exists) {
+                console.log(`API विफलता के कारण बैकअप कैश का उपयोग किया गया। डेटा Firebase से भेजा गया।`);
                 return res.status(200).json(cachedDoc.data().data);
             } else {
+                console.error("API विफल हो गई और इस रिक्वेस्ट के लिए कोई कैश भी उपलब्ध नहीं है।");
                 return res.status(503).json({ error: "Service unavailable and no cache found." });
             }
         } catch (cacheError) {
+            console.error("API विफलता के बाद कैश पढ़ने में भी त्रुटि:", cacheError);
             return res.status(500).json({ error: "API and cache both failed." });
         }
     }
 });
 
-// ====================================================================
-// ★★★ स्टैटिक फाइलें और सर्वर स्टार्टअप (इसमें कोई बदलाव नहीं) ★★★
-// ====================================================================
-
+// 6. स्टैटिक फाइलें सर्व करें
 const publicPath = path.join(__dirname, '');
 app.use(express.static(publicPath));
 
+// 7. किसी भी अन्य रिक्वेस्ट के लिए index.html भेजें
 app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
+// 8. सर्वर शुरू करें
 app.listen(port, () => {
     console.log("/////////////////////////////////////////////////////");
     console.log("===> 🚀 Shubhzone सर्वर सफलतापूर्वक चल रहा है! 🚀");
