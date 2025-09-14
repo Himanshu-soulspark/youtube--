@@ -502,7 +502,7 @@
         }
 
         .modal-overlay {
-            position: absolute;
+            position: fixed; /* Changed from absolute for better overlay */
             top: 0;
             left: 0;
             width: 100%;
@@ -992,14 +992,16 @@
         }
 
         #long-video-screen,
-        #history-screen {
+        #history-screen,
+        #movies-screen {
             padding: 0;
             overflow-y: hidden;
             height: 100%;
         }
 
         .long-video-screen-content,
-        .history-content {
+        .history-content,
+        .movies-screen-content {
             width: 100%;
             height: 100%;
             overflow-y: auto;
@@ -1042,45 +1044,6 @@
         #long-video-category-scroller::-webkit-scrollbar,
         #history-shorts-scroller::-webkit-scrollbar {
             display: none;
-        }
-
-        #long-video-carousel-container {
-            width: 100%;
-            overflow-x: auto;
-            padding: 15px 0;
-            position: relative;
-            flex-shrink: 0;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-            background-color: var(--secondary-background);
-        }
-
-        #long-video-carousel-container::-webkit-scrollbar {
-            display: none;
-        }
-
-        #long-video-carousel-wrapper {
-            display: flex;
-            width: fit-content;
-        }
-
-        .carousel-card {
-            flex-shrink: 0;
-            width: 284px;
-            height: 160px;
-            margin: 0 8px;
-            border-radius: 12px;
-            background-size: cover;
-            background-position: center;
-            cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            border: 1px solid var(--text-secondary);
-            color: var(--text-primary);
-        }
-
-        .carousel-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px var(--primary-neon);
         }
 
         .long-video-search-container {
@@ -1639,6 +1602,121 @@
             border-bottom-width: 2px;
         }
 
+        /* === NEW STYLES FOR MOVIES SCREEN & CAROUSEL === */
+        .auto-carousel-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            position: relative;
+            flex-shrink: 0;
+            background-color: var(--secondary-background);
+        }
+        
+        @keyframes slide-infinite {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(-50%); } /* Halfway through since the track is duplicated */
+        }
+        
+        .auto-carousel-track {
+            display: flex;
+            width: 200%; /* Double the width for the duplicated content */
+            animation: slide-infinite 30s linear infinite; /* 10 slides * 3s = 30s */
+        }
+
+        .carousel-slide-item {
+            flex-shrink: 0;
+            width: 10%; /* 10 slides in the view */
+            aspect-ratio: 16 / 9;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            border: 1px solid #000;
+        }
+        
+        .movies-screen-content {
+            padding: 15px;
+        }
+        
+        .movies-category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5px 10px 5px;
+        }
+        
+        .category-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .see-all-btn {
+            background: none;
+            border: 1px solid var(--text-secondary);
+            color: var(--text-secondary);
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .movies-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .movie-card {
+            background-color: var(--secondary-background);
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 8px;
+        }
+        
+        .movie-card-poster {
+            width: 100%;
+            aspect-ratio: 9 / 16;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .movie-card .btn-3d {
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        
+        /* === PEERTUBE PLAYER MODAL STYLES === */
+        .peertube-modal-content {
+            width: 95%;
+            max-width: 800px;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            position: relative;
+            border: 2px solid var(--primary-neon);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #peertube-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .close-peertube-btn {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            font-size: 2.5em;
+            color: white;
+            cursor: pointer;
+            font-weight: 200;
+            line-height: 1;
+            padding: 5px;
+        }
+
+
     </style>
 </head>
 
@@ -1685,6 +1763,14 @@
             <img id="enlarged-image-src" src="" alt="Enlarged View">
         </div>
     </div>
+    
+    <!-- ★★★ NEW PEERTUBE PLAYER MODAL ★★★ -->
+    <div id="peertube-modal-overlay" class="modal-overlay">
+         <span id="close-peertube-btn" class="close-peertube-btn haptic-trigger">&times;</span>
+        <div class="peertube-modal-content">
+            <iframe id="peertube-iframe" src="" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        </div>
+    </div>
     <!-- === ALL MODALS END === -->
 
     <div class="app-container" id="app-container">
@@ -1713,7 +1799,7 @@
                 <p class="creator-credit-new">Made with ❤️ by Udbhav</p>
             </div>
         </div>
-
+        
         <!-- ★★★ नया बदलाव: नया खाली होम स्क्रीन ★★★ -->
         <div id="main-home-screen" class="screen">
             
@@ -1739,6 +1825,7 @@
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
             </div>
         </div>
 
@@ -1759,6 +1846,7 @@
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
             </div>
         </div>
 
@@ -1771,8 +1859,11 @@
                     </div>
                     <div id="long-video-category-scroller" class="category-scroller"></div>
                 </div>
-                <div id="long-video-carousel-container">
-                    <div id="long-video-carousel-wrapper"></div>
+                <!-- ★★★ NEW AUTO-CAROUSEL ★★★ -->
+                <div class="auto-carousel-container">
+                    <div class="auto-carousel-track">
+                        <!-- Content will be injected by JavaScript -->
+                    </div>
                 </div>
                 <div class="long-video-search-container">
                     <input type="text" id="long-video-search-input" placeholder="Search or paste YouTube link...">
@@ -1786,6 +1877,76 @@
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+            </div>
+        </div>
+
+        <!-- ★★★ NEW MOVIES SCREEN ★★★ -->
+        <div id="movies-screen" class="screen">
+            <div class="movies-screen-content">
+                 <!-- ★★★ NEW AUTO-CAROUSEL ★★★ -->
+                <div class="auto-carousel-container">
+                    <div class="auto-carousel-track">
+                        <!-- Content will be injected by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Category 1: Hollywood -->
+                <div class="movies-category-header">
+                    <span class="category-title">Hollywood Movies</span>
+                    <button class="see-all-btn haptic-trigger">See All</button>
+                </div>
+                <div class="movies-grid">
+                    <!-- Card 1 -->
+                    <div class="movie-card">
+                        <img class="movie-card-poster" src="https://i.ibb.co/bgNSc7MV/MV5-BNzhk-Mj-Fh-OTIt-MTcz-Ni00-YWM1-LTlh-Zj-It-OTc4-OTA0-OWVh-ZTIz-Xk-Ey-Xk-Fqc-Gc-V1.jpg" alt="Movie Poster">
+                        <button class="btn-3d haptic-trigger" onclick="playPeerTubeVideo('https://peertube.wtf/w/nXGt3V6VC7otTheYpvSXk5')">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="movie-card">
+                        <img class="movie-card-poster" src="https://i.ibb.co/1G768kNK/saiyaara.jpg" alt="Movie Poster">
+                         <button class="btn-3d haptic-trigger" onclick="playPeerTubeVideo('https://peertube.wtf/w/k5izu4hJDxGGq6jkLJJuR5')">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                    </div>
+                    <!-- Card 3 (Placeholder) -->
+                    <div class="movie-card">
+                        <img class="movie-card-poster" src="https://via.placeholder.com/270x480/1A1A1A/EEEEEE?text=Movie" alt="Movie Poster">
+                         <button class="btn-3d haptic-trigger">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                    </div>
+                    <!-- Card 4 (Placeholder) -->
+                    <div class="movie-card">
+                        <img class="movie-card-poster" src="https://via.placeholder.com/270x480/1A1A1A/EEEEEE?text=Movie" alt="Movie Poster">
+                         <button class="btn-3d haptic-trigger">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                    </div>
+                     <!-- Card 5 (Placeholder) -->
+                    <div class="movie-card">
+                        <img class="movie-card-poster" src="https://via.placeholder.com/270x480/1A1A1A/EEEEEE?text=Movie" alt="Movie Poster">
+                         <button class="btn-3d haptic-trigger">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                    </div>
+                     <!-- Card 6 (Placeholder) -->
+                    <div class="movie-card">
+                        <img class="movie-card-poster" src="https://via.placeholder.com/270x480/1A1A1A/EEEEEE?text=Movie" alt="Movie Poster">
+                         <button class="btn-3d haptic-trigger">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                    </div>
+                </div>
+                 <!-- Add more categories here -->
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+                <div class="nav-item active" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
             </div>
         </div>
 
@@ -1808,6 +1969,7 @@
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
             </div>
         </div>
 
@@ -1909,6 +2071,7 @@
             youtubeNextPageTokens: {
                 long: null,
                 shorts: null,
+                movies: null, // For future use
                 search: null,
                 trending: null,
                 channelVideos: null,
@@ -2003,8 +2166,6 @@
                 if (type === 'search') {
                      const grid = document.getElementById('long-video-grid');
                      if(grid) grid.innerHTML = '<p class="static-message">Could not load videos. Please check your connection or API key.</p>';
-                     const carousel = document.getElementById('long-video-carousel-wrapper');
-                     if(carousel) carousel.innerHTML = '<p class="static-message">Could not load trending videos.</p>';
                 }
                 return {
                     error: error.message,
@@ -2189,6 +2350,7 @@
             if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
             if (nextScreenId === 'history-screen') initializeHistoryScreen();
             if (nextScreenId === 'home-screen') setupShortsScreen();
+            if (nextScreenId === 'movies-screen') setupMoviesScreen(); // ★★★ NEW
             if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
                 initializeCreatorPage(payload);
             }
@@ -2657,9 +2819,36 @@
             }
         }
 
+        // ★★★ NEW & MODIFIED FUNCTIONS FOR CAROUSEL AND MOVIES ★★★
+
+        const sampleCarouselData = [
+            { id: '1', imageUrl: 'https://i.ibb.co/3kC0STG/MV5-BYj-Fk-M2-Tix-ZS1-LTA5-Mi00-ZWI2-LTg2-ODIt-ZDBj-ZWMz-Yj-I3-ZGE3-Xk-Ey-Xk-Fqc-Gc-V1-FMjpg-UX1000.jpg'},
+            { id: '2', imageUrl: 'https://i.ibb.co/L50H0kM/MV5-BNj-Q3-NWNl-Yjct-MGFh-YS00-M2-Yy-LTg4-Zj-Qt-M2-Zm-ZDJj-ZTE5-Nzcw-Xk-Ey-Xk-Fqc-Gc-V1.jpg' },
+            { id: '3', imageUrl: 'https://i.ibb.co/wJjLzZz/art-2-10-1557317377-1.jpg' },
+            { id: '4', imageUrl: 'https://i.ibb.co/8Yj0cMf/images.jpg' },
+            { id: '5', imageUrl: 'https://i.ibb.co/d2x2zsp/MV5-BMj-I0-MDc3-NTQy-OF5-BMl5-Ban-Bn-Xk-Ft-ZTgw-NzA5-MDI4-NTM-V1.jpg' },
+            { id: '6', imageUrl: 'https://i.ibb.co/3kC0STG/MV5-BYj-Fk-M2-Tix-ZS1-LTA5-Mi00-ZWI2-LTg2-ODIt-ZDBj-ZWMz-Yj-I3-ZGE3-Xk-Ey-Xk-Fqc-Gc-V1-FMjpg-UX1000.jpg'},
+            { id: '7', imageUrl: 'https://i.ibb.co/L50H0kM/MV5-BNj-Q3-NWNl-Yjct-MGFh-YS00-M2-Yy-LTg4-Zj-Qt-M2-Zm-ZDJj-ZTE5-Nzcw-Xk-Ey-Xk-Fqc-Gc-V1.jpg' },
+            { id: '8', imageUrl: 'https://i.ibb.co/wJjLzZz/art-2-10-1557317377-1.jpg' },
+            { id: '9', imageUrl: 'https://i.ibb.co/8Yj0cMf/images.jpg' },
+            { id: '10', imageUrl: 'https://i.ibb.co/d2x2zsp/MV5-BMj-I0-MDc3-NTQy-OF5-BMl5-Ban-Bn-Xk-Ft-ZTgw-NzA5-MDI4-NTM-V1.jpg' }
+        ];
+
+        function renderAutoCarousel(containerSelector) {
+            const track = document.querySelector(containerSelector);
+            if (!track) return;
+            
+            const slidesHtml = sampleCarouselData.map(item => `
+                <div class="carousel-slide-item" style="background-image: url('${item.imageUrl}')"></div>
+            `).join('');
+            
+            // Duplicate the slides for a seamless loop
+            track.innerHTML = slidesHtml + slidesHtml;
+        }
+
         async function setupLongVideoScreen() {
             renderCategoriesInBar();
-            await renderTrendingCarousel();
+            renderAutoCarousel('#long-video-screen .auto-carousel-track');
             await populateLongVideoGrid('Trending');
             const gridContainer = document.querySelector('.long-video-screen-content');
             let loadMoreBtn = document.getElementById('long-video-load-more-btn');
@@ -2673,6 +2862,39 @@
                 gridContainer.appendChild(loadMoreBtn);
             }
         }
+        
+        function setupMoviesScreen() {
+            renderAutoCarousel('#movies-screen .auto-carousel-track');
+            // The rest of the screen is static for now, so no more JS needed here.
+        }
+
+        function playPeerTubeVideo(watchUrl) {
+            const modal = document.getElementById('peertube-modal-overlay');
+            const iframe = document.getElementById('peertube-iframe');
+            if(!modal || !iframe) return;
+            
+            // Extract video ID from URL (e.g., https://peertube.wtf/w/nXGt3V6VC7otTheYpvSXk5)
+            const urlParts = watchUrl.split('/w/');
+            if (urlParts.length < 2) {
+                console.error("Invalid PeerTube URL:", watchUrl);
+                return;
+            }
+            const videoId = urlParts[1];
+            const embedUrl = `https://peertube.wtf/videos/embed/${videoId}?autoplay=1`;
+            
+            iframe.src = embedUrl;
+            modal.classList.add('active');
+        }
+
+        function closePeerTubePlayer() {
+            const modal = document.getElementById('peertube-modal-overlay');
+            const iframe = document.getElementById('peertube-iframe');
+            if(!modal || !iframe) return;
+            
+            iframe.src = ''; // Stop video playback
+            modal.classList.remove('active');
+        }
+
 
         async function populateLongVideoGrid(category = 'All') {
             const grid = document.getElementById('long-video-grid');
@@ -2697,32 +2919,6 @@
 
             appState.youtubeNextPageTokens.long = data.nextPageToken || null;
             renderYouTubeLongVideos(data.items || [], false);
-        }
-
-        async function renderTrendingCarousel() {
-            const carouselWrapper = document.getElementById('long-video-carousel-wrapper');
-            if (!carouselWrapper) return;
-            carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
-            const data = await fetchFromYouTubeAPI('search', {
-                q: 'latest trending videos',
-                videoDuration: 'long',
-                maxResults: 10
-            });
-
-            if (data.items && data.items.length > 0) {
-                carouselWrapper.innerHTML = data.items.map(video => {
-                    const videoId = video.id?.videoId || video.id;
-                    const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
-                    return `
-                        <div class="carousel-card haptic-trigger" 
-                             style="background-image: url('${escapeHTML(thumbnailUrl)}')"
-                             onclick="playYouTubeVideoFromCard('${videoId}')">
-                        </div>
-                    `;
-                }).join('');
-            } else {
-                carouselWrapper.innerHTML = `<p class="static-message">Could not load trending videos.</p>`;
-            }
         }
 
         async function performLongVideoSearch() {
@@ -3130,6 +3326,10 @@
                 document.getElementById('main-sidebar').classList.remove('open');
                 document.getElementById('sidebar-overlay').classList.remove('open');
             });
+            
+            // ★★★ NEW Event Listener for PeerTube Player Close Button ★★★
+            document.getElementById('close-peertube-btn')?.addEventListener('click', closePeerTubePlayer);
+
 
             document.getElementById('long-video-history-btn')?.addEventListener('click', () => navigateTo('history-screen'));
             document.getElementById('back-from-history-btn')?.addEventListener('click', () => navigateBack());
