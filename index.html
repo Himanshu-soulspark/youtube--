@@ -1639,6 +1639,131 @@
             border-bottom-width: 2px;
         }
 
+        /* ★★★ NEW MOVIES SECTION START ★★★ */
+        #movies-screen-content {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 60px; /* bottom-nav के लिए जगह */
+        }
+
+        #movies-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 कॉलम का ग्रिड */
+            gap: 15px;
+            padding: 20px;
+            width: 100%;
+        }
+
+        .movie-card {
+            background-color: var(--secondary-background);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* टेक्स्ट को बीच में रखने के लिए */
+            align-items: center;
+            aspect-ratio: 2 / 3; /* पोस्टर जैसा अनुपात */
+            padding: 10px;
+            text-align: center;
+            border: 1px solid transparent;
+            transition: border-color 0.3s ease, transform 0.3s ease;
+        }
+
+        .movie-card:hover {
+            transform: scale(1.05);
+            border-color: var(--primary-neon);
+        }
+
+        .movie-card-title {
+            font-size: 0.9em;
+            font-weight: 500;
+            color: var(--text-primary);
+            /* Clamp text to 3 lines */
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        #movies-load-more-btn {
+            background-color: var(--primary-neon);
+            color: var(--background);
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: auto;
+            display: block;
+            margin: 0 auto 20px auto;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+        }
+
+        #movies-load-more-btn:disabled {
+            background-color: var(--text-disabled);
+            cursor: not-allowed;
+        }
+        
+        #movie-player-modal {
+            z-index: 2000; /* यह सुनिश्चित करने के लिए कि यह सबसे ऊपर हो */
+        }
+
+        .movie-player-content {
+            width: 100%;
+            height: 100%;
+            max-width: 420px; /* app-container की चौड़ाई के बराबर */
+            max-height: 95vh; /* थोड़ी जगह छोड़ने के लिए */
+            background-color: var(--background);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .movie-player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: var(--secondary-background);
+            flex-shrink: 0;
+        }
+
+        .movie-player-title {
+            font-size: 1.1em;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #close-movie-player-btn {
+            font-size: 1.8em;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        .movie-player-iframe-container {
+            flex-grow: 1;
+            background-color: #000;
+        }
+        
+        .movie-player-iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        /* ★★★ NEW MOVIES SECTION END ★★★ */
+
     </style>
 </head>
 
@@ -1685,6 +1810,25 @@
             <img id="enlarged-image-src" src="" alt="Enlarged View">
         </div>
     </div>
+    
+    <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
+    <div id="movie-player-modal" class="modal-overlay">
+        <div class="movie-player-content">
+            <div class="movie-player-header">
+                <span id="movie-player-title" class="movie-player-title">Loading Movie...</span>
+                <span id="close-movie-player-btn" class="haptic-trigger" onclick="closeMovieModal()">×</span>
+            </div>
+            <div class="movie-player-iframe-container">
+                <iframe id="movie-player-iframe" 
+                        src="" 
+                        allow="autoplay; encrypted-media" 
+                        allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </div>
+    <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
+
     <!-- === ALL MODALS END === -->
 
     <div class="app-container" id="app-container">
@@ -1737,6 +1881,9 @@
 
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -1757,6 +1904,9 @@
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -1784,10 +1934,39 @@
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                 <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
                 <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
+
+        <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
+        <div id="movies-screen" class="screen">
+             <div id="movies-screen-content">
+                <!-- Top bar similar to long-video screen -->
+                <div id="movies-top-bar" class="home-top-bar">
+                    <div id="movies-menu-icon" class="home-menu-icon haptic-trigger">
+                        <i class="fas fa-bars"></i>
+                    </div>
+                     <span style="font-size: 1.2em; font-weight: 700; margin: 0 auto;">Latest Movies</span>
+                </div>
+
+                <div id="movies-grid">
+                    <!-- Movie cards will be injected here by JavaScript -->
+                </div>
+
+                <button id="movies-load-more-btn" class="haptic-trigger">Load More Movies</button>
+            </div>
+            <div class="bottom-nav">
+                <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <div class="nav-item active" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            </div>
+        </div>
+        <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
 
         <!-- === HISTORY SCREEN === -->
         <div id="history-screen" class="screen">
@@ -1806,6 +1985,9 @@
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                 <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -1915,6 +2097,12 @@
                 channelShorts: null,
                 channelPlaylists: null,
             },
+            // ★★★ NEW MOVIES SECTION START ★★★
+            movies: {
+                currentPage: 1,
+                isLoading: false
+            },
+            // ★★★ NEW MOVIES SECTION END ★★★
             longVideoSearchContext: {
                 type: 'query',
                 value: null
@@ -2189,6 +2377,9 @@
             if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
             if (nextScreenId === 'history-screen') initializeHistoryScreen();
             if (nextScreenId === 'home-screen') setupShortsScreen();
+            // ★★★ NEW MOVIES SECTION START ★★★
+            if (nextScreenId === 'movies-screen') setupMoviesScreen();
+            // ★★★ NEW MOVIES SECTION END ★★★
             if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
                 initializeCreatorPage(payload);
             }
@@ -3054,6 +3245,130 @@
         // =======================================================
         // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
         // =======================================================
+        
+        // ★★★ NEW MOVIES SECTION START ★★★
+
+        // Movies स्क्रीन को सेट अप करने वाला मुख्य फ़ंक्शन
+        function setupMoviesScreen() {
+            // currentPage को रीसेट करें और ग्रिड को साफ़ करें
+            appState.movies.currentPage = 1;
+            const grid = document.getElementById('movies-grid');
+            if (grid) {
+                grid.innerHTML = '';
+            }
+            // पहली बार फिल्में लोड करें
+            fetchAndShowMovies(false);
+        }
+
+        // VidSrc API से फिल्में लाने और दिखाने वाला फ़ंक्शन
+        async function fetchAndShowMovies(append = false) {
+            const moviesGrid = document.getElementById('movies-grid');
+            const loadMoreBtn = document.getElementById('movies-load-more-btn');
+            
+            // अगर पहले से लोड हो रहा है, तो कुछ न करें
+            if (appState.movies.isLoading) return;
+            appState.movies.isLoading = true;
+
+            // अगर नए सिरे से लोड हो रहा है, तो लोडर दिखाएं
+            if (!append && moviesGrid) {
+                moviesGrid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            }
+            if (loadMoreBtn) {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.textContent = 'Loading...';
+            }
+
+            try {
+                // VidSrc API को कॉल करें
+                const response = await fetch(`https://vidsrc.xyz/movies/latest/page-${appState.movies.currentPage}.json`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (!append) {
+                    moviesGrid.innerHTML = ''; // लोडर को हटाएं
+                }
+
+                if (data.result && data.result.length > 0) {
+                    const fragment = document.createDocumentFragment();
+                    data.result.forEach(movie => {
+                        const movieCard = createMovieCard(movie);
+                        if (movieCard) {
+                            fragment.appendChild(movieCard);
+                        }
+                    });
+                    moviesGrid.appendChild(fragment);
+                    appState.movies.currentPage++; // अगले पेज के लिए पेज नंबर बढ़ाएं
+                } else {
+                    if (!append) {
+                         moviesGrid.innerHTML = '<p class="static-message">No movies found. Please try again later.</p>';
+                    }
+                    if(loadMoreBtn) loadMoreBtn.style.display = 'none'; // अगर और फिल्में नहीं हैं, तो बटन छिपा दें
+                }
+
+            } catch (error) {
+                console.error("Failed to fetch movies from VidSrc:", error);
+                if (!append) {
+                     moviesGrid.innerHTML = '<p class="static-message">Could not load movies. Check your connection.</p>';
+                }
+            } finally {
+                // लोडिंग स्टेट को रीसेट करें
+                appState.movies.isLoading = false;
+                if (loadMoreBtn) {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'Load More Movies';
+                }
+            }
+        }
+        
+        // एक अकेली मूवी का कार्ड बनाने वाला फ़ंक्शन
+        function createMovieCard(movie) {
+            if (!movie || !movie.imdb_id || !movie.title) return null;
+
+            const card = document.createElement('div');
+            card.className = 'movie-card haptic-trigger';
+            // imdb_id और title को डेटा एट्रिब्यूट में स्टोर करें
+            card.dataset.imdbId = movie.imdb_id;
+            card.dataset.title = movie.title;
+            
+            // कार्ड पर क्लिक करने पर playMovie फ़ंक्शन कॉल होगा
+            card.onclick = () => playMovie(movie.imdb_id, movie.title);
+
+            card.innerHTML = `<span class="movie-card-title">${escapeHTML(movie.title)}</span>`;
+            return card;
+        }
+
+        // मूवी चलाने वाला फ़ंक्शन
+        function playMovie(imdbId, title) {
+            const modal = document.getElementById('movie-player-modal');
+            const iframe = document.getElementById('movie-player-iframe');
+            const modalTitle = document.getElementById('movie-player-title');
+            
+            if (modal && iframe && modalTitle) {
+                // iframe का src सेट करें
+                iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
+                // मोडल का टाइटल सेट करें
+                modalTitle.textContent = title;
+                // मोडल दिखाएं
+                modal.classList.add('active');
+            }
+        }
+
+        // मूवी प्लेयर मोडल को बंद करने वाला फ़ंक्शन
+        function closeMovieModal() {
+            const modal = document.getElementById('movie-player-modal');
+            const iframe = document.getElementById('movie-player-iframe');
+            
+            if (modal && iframe) {
+                 // मोडल छिपाएं
+                modal.classList.remove('active');
+                // iframe का src खाली कर दें ताकि वीडियो बैकग्राउंड में न चले
+                iframe.src = '';
+            }
+        }
+
+        // ★★★ NEW MOVIES SECTION END ★★★
 
 
         async function addChannelToList(event, channelId) { /* Unchanged */ }
@@ -3113,6 +3428,10 @@
                 if (e.key === 'Enter') performLongVideoSearch();
             });
 
+            // ★★★ NEW MOVIES SECTION START ★★★
+            document.getElementById('movies-load-more-btn')?.addEventListener('click', () => fetchAndShowMovies(true));
+            // ★★★ NEW MOVIES SECTION END ★★★
+
             document.querySelector('#creator-page-screen .header-icon-left')?.addEventListener('click', () => navigateBack());
             
             const openSidebar = () => {
@@ -3121,6 +3440,10 @@
             };
             document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
+            // ★★★ NEW MOVIES SECTION START ★★★
+            // मूवी स्क्रीन के मेनू आइकन को भी साइडबार खोलने के लिए जोड़ें
+            document.getElementById('movies-menu-icon')?.addEventListener('click', openSidebar);
+            // ★★★ NEW MOVIES SECTION END ★★★
             
             document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
                 document.getElementById('main-sidebar').classList.remove('open');
