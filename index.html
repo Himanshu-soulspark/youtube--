@@ -1045,6 +1045,47 @@
         #history-shorts-scroller::-webkit-scrollbar {
             display: none;
         }
+        
+        /* ★★★ REVERTED CAROUSEL STYLES FOR LONG VIDEO ★★★ */
+        #long-video-carousel-container {
+            width: 100%;
+            overflow-x: auto;
+            padding: 15px 0;
+            position: relative;
+            flex-shrink: 0;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            background-color: var(--secondary-background);
+        }
+
+        #long-video-carousel-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        #long-video-carousel-wrapper {
+            display: flex;
+            width: fit-content;
+        }
+        
+        .carousel-card {
+            flex-shrink: 0;
+            width: 284px;
+            height: 160px;
+            margin: 0 8px;
+            border-radius: 12px;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        .carousel-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px var(--primary-neon);
+        }
+
 
         .long-video-search-container {
             display: flex;
@@ -1685,37 +1726,55 @@
             margin-top: 10px;
         }
         
-        /* === PEERTUBE PLAYER MODAL STYLES === */
-        .peertube-modal-content {
-            width: 95%;
-            max-width: 800px;
-            height: auto;
-            aspect-ratio: 16 / 9;
+        /* === NEW FULLSCREEN PEERTUBE PLAYER STYLES === */
+        #peertube-player-screen {
             background-color: #000;
-            position: relative;
-            border: 2px solid var(--primary-neon);
-            border-radius: 10px;
-            overflow: hidden;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001; /* Should be on top of everything */
         }
 
-        #peertube-iframe {
+        #peertube-player-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #peertube-player-header {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+        }
+
+        #peertube-back-btn {
+            color: var(--text-primary);
+            background-color: rgba(0, 0, 0, 0.5);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            border: none;
+        }
+        
+        #peertube-player-iframe-wrapper {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+        
+        #peertube-player-iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
-
-        .close-peertube-btn {
-            position: absolute;
-            top: -40px;
-            right: 0;
-            font-size: 2.5em;
-            color: white;
-            cursor: pointer;
-            font-weight: 200;
-            line-height: 1;
-            padding: 5px;
-        }
-
 
     </style>
 </head>
@@ -1764,13 +1823,6 @@
         </div>
     </div>
     
-    <!-- ★★★ NEW PEERTUBE PLAYER MODAL ★★★ -->
-    <div id="peertube-modal-overlay" class="modal-overlay">
-         <span id="close-peertube-btn" class="close-peertube-btn haptic-trigger">&times;</span>
-        <div class="peertube-modal-content">
-            <iframe id="peertube-iframe" src="" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
-        </div>
-    </div>
     <!-- === ALL MODALS END === -->
 
     <div class="app-container" id="app-container">
@@ -1859,11 +1911,9 @@
                     </div>
                     <div id="long-video-category-scroller" class="category-scroller"></div>
                 </div>
-                <!-- ★★★ NEW AUTO-CAROUSEL ★★★ -->
-                <div class="auto-carousel-container">
-                    <div class="auto-carousel-track">
-                        <!-- Content will be injected by JavaScript -->
-                    </div>
+                <!-- ★★★ REVERTED TO ORIGINAL CAROUSEL ★★★ -->
+                <div id="long-video-carousel-container">
+                    <div id="long-video-carousel-wrapper"></div>
                 </div>
                 <div class="long-video-search-container">
                     <input type="text" id="long-video-search-input" placeholder="Search or paste YouTube link...">
@@ -1984,6 +2034,21 @@
                 <!-- Content injected by JS -->
             </div>
         </div>
+        
+        <!-- ★★★ NEW PEERTUBE PLAYER SCREEN ★★★ -->
+        <div id="peertube-player-screen" class="screen">
+            <div id="peertube-player-container">
+                <div id="peertube-player-header">
+                     <button id="peertube-back-btn" class="haptic-trigger" onclick="navigateBack()">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+                <div id="peertube-player-iframe-wrapper">
+                    <iframe id="peertube-player-iframe" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+
 
     </div> <!-- End of .app-container -->
 
@@ -2324,11 +2389,8 @@
             if (nextScreenId !== 'splash-screen') {
                 localStorage.setItem('shubhzone_lastScreen', nextScreenId);
             }
-
-            if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
-                appState.navigationStack.push(nextScreenId);
-            }
-
+            
+            // ★★★ CLEANUP LOGIC FOR PLAYERS ★★★
             if (appState.currentScreen === 'home-screen' && activePlayerId && players[activePlayerId]) {
                 pauseActivePlayer();
             }
@@ -2341,7 +2403,17 @@
                 if (creatorContent) creatorContent.innerHTML = '';
                 document.getElementById('app-container').classList.remove('fullscreen-active');
             }
+            // ★★★ NEW: Cleanup for PeerTube player
+            if (appState.currentScreen === 'peertube-player-screen') {
+                const iframe = document.getElementById('peertube-player-iframe');
+                if (iframe) iframe.src = ''; // Stop the video
+            }
             activePlayerId = null;
+
+
+            if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
+                appState.navigationStack.push(nextScreenId);
+            }
 
             appState.currentScreenPayload = payload;
             activateScreen(nextScreenId);
@@ -2350,9 +2422,13 @@
             if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
             if (nextScreenId === 'history-screen') initializeHistoryScreen();
             if (nextScreenId === 'home-screen') setupShortsScreen();
-            if (nextScreenId === 'movies-screen') setupMoviesScreen(); // ★★★ NEW
+            if (nextScreenId === 'movies-screen') setupMoviesScreen(); 
             if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
                 initializeCreatorPage(payload);
+            }
+            // ★★★ NEW: Initialize PeerTube player screen
+            if (nextScreenId === 'peertube-player-screen' && payload && payload.videoUrl) {
+                initializePeerTubePlayerScreen(payload);
             }
         }
 
@@ -2845,10 +2921,37 @@
             // Duplicate the slides for a seamless loop
             track.innerHTML = slidesHtml + slidesHtml;
         }
+        
+        async function renderTrendingCarousel() {
+            const carouselWrapper = document.getElementById('long-video-carousel-wrapper');
+            if (!carouselWrapper) return;
+            carouselWrapper.innerHTML = `<div class="loader-container" style="display:flex; justify-content:center; width:100%;"><div class="loader"></div></div>`;
+            const data = await fetchFromYouTubeAPI('search', {
+                q: 'latest trending videos',
+                videoDuration: 'long',
+                maxResults: 10
+            });
+
+            if (data.items && data.items.length > 0) {
+                carouselWrapper.innerHTML = data.items.map(video => {
+                    const videoId = video.id?.videoId || video.id;
+                    const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
+                    return `
+                        <div class="carousel-card haptic-trigger" 
+                             style="background-image: url('${escapeHTML(thumbnailUrl)}')"
+                             onclick="playYouTubeVideoFromCard('${videoId}')">
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                carouselWrapper.innerHTML = `<p class="static-message">Could not load trending videos.</p>`;
+            }
+        }
+
 
         async function setupLongVideoScreen() {
             renderCategoriesInBar();
-            renderAutoCarousel('#long-video-screen .auto-carousel-track');
+            await renderTrendingCarousel(); // Reverted to old manual carousel
             await populateLongVideoGrid('Trending');
             const gridContainer = document.querySelector('.long-video-screen-content');
             let loadMoreBtn = document.getElementById('long-video-load-more-btn');
@@ -2869,11 +2972,14 @@
         }
 
         function playPeerTubeVideo(watchUrl) {
-            const modal = document.getElementById('peertube-modal-overlay');
-            const iframe = document.getElementById('peertube-iframe');
-            if(!modal || !iframe) return;
+            navigateTo('peertube-player-screen', { videoUrl: watchUrl });
+        }
+
+        function initializePeerTubePlayerScreen(payload) {
+             const iframe = document.getElementById('peertube-player-iframe');
+            if(!iframe || !payload || !payload.videoUrl) return;
             
-            // Extract video ID from URL (e.g., https://peertube.wtf/w/nXGt3V6VC7otTheYpvSXk5)
+            const watchUrl = payload.videoUrl;
             const urlParts = watchUrl.split('/w/');
             if (urlParts.length < 2) {
                 console.error("Invalid PeerTube URL:", watchUrl);
@@ -2883,18 +2989,7 @@
             const embedUrl = `https://peertube.wtf/videos/embed/${videoId}?autoplay=1`;
             
             iframe.src = embedUrl;
-            modal.classList.add('active');
         }
-
-        function closePeerTubePlayer() {
-            const modal = document.getElementById('peertube-modal-overlay');
-            const iframe = document.getElementById('peertube-iframe');
-            if(!modal || !iframe) return;
-            
-            iframe.src = ''; // Stop video playback
-            modal.classList.remove('active');
-        }
-
 
         async function populateLongVideoGrid(category = 'All') {
             const grid = document.getElementById('long-video-grid');
@@ -3327,10 +3422,6 @@
                 document.getElementById('sidebar-overlay').classList.remove('open');
             });
             
-            // ★★★ NEW Event Listener for PeerTube Player Close Button ★★★
-            document.getElementById('close-peertube-btn')?.addEventListener('click', closePeerTubePlayer);
-
-
             document.getElementById('long-video-history-btn')?.addEventListener('click', () => navigateTo('history-screen'));
             document.getElementById('back-from-history-btn')?.addEventListener('click', () => navigateBack());
 
