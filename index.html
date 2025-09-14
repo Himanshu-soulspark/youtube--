@@ -1045,8 +1045,7 @@
         #history-shorts-scroller::-webkit-scrollbar {
             display: none;
         }
-        
-        /* ★★★ REVERTED CAROUSEL STYLES FOR LONG VIDEO ★★★ */
+
         #long-video-carousel-container {
             width: 100%;
             overflow-x: auto;
@@ -1066,7 +1065,7 @@
             display: flex;
             width: fit-content;
         }
-        
+
         .carousel-card {
             flex-shrink: 0;
             width: 284px;
@@ -1085,7 +1084,6 @@
             transform: scale(1.05);
             box-shadow: 0 0 15px var(--primary-neon);
         }
-
 
         .long-video-search-container {
             display: flex;
@@ -1144,7 +1142,6 @@
             cursor: pointer;
         }
 
-        /* ★★★ FIX: वीडियो कार्ड को 16:9 का अनुपात दिया गया ★★★ */
         .long-video-thumbnail {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -1726,55 +1723,42 @@
             margin-top: 10px;
         }
         
-        /* === NEW FULLSCREEN PEERTUBE PLAYER STYLES === */
-        #peertube-player-screen {
-            background-color: #000;
-            justify-content: center;
-            align-items: center;
-            z-index: 1001; /* Should be on top of everything */
-        }
-
-        #peertube-player-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
-
-        #peertube-player-header {
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            z-index: 10;
-        }
-
-        #peertube-back-btn {
-            color: var(--text-primary);
-            background-color: rgba(0, 0, 0, 0.5);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            cursor: pointer;
-            border: none;
-        }
-        
-        #peertube-player-iframe-wrapper {
-            width: 100%;
+        /* ★★★ FIX: PEERTUBE PLAYER MODAL STYLES ★★★ */
+        .peertube-modal-content {
+            width: 95%;
+            max-width: 800px;
+            height: auto;
             aspect-ratio: 16 / 9;
+            background-color: #000;
+            position: relative;
+            border: 2px solid var(--primary-neon);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(var(--primary-neon-rgb), 0.5);
         }
-        
-        #peertube-player-iframe {
+
+        #peertube-iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
+
+        .close-peertube-btn {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            font-size: 2.5em;
+            color: white;
+            cursor: pointer;
+            font-weight: 200;
+            line-height: 1;
+            padding: 5px;
+            transition: transform 0.2s ease;
+        }
+        .close-peertube-btn:hover {
+            transform: scale(1.1);
+        }
+
 
     </style>
 </head>
@@ -1823,6 +1807,13 @@
         </div>
     </div>
     
+    <!-- ★★★ FIX: PEERTUBE PLAYER MODAL ★★★ -->
+    <div id="peertube-modal-overlay" class="modal-overlay">
+         <span id="close-peertube-btn" class="close-peertube-btn haptic-trigger">&times;</span>
+        <div class="peertube-modal-content">
+            <iframe id="peertube-iframe" src="" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+        </div>
+    </div>
     <!-- === ALL MODALS END === -->
 
     <div class="app-container" id="app-container">
@@ -1855,23 +1846,18 @@
         <!-- ★★★ नया बदलाव: नया खाली होम स्क्रीन ★★★ -->
         <div id="main-home-screen" class="screen">
             
-            <!-- ★★★★★★★★★★ आपके अनुरोध के अनुसार यह नया सेक्शन जोड़ा गया है ★★★★★★★★★★ -->
             <div style="flex-grow: 1; width: 100%; overflow-y: auto;">
                 <div class="home-grid-container">
-                    <!-- कार्ड 1 -->
                     <div class="home-grid-card">
                         <img src="https://i.ibb.co/fz4R70tD/Leonardo-Phoenix-10-An-animated-scene-of-a-happy-young-boy-rec-3.jpg" alt="Reward Section">
                         <button class="btn-3d haptic-trigger">Reward</button>
                     </div>
-                    <!-- कार्ड 2 -->
                     <div class="home-grid-card">
                         <img src="https://i.ibb.co/JWkN2C8z/Leonardo-Phoenix-10-A-beautiful-young-girl-stylish-and-modern-0.jpg" alt="Profile Section">
                         <button class="btn-3d haptic-trigger">Profile</button>
                     </div>
                 </div>
-                 <!-- आप चाहें तो ग्रिड के नीचे और भी कंटेंट जोड़ सकते हैं -->
             </div>
-            <!-- ★★★★★★★★★★ नया सेक्शन यहाँ खत्म होता है ★★★★★★★★★★ -->
 
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
@@ -1921,7 +1907,6 @@
                     <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
                 </div>
                 <div id="long-video-grid"></div>
-                <!-- "Load More" button is dynamically added here by script.js -->
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
@@ -1934,55 +1919,47 @@
         <!-- ★★★ NEW MOVIES SCREEN ★★★ -->
         <div id="movies-screen" class="screen">
             <div class="movies-screen-content">
-                 <!-- ★★★ NEW AUTO-CAROUSEL ★★★ -->
                 <div class="auto-carousel-container">
                     <div class="auto-carousel-track">
                         <!-- Content will be injected by JavaScript -->
                     </div>
                 </div>
                 
-                <!-- Category 1: Hollywood -->
                 <div class="movies-category-header">
                     <span class="category-title">Hollywood Movies</span>
                     <button class="see-all-btn haptic-trigger">See All</button>
                 </div>
                 <div class="movies-grid">
-                    <!-- Card 1 -->
                     <div class="movie-card">
                         <img class="movie-card-poster" src="https://i.ibb.co/bgNSc7MV/MV5-BNzhk-Mj-Fh-OTIt-MTcz-Ni00-YWM1-LTlh-Zj-It-OTc4-OTA0-OWVh-ZTIz-Xk-Ey-Xk-Fqc-Gc-V1.jpg" alt="Movie Poster">
                         <button class="btn-3d haptic-trigger" onclick="playPeerTubeVideo('https://peertube.wtf/w/nXGt3V6VC7otTheYpvSXk5')">
                             <i class="fas fa-play"></i> Play
                         </button>
                     </div>
-                    <!-- Card 2 -->
                     <div class="movie-card">
                         <img class="movie-card-poster" src="https://i.ibb.co/1G768kNK/saiyaara.jpg" alt="Movie Poster">
                          <button class="btn-3d haptic-trigger" onclick="playPeerTubeVideo('https://peertube.wtf/w/k5izu4hJDxGGq6jkLJJuR5')">
                             <i class="fas fa-play"></i> Play
                         </button>
                     </div>
-                    <!-- Card 3 (Placeholder) -->
                     <div class="movie-card">
                         <img class="movie-card-poster" src="https://via.placeholder.com/270x480/1A1A1A/EEEEEE?text=Movie" alt="Movie Poster">
                          <button class="btn-3d haptic-trigger">
                             <i class="fas fa-play"></i> Play
                         </button>
                     </div>
-                    <!-- Card 4 (Placeholder) -->
                     <div class="movie-card">
                         <img class="movie-card-poster" src="https://via.placeholder.com/270x480/1A1A1A/EEEEEE?text=Movie" alt="Movie Poster">
                          <button class="btn-3d haptic-trigger">
                             <i class="fas fa-play"></i> Play
                         </button>
                     </div>
-                     <!-- Card 5 (Placeholder) -->
                     <div class="movie-card">
                         <img class="movie-card-poster" src="https://via.placeholder.com/270x480/1A1A1A/EEEEEE?text=Movie" alt="Movie Poster">
                          <button class="btn-3d haptic-trigger">
                             <i class="fas fa-play"></i> Play
                         </button>
                     </div>
-                     <!-- Card 6 (Placeholder) -->
                     <div class="movie-card">
                         <img class="movie-card-poster" src="https://via.placeholder.com/270x480/1A1A1A/EEEEEE?text=Movie" alt="Movie Poster">
                          <button class="btn-3d haptic-trigger">
@@ -1990,7 +1967,6 @@
                         </button>
                     </div>
                 </div>
-                 <!-- Add more categories here -->
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
@@ -2034,21 +2010,6 @@
                 <!-- Content injected by JS -->
             </div>
         </div>
-        
-        <!-- ★★★ NEW PEERTUBE PLAYER SCREEN ★★★ -->
-        <div id="peertube-player-screen" class="screen">
-            <div id="peertube-player-container">
-                <div id="peertube-player-header">
-                     <button id="peertube-back-btn" class="haptic-trigger" onclick="navigateBack()">
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
-                </div>
-                <div id="peertube-player-iframe-wrapper">
-                    <iframe id="peertube-player-iframe" src="" allow="autoplay; fullscreen" allowfullscreen></iframe>
-                </div>
-            </div>
-        </div>
-
 
     </div> <!-- End of .app-container -->
 
@@ -2191,13 +2152,7 @@
         let currentVideoCache = new Map();
         
         async function fetchFromYouTubeAPI(type, params) {
-            
-            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-            // ★★★ FINAL FIX: सर्वर का URL ठीक किया गया ★★★
-            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-            // यह सर्वर को हमेशा उसी डोमेन पर कॉल करेगा जिस पर ऐप चल रहा है।
-            // let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`; // <-- यह गलत था
-            let url = `/api/youtube?type=${type}`; // <-- यह सही तरीका है। यह हमेशा shboard.render.com पर ही रिक्वेस्ट भेजेगा।
+            let url = `/api/youtube?type=${type}`; 
 
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
@@ -2205,7 +2160,7 @@
                 }
             }
             
-            console.log(`[API] सही सर्वर से डेटा लाया जा रहा है: ${url}`);
+            console.log(`[API] Fetching data from server: ${url}`);
 
             try {
                 const response = await fetch(url);
@@ -2227,7 +2182,7 @@
                 
                 return data;
             } catch (error) {
-                console.error(`सर्वर से डेटा लाने में गंभीर त्रुटि (${type}):`, error);
+                console.error(`Critical error fetching data (${type}):`, error);
                 if (type === 'search') {
                      const grid = document.getElementById('long-video-grid');
                      if(grid) grid.innerHTML = '<p class="static-message">Could not load videos. Please check your connection or API key.</p>';
@@ -2390,7 +2345,7 @@
                 localStorage.setItem('shubhzone_lastScreen', nextScreenId);
             }
             
-            // ★★★ CLEANUP LOGIC FOR PLAYERS ★★★
+            // Cleanup logic for players
             if (appState.currentScreen === 'home-screen' && activePlayerId && players[activePlayerId]) {
                 pauseActivePlayer();
             }
@@ -2403,13 +2358,7 @@
                 if (creatorContent) creatorContent.innerHTML = '';
                 document.getElementById('app-container').classList.remove('fullscreen-active');
             }
-            // ★★★ NEW: Cleanup for PeerTube player
-            if (appState.currentScreen === 'peertube-player-screen') {
-                const iframe = document.getElementById('peertube-player-iframe');
-                if (iframe) iframe.src = ''; // Stop the video
-            }
             activePlayerId = null;
-
 
             if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
                 appState.navigationStack.push(nextScreenId);
@@ -2426,10 +2375,6 @@
             if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
                 initializeCreatorPage(payload);
             }
-            // ★★★ NEW: Initialize PeerTube player screen
-            if (nextScreenId === 'peertube-player-screen' && payload && payload.videoUrl) {
-                initializePeerTubePlayerScreen(payload);
-            }
         }
 
         function navigateBack() {
@@ -2442,14 +2387,12 @@
             }
 
             if (appState.navigationStack.length <= 1) {
-                navigateTo('main-home-screen'); // वापस होम पर जाएं
+                navigateTo('main-home-screen');
                 return;
             }
 
             appState.navigationStack.pop();
-
             const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'main-home-screen';
-
             navigateTo(previousScreenId, null);
         }
 
@@ -2463,7 +2406,6 @@
                 if (user) {
                     console.log("User signed in anonymously:", user.uid);
                     appState.currentUser.uid = user.uid;
-                    // The check to run startAppLogic only once is handled inside the function itself.
                     startAppLogic();
                 } else {
                     auth.signInAnonymously().catch(error => console.error("Anonymous sign-in failed:", error));
@@ -2484,7 +2426,6 @@
         let appStartLogicHasRun = false;
         const startAppLogic = async () => {
             if (!appState.currentUser || !appState.currentUser.uid) {
-                console.warn("User data not ready yet, retrying in 100ms...");
                 setTimeout(startAppLogic, 100);
                 return;
             }
@@ -2493,7 +2434,6 @@
                 return;
             }
             appStartLogicHasRun = true;
-            console.log("Starting main app logic...");
 
             const getStartedBtn = document.getElementById('get-started-btn');
             const loadingContainer = document.getElementById('loading-container');
@@ -2606,12 +2546,8 @@
         }
 
         function onYouTubeIframeAPIReady() {
-            console.log("[YT API] YouTube IFrame API is ready.");
             isYouTubeApiReady = true;
-
-            console.log(`[YT API] Processing ${youtubePlayerQueue.length} queued player requests.`);
             youtubePlayerQueue.forEach(request => {
-                console.log(`[YT API] Creating queued player for container: ${request.containerId}`);
                 if (request.type === 'shorts') {
                     createPlayerForSlide(request.slide, true);
                 } else if (request.type === 'long') {
@@ -2624,7 +2560,6 @@
         function onPlayerReady(event) {
             const iframe = event.target.getIframe();
             const videoId = event.target.getVideoData().video_id;
-            console.log(`[YT Player] Player ready for video ID: ${videoId}`);
             const slide = iframe.closest('.video-slide');
             if (slide) {
                 const preloader = slide.querySelector('.video-preloader');
@@ -2728,23 +2663,14 @@
         function createPlayerForSlide(slide, forceCreation = false) {
             const videoId = slide.dataset.videoId;
             if (!isYouTubeApiReady && !forceCreation) {
-                console.log(`[YT Player] API not ready. Queuing player for video ID: ${videoId}`);
                 if (!youtubePlayerQueue.some(item => item.videoId === videoId)) {
-                    youtubePlayerQueue.push({
-                        type: 'shorts',
-                        slide: slide,
-                        videoId: videoId
-                    });
+                    youtubePlayerQueue.push({ type: 'shorts', slide: slide, videoId: videoId });
                 }
                 return;
             }
 
-
             if (players[videoId]) {
-                if (typeof players[videoId].playVideo === 'function') {
-                    console.log(`[YT Player] Player for ${videoId} already exists. Playing.`);
-                    playActivePlayer(videoId);
-                }
+                if (typeof players[videoId].playVideo === 'function') playActivePlayer(videoId);
                 return;
             }
 
@@ -2752,32 +2678,17 @@
             const playerElement = document.getElementById(playerId);
             if (!playerElement || playerElement.tagName === 'IFRAME') return;
 
-            console.log(`[YT Player] Creating new shorts player for video ID: ${videoId}`);
             players[videoId] = new YT.Player(playerId, {
                 height: '100%',
                 width: '100%',
                 videoId: videoId,
-                playerVars: {
-                    'autoplay': 0,
-                    'controls': 0,
-                    'mute': userHasInteracted ? 0 : 1,
-                    'rel': 0,
-                    'showinfo': 0,
-                    'modestbranding': 1,
-                    'loop': 1,
-                    'playlist': videoId,
-                    'fs': 0,
-                    'iv_load_policy': 3,
-                    'origin': window.location.origin
-                },
+                playerVars: { 'autoplay': 0, 'controls': 0, 'mute': userHasInteracted ? 0 : 1, 'rel': 0, 'showinfo': 0, 'modestbranding': 1, 'loop': 1, 'playlist': videoId, 'fs': 0, 'iv_load_policy': 3, 'origin': window.location.origin },
                 events: {
                     'onReady': (event) => {
                         onPlayerReady(event);
                         const slideRect = slide.getBoundingClientRect();
                         const isInView = slideRect.top >= 0 && slideRect.bottom <= window.innerHeight;
-                        if (isInView) {
-                            playActivePlayer(videoId);
-                        }
+                        if (isInView) playActivePlayer(videoId);
                     },
                     'onStateChange': onPlayerStateChange,
                     'onError': onPlayerError
@@ -2788,10 +2699,7 @@
         function setupVideoObserver() {
             if (videoObserver) videoObserver.disconnect();
             if (!videoSwiper) return;
-            const options = {
-                root: videoSwiper,
-                threshold: 0.8
-            };
+            const options = { root: videoSwiper, threshold: 0.8 };
             videoObserver = new IntersectionObserver(async (entries) => {
                 for (const entry of entries) {
                     if (entry.target.id === 'shorts-load-more-trigger') {
@@ -2801,7 +2709,6 @@
                         }
                         continue;
                     }
-                    if (entry.target.classList.contains('native-ad-slide')) continue;
                     const videoId = entry.target.dataset.videoId;
                     if (!videoId) continue;
 
@@ -2864,38 +2771,24 @@
                 videoSwiper.innerHTML = '';
                 videoSwiper.appendChild(homeStaticMessageContainer);
                 homeStaticMessageContainer.style.display = 'flex';
-                homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div>'; // सिर्फ लोडर दिखाएं
+                homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div>';
             }
 
-            const data = await fetchFromYouTubeAPI('search', {
-                q: query,
-                videoDuration: 'short'
-            });
+            const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short' });
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
-            if (data.items && data.items.length > 0) {
-                renderVideoSwiper(data.items, false);
-            } else {
-                renderVideoSwiper([], false);
-            }
+            renderVideoSwiper(data.items || [], false);
         }
 
         async function loadMoreShorts() {
             const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
             const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
             const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
-            const data = await fetchFromYouTubeAPI('search', {
-                q: query,
-                videoDuration: 'short',
-                pageToken: appState.youtubeNextPageTokens.shorts
-            });
-
+            const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'short', pageToken: appState.youtubeNextPageTokens.shorts });
             appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
-            if (data.items) {
-                renderVideoSwiper(data.items, true);
-            }
+            if (data.items) renderVideoSwiper(data.items, true);
         }
-
-        // ★★★ NEW & MODIFIED FUNCTIONS FOR CAROUSEL AND MOVIES ★★★
+        
+        // ★★★ FIX: FUNCTIONS FOR MOVIES & PEERTUBE PLAYER ★★★
 
         const sampleCarouselData = [
             { id: '1', imageUrl: 'https://i.ibb.co/3kC0STG/MV5-BYj-Fk-M2-Tix-ZS1-LTA5-Mi00-ZWI2-LTg2-ODIt-ZDBj-ZWMz-Yj-I3-ZGE3-Xk-Ey-Xk-Fqc-Gc-V1-FMjpg-UX1000.jpg'},
@@ -2918,7 +2811,6 @@
                 <div class="carousel-slide-item" style="background-image: url('${item.imageUrl}')"></div>
             `).join('');
             
-            // Duplicate the slides for a seamless loop
             track.innerHTML = slidesHtml + slidesHtml;
         }
         
@@ -2926,11 +2818,7 @@
             const carouselWrapper = document.getElementById('long-video-carousel-wrapper');
             if (!carouselWrapper) return;
             carouselWrapper.innerHTML = `<div class="loader-container" style="display:flex; justify-content:center; width:100%;"><div class="loader"></div></div>`;
-            const data = await fetchFromYouTubeAPI('search', {
-                q: 'latest trending videos',
-                videoDuration: 'long',
-                maxResults: 10
-            });
+            const data = await fetchFromYouTubeAPI('search', { q: 'latest trending videos', videoDuration: 'long', maxResults: 10 });
 
             if (data.items && data.items.length > 0) {
                 carouselWrapper.innerHTML = data.items.map(video => {
@@ -2951,67 +2839,47 @@
 
         async function setupLongVideoScreen() {
             renderCategoriesInBar();
-            await renderTrendingCarousel(); // Reverted to old manual carousel
+            await renderTrendingCarousel();
             await populateLongVideoGrid('Trending');
-            const gridContainer = document.querySelector('.long-video-screen-content');
-            let loadMoreBtn = document.getElementById('long-video-load-more-btn');
-            if (!loadMoreBtn && gridContainer) {
-                loadMoreBtn = document.createElement('button');
-                loadMoreBtn.id = 'long-video-load-more-btn';
-                loadMoreBtn.className = 'haptic-trigger';
-                loadMoreBtn.textContent = 'Load More';
-                loadMoreBtn.style.display = 'none';
-                loadMoreBtn.onclick = loadMoreLongVideos;
-                gridContainer.appendChild(loadMoreBtn);
-            }
         }
         
         function setupMoviesScreen() {
             renderAutoCarousel('#movies-screen .auto-carousel-track');
-            // The rest of the screen is static for now, so no more JS needed here.
         }
 
         function playPeerTubeVideo(watchUrl) {
-            navigateTo('peertube-player-screen', { videoUrl: watchUrl });
-        }
-
-        function initializePeerTubePlayerScreen(payload) {
-             const iframe = document.getElementById('peertube-player-iframe');
-            if(!iframe || !payload || !payload.videoUrl) return;
+            const modal = document.getElementById('peertube-modal-overlay');
+            const iframe = document.getElementById('peertube-iframe');
+            if(!modal || !iframe) return;
             
-            const watchUrl = payload.videoUrl;
             const urlParts = watchUrl.split('/w/');
-            if (urlParts.length < 2) {
-                console.error("Invalid PeerTube URL:", watchUrl);
-                return;
-            }
+            if (urlParts.length < 2) return;
             const videoId = urlParts[1];
             const embedUrl = `https://peertube.wtf/videos/embed/${videoId}?autoplay=1`;
             
             iframe.src = embedUrl;
+            modal.classList.add('active');
         }
+
+        function closePeerTubePlayer() {
+            const modal = document.getElementById('peertube-modal-overlay');
+            const iframe = document.getElementById('peertube-iframe');
+            if(!modal || !iframe) return;
+            
+            iframe.src = '';
+            modal.classList.remove('active');
+        }
+
 
         async function populateLongVideoGrid(category = 'All') {
             const grid = document.getElementById('long-video-grid');
             if (!grid) return;
             grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            let query;
-            if (category.toLowerCase() === 'trending') {
-                query = 'trending videos';
-            } else {
-                query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
-            }
+            let query = (category.toLowerCase() === 'all') ? getRandomTopic() : category;
+            if (category.toLowerCase() === 'trending') query = 'trending videos';
 
-            appState.longVideoSearchContext = {
-                type: 'query',
-                value: query
-            };
-
-            const data = await fetchFromYouTubeAPI('search', {
-                q: query,
-                videoDuration: 'long'
-            });
-
+            appState.longVideoSearchContext = { type: 'query', value: query };
+            const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
             appState.youtubeNextPageTokens.long = data.nextPageToken || null;
             renderYouTubeLongVideos(data.items || [], false);
         }
@@ -3033,55 +2901,10 @@
             if (!grid) return;
             grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
-            let searchParams = {
-                videoDuration: 'long'
-            };
-            let finalData;
-
-            try {
-                const channelData = await fetchFromYouTubeAPI('search', {
-                    q: query,
-                    type: 'channel',
-                    maxResults: 1
-                });
-                let channelId = null;
-                if (channelData.items && channelData.items.length > 0) {
-                    const channelTitle = channelData.items[0].snippet.title.toLowerCase();
-                    const queryLower = query.toLowerCase();
-                    if (channelTitle.includes(queryLower)) {
-                        channelId = channelData.items[0].id.channelId;
-                    }
-                }
-
-                if (channelId) {
-                    console.log(`Channel found: ${channelId}. Searching for videos in this channel.`);
-                    searchParams.channelId = channelId;
-                    appState.longVideoSearchContext = {
-                        type: 'channel',
-                        value: channelId
-                    };
-                } else {
-                    console.log(`No specific channel found. Performing general search for: ${query}`);
-                    searchParams.q = query;
-                    appState.longVideoSearchContext = {
-                        type: 'query',
-                        value: query
-                    };
-                }
-
-                finalData = await fetchFromYouTubeAPI('search', searchParams);
-
-            } catch (error) {
-                console.error("Error during search process:", error);
-                finalData = {
-                    items: [],
-                    nextPageToken: null
-                };
-                grid.innerHTML = '<p class="static-message">An error occurred during search.</p>';
-            }
-
-            appState.youtubeNextPageTokens.long = finalData.nextPageToken || null;
-            renderYouTubeLongVideos(finalData.items || [], false);
+            appState.longVideoSearchContext = { type: 'query', value: query };
+            const data = await fetchFromYouTubeAPI('search', { q: query, videoDuration: 'long' });
+            appState.youtubeNextPageTokens.long = data.nextPageToken || null;
+            renderYouTubeLongVideos(data.items || [], false);
         }
 
         function createLongVideoCard(video) {
@@ -3135,11 +2958,7 @@
         // =======================================================
 
         async function initializeCreatorPage(payload) {
-            const {
-                creatorId,
-                startWith = 'home',
-                videoId
-            } = payload;
+            const { creatorId, startWith = 'home', videoId } = payload;
             appState.creatorPage.currentChannelId = creatorId;
 
             if (startWith === 'play' && videoId) {
@@ -3147,7 +2966,6 @@
                 return;
             }
 
-            appState.creatorPage.currentView = 'channel';
             const creatorPageHeader = document.getElementById('creator-page-screen').querySelector('.screen-header');
             const creatorPageTabsContainer = document.getElementById('creator-page-tabs');
             const creatorPageContent = document.getElementById('creator-page-content');
@@ -3168,10 +2986,7 @@
                 tab.addEventListener('click', () => {
                     creatorPageTabsContainer.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
-                    loadCreatorPageContent({ ...payload,
-                        startWith: tab.dataset.type,
-                        videoId: null
-                    });
+                    loadCreatorPageContent({ ...payload, startWith: tab.dataset.type, videoId: null });
                 });
             });
 
@@ -3179,48 +2994,30 @@
             const initialTab = creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="${effectiveStartWith}"]`) || creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="home"]`);
             if (initialTab) initialTab.classList.add('active');
 
-            await loadCreatorPageContent({ ...payload,
-                startWith: effectiveStartWith
-            });
+            await loadCreatorPageContent({ ...payload, startWith: effectiveStartWith });
         }
 
         async function loadCreatorPageContent(payload) {
-            const {
-                creatorId,
-                startWith,
-                playlistId
-            } = payload;
+            const { creatorId, startWith, playlistId } = payload;
             const contentArea = document.getElementById('creator-page-content');
             contentArea.innerHTML = '<div class="loader-container" style="height: 100%;"><div class="loader"></div></div>';
             let data;
             switch (startWith) {
                 case 'home':
                 case 'videos':
-                    data = await fetchFromYouTubeAPI('search', {
-                        channelId: creatorId,
-                        order: 'date',
-                        videoDuration: 'long'
-                    });
+                    data = await fetchFromYouTubeAPI('search', { channelId: creatorId, order: 'date', videoDuration: 'long' });
                     renderCreatorVideoList(contentArea, data.items || [], 'long');
                     break;
                 case 'shorts':
-                    data = await fetchFromYouTubeAPI('search', {
-                        channelId: creatorId,
-                        videoDuration: 'short',
-                        order: 'date'
-                    });
+                    data = await fetchFromYouTubeAPI('search', { channelId: creatorId, videoDuration: 'short', order: 'date' });
                     renderCreatorVideoList(contentArea, data.items || [], 'short');
                     break;
                 case 'playlists':
-                    data = await fetchFromYouTubeAPI('playlists', {
-                        channelId: creatorId
-                    });
+                    data = await fetchFromYouTubeAPI('playlists', { channelId: creatorId });
                     renderCreatorPlaylistList(contentArea, data.items || [], payload);
                     break;
                 case 'playlistItems':
-                    data = await fetchFromYouTubeAPI('playlistItems', {
-                        playlistId: playlistId
-                    });
+                    data = await fetchFromYouTubeAPI('playlistItems', { playlistId: playlistId });
                     renderCreatorVideoList(contentArea, data.items || [], 'long');
                     break;
             }
@@ -3231,7 +3028,6 @@
         function renderCreatorPlaylistList(container, playlists, payload) { /* Unchanged */ }
 
         function showCreatorPlayerView(videoId) {
-            appState.creatorPage.currentView = 'player';
             const creatorPageScreen = document.getElementById('creator-page-screen');
             const contentArea = document.getElementById('creator-page-content');
 
@@ -3245,16 +3041,10 @@
                             <i class="fas fa-arrow-left"></i>
                         </div>
                         <div class="player-zoom-controls">
-                            <button id="player-zoom-out-btn" class="haptic-trigger">
-                                <i class="fas fa-search-minus"></i>
-                            </button>
-                            <button id="player-zoom-in-btn" class="haptic-trigger">
-                                <i class="fas fa-search-plus"></i>
-                            </button>
+                            <button id="player-zoom-out-btn" class="haptic-trigger"><i class="fas fa-search-minus"></i></button>
+                            <button id="player-zoom-in-btn" class="haptic-trigger"><i class="fas fa-search-plus"></i></button>
                         </div>
-                        <button id="player-rotate-btn" class="haptic-trigger">
-                            <i class="fas fa-sync-alt"></i>
-                        </button>
+                        <button id="player-rotate-btn" class="haptic-trigger"><i class="fas fa-sync-alt"></i></button>
                     </div>
                     <div class="player-wrapper">
                         <div id="creator-page-player-long"></div>
@@ -3264,21 +3054,15 @@
 
             initializeCreatorPagePlayer(videoId, 'creator-page-player-long', 'long');
 
-            document.getElementById('player-rotate-btn').addEventListener('click', () => {
-                document.getElementById('app-container').classList.toggle('fullscreen-active');
-            });
+            document.getElementById('player-rotate-btn').addEventListener('click', () => appContainer.classList.toggle('fullscreen-active'));
 
             let currentZoom = 1.0;
             const playerWrapper = contentArea.querySelector('.player-wrapper');
-            const zoomInBtn = document.getElementById('player-zoom-in-btn');
-            const zoomOutBtn = document.getElementById('player-zoom-out-btn');
-
-            zoomInBtn.addEventListener('click', () => {
+            document.getElementById('player-zoom-in-btn').addEventListener('click', () => {
                 currentZoom = Math.min(2.5, currentZoom + 0.1);
                 playerWrapper.style.transform = `scale(${currentZoom})`;
             });
-
-            zoomOutBtn.addEventListener('click', () => {
+            document.getElementById('player-zoom-out-btn').addEventListener('click', () => {
                 currentZoom = Math.max(0.5, currentZoom - 0.1);
                 playerWrapper.style.transform = `scale(${currentZoom})`;
             });
@@ -3286,53 +3070,29 @@
 
         function initializeCreatorPagePlayer(videoId, containerId, type, forceCreation = false) {
             if (appState.creatorPagePlayers[type]) {
-                console.log(`[YT Player] Destroying existing creator player of type: ${type}`);
                 appState.creatorPagePlayers[type].destroy();
                 appState.creatorPagePlayers[type] = null;
             }
 
-            const playerContainer = document.getElementById(containerId);
-
             if (!isYouTubeApiReady && !forceCreation) {
-                console.log(`[YT Player] API not ready. Queuing creator player for video ID: ${videoId}`);
-                youtubePlayerQueue.push({
-                    type: 'long',
-                    videoId: videoId,
-                    containerId: containerId
-                });
+                youtubePlayerQueue.push({ type: 'long', videoId: videoId, containerId: containerId });
                 return;
             }
 
-            if (!playerContainer) {
-                console.error(`[YT Player] Player container #${containerId} not found in DOM.`);
-                return;
-            }
+            const playerContainer = document.getElementById(containerId);
+            if (!playerContainer) return;
 
-            console.log(`[YT Player] Creating new creator player for video ID: ${videoId} in container: #${containerId}`);
             appState.creatorPagePlayers[type] = new YT.Player(containerId, {
                 height: '100%',
                 width: '100%',
                 videoId: videoId,
-                playerVars: {
-                    'autoplay': 1,
-                    'controls': 1,
-                    'rel': 0,
-                    'showinfo': 0,
-                    'mute': 0,
-                    'modestbranding': 1,
-                    'fs': 0,
-                    'origin': window.location.origin,
-                    'iv_load_policy': 3
-                },
+                playerVars: { 'autoplay': 1, 'controls': 1, 'rel': 0, 'showinfo': 0, 'mute': 0, 'modestbranding': 1, 'fs': 0, 'origin': window.location.origin, 'iv_load_policy': 3 },
                 events: {
                     'onReady': (event) => {
-                        console.log(`[YT Player] Creator player ready for video ID: ${videoId}`);
                         event.target.playVideo();
                         event.target.unMute();
                         const videoData = currentVideoCache.get(videoId);
-                        if (videoData) {
-                            addLongVideoToHistory(videoData);
-                        }
+                        if (videoData) addLongVideoToHistory(videoData);
                     },
                     'onStateChange': handleCreatorPlayerStateChange,
                     'onError': onPlayerError
@@ -3346,36 +3106,17 @@
         // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
         // =======================================================
 
-
         async function addChannelToList(event, channelId) { /* Unchanged */ }
-
         function renderMyChannelsList() { /* Unchanged */ }
-
         function removeChannelFromList(event, channelId) { /* Unchanged */ }
-
         function provideHapticFeedback() { /* Unchanged */ }
-
         function loadHapticPreference() { /* Unchanged */ }
         
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.nav-item').forEach(item => {
-                item.classList.add('haptic-trigger');
                 item.addEventListener('click', () => {
                     const targetNav = item.getAttribute('data-nav');
-                    if (item.style.display === 'none') return;
-                    let targetScreen;
-                    
-                    switch (targetNav) {
-                        case 'home':
-                            targetScreen = 'main-home-screen';
-                            break;
-                        case 'shorts':
-                            targetScreen = 'home-screen';
-                            break;
-                        default:
-                            targetScreen = `${targetNav}-screen`;
-                    }
-
+                    let targetScreen = (targetNav === 'home') ? 'main-home-screen' : (targetNav === 'shorts' ? 'home-screen' : `${targetNav}-screen`);
                     navigateTo(targetScreen);
                     updateNavActiveState(targetNav);
                 });
@@ -3388,47 +3129,32 @@
                 startAppLogic();
             });
 
-            appContainer.addEventListener('click', (event) => {
-                if (!userHasInteracted) {
-                    userHasInteracted = true;
-                    Object.values(players).forEach(p => p && typeof p.unMute === 'function' && p.unMute());
-                    if (appState.creatorPagePlayers.long && typeof appState.creatorPagePlayers.long.unMute === 'function') {
-                        appState.creatorPagePlayers.long.unMute();
-                    }
-                }
-                if (event.target.closest('.haptic-trigger')) provideHapticFeedback();
-            });
-
             document.getElementById('long-video-search-btn')?.addEventListener('click', performLongVideoSearch);
             document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') performLongVideoSearch();
             });
-
-            document.querySelector('#creator-page-screen .header-icon-left')?.addEventListener('click', () => navigateBack());
             
             const openSidebar = () => {
                 document.getElementById('main-sidebar').classList.add('open');
                 document.getElementById('sidebar-overlay').classList.add('open');
             };
+            const closeSidebar = () => {
+                document.getElementById('main-sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('open');
+            };
             document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
-            
-            document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
-                document.getElementById('main-sidebar').classList.remove('open');
-                document.getElementById('sidebar-overlay').classList.remove('open');
-            });
-            document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-                document.getElementById('main-sidebar').classList.remove('open');
-                document.getElementById('sidebar-overlay').classList.remove('open');
-            });
+            document.getElementById('close-sidebar-btn')?.addEventListener('click', closeSidebar);
+            document.getElementById('sidebar-overlay')?.addEventListener('click', closeSidebar);
             
             document.getElementById('long-video-history-btn')?.addEventListener('click', () => navigateTo('history-screen'));
             document.getElementById('back-from-history-btn')?.addEventListener('click', () => navigateBack());
 
-            const enlargeModal = document.getElementById('image-enlarge-modal');
-            if (enlargeModal) enlargeModal.addEventListener('click', () => enlargeModal.classList.remove('active'));
-
-            loadHapticPreference();
+            // ★★★ FIX: Event listeners for PeerTube Modal ★★★
+            document.getElementById('close-peertube-btn')?.addEventListener('click', closePeerTubePlayer);
+            document.getElementById('peertube-modal-overlay')?.addEventListener('click', (e) => {
+                 if (e.target.id === 'peertube-modal-overlay') closePeerTubePlayer();
+            });
             
         });
         
