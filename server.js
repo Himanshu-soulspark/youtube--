@@ -31,7 +31,7 @@ app.use(cors());
 
 // 4. Render के Environment Variable से दोनों API कुंजियाँ पढ़ें
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const TMDB_API_KEY = process.env.TMDB_API_KEY; // ★★★ नया बदलाव: TMDb की कुंजी यहाँ सुरक्षित रूप से पढ़ी गई
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 // ====================================================================
 // === YouTube API रूट (इसमें कोई बदलाव नहीं किया गया है) ===
@@ -121,14 +121,12 @@ async function checkVidSrcAvailability(item, type) {
         const response = await fetch(checkUrl, { method: 'HEAD', signal: controller.signal });
 
         // 200 OK स्टेटस का मतलब है कि एम्बेड पेज मौजूद है और उपलब्ध है।
-        // यह गारंटी नहीं देता कि वीडियो स्ट्रीम काम करेगी, लेकिन यह सर्वर-साइड पर सबसे अच्छी संभव जांच है।
         return response.ok;
 
     } catch (error) {
         if (error.name === 'AbortError') {
             console.warn(`VidSrc जांच ${type} ID ${item.id} के लिए टाइम आउट हो गई।`);
         } else {
-            // कोई अन्य त्रुटि (जैसे, नेटवर्क समस्या) का मतलब है कि हम उपलब्धता की पुष्टि नहीं कर सकते
             console.error(`${type} ID ${item.id} के लिए VidSrc की जांच करते समय त्रुटि:`, error.message);
         }
         return false;
@@ -145,15 +143,12 @@ app.get('/api/tmdb', async (req, res) => {
         return res.status(500).json({ error: "सर्वर ठीक से कॉन्फ़िगर नहीं है। TMDb API कुंजी गायब है।" });
     }
 
-    // index.html से आने वाले अनुरोध से endpoint और बाकी पैरामीटर निकालें
     const { endpoint, ...queryParams } = req.query;
 
-    // अगर endpoint नहीं भेजा गया है, तो एरर दें
     if (!endpoint) {
         return res.status(400).json({ error: "TMDb endpoint is required." });
     }
 
-    // TMDb API को भेजने के लिए URL तैयार करें
     const paramsString = new URLSearchParams(queryParams).toString();
     const tmdbApiUrl = `https://api.themoviedb.org/3/${endpoint}?api_key=${TMDB_API_KEY}&${paramsString}`;
 
@@ -170,24 +165,21 @@ app.get('/api/tmdb', async (req, res) => {
         const data = await tmdbResponse.json();
         
         // ★★★ नया बदलाव: अगर रिजल्ट्स एक सूची है, तो हर आइटम की उपलब्धता की जांच करें ★★★
+        // ★★★ यह अब एक बार में केवल एक कैटेगरी के लिए चलेगा, जिससे सर्वर पर लोड कम होगा ★★★
         if (data.results && Array.isArray(data.results)) {
             console.log(`VidSrc पर ${data.results.length} आइटम्स के लिए उपलब्धता की जांच की जा रही है...`);
 
             // मीडिया का प्रकार (movie या tv) endpoint से पता करें
-            const mediaType = endpoint.includes('movie') || endpoint.includes('search/movie') ? 'movie' : 'tv';
+            const mediaType = endpoint.includes('movie') ? 'movie' : 'tv';
 
-            // सभी जांचों के लिए समानांतर में प्रॉमिस बनाएं
             const availabilityChecks = data.results.map(item => checkVidSrcAvailability(item, mediaType));
             
-            // सभी प्रॉमिस के पूरे होने का इंतजार करें
             const checkResults = await Promise.all(availabilityChecks);
 
-            // केवल उपलब्ध आइटम को फ़िल्टर करें
             const availableItems = data.results.filter((_, index) => checkResults[index]);
             
             console.log(`${availableItems.length} / ${data.results.length} आइटम्स VidSrc पर उपलब्ध पाए गए।`);
 
-            // मूल डेटा ऑब्जेक्ट में रिजल्ट्स को उपलब्ध आइटम्स से बदलें
             data.results = availableItems;
         }
         
