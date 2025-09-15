@@ -1910,6 +1910,59 @@
             background-color: var(--text-disabled);
             cursor: not-allowed;
         }
+
+        /* ★★★★★★★★★★ USER UPLOAD FORM STYLES ★★★★★★★★★★ */
+        .user-upload-section {
+            padding: 0 20px 20px 20px;
+            border-top: 1px solid var(--secondary-background);
+            margin-top: 20px;
+        }
+        .user-upload-section h2 {
+            font-size: 1.4em;
+            color: var(--primary-neon);
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .upload-form .form-group {
+            margin-bottom: 15px;
+        }
+        .upload-form input, .upload-form select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--text-secondary);
+            background-color: var(--secondary-background);
+            color: var(--text-primary);
+            font-size: 1em;
+        }
+        #submit-movie-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: var(--primary-neon);
+            color: var(--background);
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        #submit-movie-btn:disabled {
+            background-color: var(--text-disabled);
+            cursor: not-allowed;
+        }
+        #upload-status-message {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+        #upload-status-message.success {
+            color: var(--success-green);
+        }
+        #upload-status-message.error {
+            color: var(--error-red);
+        }
+
     </style>
 </head>
 
@@ -2015,7 +2068,6 @@
         <!-- ★★★ नया बदलाव: नया खाली होम स्क्रीन ★★★ -->
         <div id="main-home-screen" class="screen">
 
-            <!-- ★★★★★★★★★★ आपके अनुरोध के अनुसार यह नया सेक्शन जोड़ा गया है ★★★★★★★★★★ -->
             <div style="flex-grow: 1; width: 100%; overflow-y: auto;">
                 <div class="home-grid-container">
                     <!-- कार्ड 1 -->
@@ -2031,9 +2083,33 @@
                         <button class="btn-3d haptic-trigger">Profile</button>
                     </div>
                 </div>
-                <!-- आप चाहें तो ग्रिड के नीचे और भी कंटेंट जोड़ सकते हैं -->
+
+                <!-- ★★★★★★★★★★ USER UPLOAD FORM START ★★★★★★★★★★ -->
+                <div class="user-upload-section">
+                    <h2>Upload Your Movie</h2>
+                    <form id="upload-movie-form" class="upload-form">
+                        <div class="form-group">
+                            <input type="text" id="movie-name-input" placeholder="Movie Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="url" id="movie-link-input" placeholder="Mega.nz Movie Link" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="url" id="movie-image-input" placeholder="Image Link (ImgBB Direct Link)" required>
+                        </div>
+                        <div class="form-group">
+                            <select id="movie-category-select" required>
+                                <option value="" disabled selected>Select Category</option>
+                                <!-- Categories will be added here by JavaScript -->
+                            </select>
+                        </div>
+                        <button type="submit" id="submit-movie-btn" class="haptic-trigger">Upload Movie</button>
+                    </form>
+                    <div id="upload-status-message"></div>
+                </div>
+                <!-- ★★★★★★★★★★ USER UPLOAD FORM END ★★★★★★★★★★ -->
+
             </div>
-            <!-- ★★★★★★★★★★ नया सेक्शन यहाँ खत्म होता है ★★★★★★★★★★ -->
 
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
@@ -2174,7 +2250,7 @@
                 <div class="player-wrapper">
                     <iframe id="movie-player-iframe-container" 
                             src=""
-                            allow="autoplay; encrypted-media"
+                            allow="autoplay; encrypted-media; fullscreen"
                             allowfullscreen>
                     </iframe>
                 </div>
@@ -2288,6 +2364,32 @@
             const match = url.match(regex);
             return match ? match[1] : null;
         }
+        
+        // ★★★★★★★★★★ नया हेल्पर फंक्शन: Mega.nz लिंक को बदलने के लिए ★★★★★★★★★★
+        function convertMegaLinkToEmbed(url) {
+            try {
+                if (!url.includes('mega.nz/file/')) {
+                    return null;
+                }
+                const parts = url.split('/file/');
+                if (parts.length < 2) return null;
+                
+                const fileAndKey = parts[1].split('#');
+                if (fileAndKey.length < 2) return null;
+
+                const fileId = fileAndKey[0];
+                const key = fileAndKey[1];
+
+                if (fileId && key) {
+                    return `https://mega.nz/embed/${fileId}#!${key}`;
+                }
+                return null;
+            } catch (e) {
+                console.error("Mega link conversion failed:", e);
+                return null;
+            }
+        }
+
 
         // =================================================
         // ★★★ Helper Functions - END ★★★
@@ -2415,13 +2517,9 @@
         // ★★★ NEW MOVIE & SERIES EXPERIENCE - START ★★★
         // TMDb API से डेटा लाने के लिए नया फंक्शन
         async function fetchFromTMDbAPI(endpoint, params = {}) {
-            // ★★★ जरूरी बदलाव 1: हर API कॉल में भारत का रीजन और हिंदी भाषा को प्राथमिकता दी गई है ★★★
-            // यह सुनिश्चित करेगा कि आपको हमेशा भारत से संबंधित कंटेंट मिले।
-            let url = `/api/tmdb?endpoint=${endpoint}&language=hi-IN&region=IN`;
+            // हर API कॉल में भाषा और रीजन अब server.js में सेट है, इसलिए यहाँ से हटा दिया गया है।
+            let url = `/api/tmdb?endpoint=${endpoint}`;
             
-            // पुराने कोड से language पैरामीटर हटाया गया क्योंकि अब यह हमेशा ऊपर सेट है।
-            // params.language = 'en-US'; 
-
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
                     url += `&${key}=${encodeURIComponent(params[key])}`;
@@ -3498,7 +3596,6 @@
             if (!query) return;
             const rowsContainer = document.getElementById('movie-category-rows');
             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            // Search API में with_original_language की जगह, सीधे भाषा और रीजन को प्राथमिकता दी गई है।
             const searchData = await fetchFromTMDbAPI('search/movie', { query: query });
             rowsContainer.innerHTML = '';
             if (searchData.results && searchData.results.length > 0) {
@@ -3514,39 +3611,38 @@
             appState.movies.isLoading = true;
             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
             
-            // ★★★ जरूरी बदलाव 2: हिंदी डब फिल्मों को खोजने के लिए एक नई API कॉल जोड़ी गई ★★★
-            // यह ऑटोमेटिक रूप से "hindi dubbed" कीवर्ड से फिल्में खोजेगी।
-            const dubbedMoviesPromise = fetchFromTMDbAPI('search/movie', { query: 'hindi dubbed' });
+            // ★★★★★★★★★★ जरूरी बदलाव 1: केवल नई फिल्में मंगवाने के लिए ★★★★★★★★★★
+            // अब हम API से कह रहे हैं कि हमें सिर्फ 2018 के बाद की फिल्में चाहिए।
+            const newMoviesParams = {
+                'primary_release_date.gte': '2018-01-01',
+                 sort_by: 'popularity.desc'
+            };
+
+            const dubbedMoviesPromise = fetchFromTMDbAPI('search/movie', { query: 'hindi dubbed', ...newMoviesParams });
             
             const [dubbedMoviesData, customMovies, ...categoryData] = await Promise.all([
                 dubbedMoviesPromise,
                 loadCustomMovies(),
-                ...MOVIE_CATEGORIES.map(cat => fetchFromTMDbAPI('discover/movie', { with_genres: cat.id, with_original_language: langCode, sort_by: 'popularity.desc' }))
+                ...MOVIE_CATEGORIES.map(cat => fetchFromTMDbAPI('discover/movie', { with_genres: cat.id, with_original_language: langCode, ...newMoviesParams }))
             ]);
 
             rowsContainer.innerHTML = '';
-            
-            // 1. "हिंदी डब फिल्में" की नई कैटेगरी दिखाएं
-            if (dubbedMoviesData.results && dubbedMoviesData.results.length > 0) {
-                renderMovieCategoryRow("हिंदी डब फिल्में (Hindi Dubbed)", dubbedMoviesData.results, true, 'dubbed-search');
-            }
 
-            // 2. एडमिन पैनल से "Latest Additions" दिखाएं
+            // 1. उपयोगकर्ता द्वारा अपलोड की गई फिल्में (firebase से) सबसे ऊपर आएंगी
             if (customMovies.length > 0) {
                  renderMovieCategoryRow("Latest Additions", customMovies, false, 'custom');
             }
 
+            // 2. "हिंदी डब फिल्में" की नई कैटेगरी दिखाएं
+            if (dubbedMoviesData.results && dubbedMoviesData.results.length > 0) {
+                renderMovieCategoryRow("हिंदी डब फिल्में (Hindi Dubbed)", dubbedMoviesData.results, true, 'dubbed-search');
+            }
+            
             // 3. बाकी सभी कैटेगरी को पहले की तरह दिखाएं
             categoryData.forEach((data, index) => {
                 const category = MOVIE_CATEGORIES[index];
-                let combinedMovies = data.results ? [...data.results] : [];
-                const relevantCustomMovies = customMovies.filter(cm => cm.genre_ids && cm.genre_ids.includes(category.id));
-                const existingTitles = new Set(combinedMovies.map(m => m.title));
-                const uniqueCustomMoviesToAdd = relevantCustomMovies.filter(cm => !existingTitles.has(cm.title));
-                combinedMovies = [...uniqueCustomMoviesToAdd, ...combinedMovies];
-
-                if (combinedMovies.length > 0) {
-                     renderMovieCategoryRow(category.title, combinedMovies, true, category.id);
+                if (data.results && data.results.length > 0) {
+                     renderMovieCategoryRow(category.title, data.results, true, category.id);
                 }
             });
             
@@ -3624,17 +3720,20 @@
             button.disabled = true;
             button.textContent = 'Loading...';
 
+            const newMoviesParams = {
+                'primary_release_date.gte': '2018-01-01',
+                page: state.nextPage
+            };
+
             let data;
-            // अगर "More" बटन 'dubbed-search' कैटेगरी से क्लिक हुआ है, तो सर्च API का उपयोग करें
             if (state.categoryId === 'dubbed-search') {
-                data = await fetchFromTMDbAPI('search/movie', { query: 'hindi dubbed', page: state.nextPage });
+                data = await fetchFromTMDbAPI('search/movie', { query: 'hindi dubbed', ...newMoviesParams });
             } else {
-                // वरना, सामान्य कैटेगरी के लिए discover API का उपयोग करें
                 data = await fetchFromTMDbAPI('discover/movie', {
                     with_genres: state.categoryId,
                     with_original_language: appState.movies.currentLanguage,
                     sort_by: 'popularity.desc',
-                    page: state.nextPage
+                    ...newMoviesParams
                 });
             }
             
@@ -3670,14 +3769,14 @@
             
             titleElement.textContent = `Play "${movieName}"`;
             
-            // ★★★ जरूरी बदलाव 3: सर्वर की लिस्ट में 3 नए सर्वर जोड़े गए हैं ★★★
-            // अब कुल 5 विकल्प हैं, जिससे वीडियो चलने की संभावना बढ़ जाएगी।
+            // ★★★★★★★★★★ जरूरी बदलाव 2: बेहतर और नए सर्वर की लिस्ट ★★★★★★★★★★
+            // VidSrc.to को हटा दिया गया है और नए सर्वर जोड़े गए हैं।
             const servers = [ 
-                { name: 'Server 1 (VidSrc)', type: 'vidsrc_to' }, 
-                { name: 'Server 2 (SuperEmbed)', type: 'superembed' },
-                { name: 'Server 3 (SmashyStream)', type: 'smashy' },
-                { name: 'Server 4 (2Embed)', type: '2embed_cc' },
-                { name: 'Server 5 (Movie-Web)', type: 'movieweb' }
+                { name: 'Server 1 (Best)', type: 'vidsrcpro' }, 
+                { name: 'Server 2 (Fast)', type: 'superembed' },
+                { name: 'Server 3 (Alternate)', type: '2embed' },
+                { name: 'Server 4 (Multi)', type: 'multiembed' },
+                { name: 'Server 5 (Backup)', type: 'smashystream' }
             ];
 
             listElement.innerHTML = servers.map(server => 
@@ -3697,36 +3796,27 @@
 
         async function playContentFromTMDB(movieId, serverType) {
             let embedUrl = '';
-            // TMDB से सीधे मूवी का ID इस्तेमाल करना बेहतर है, अगर सर्वर सपोर्ट करता है।
-            // अगर सर्वर को IMDb ID चाहिए, तो ही एक्सटर्नल ID की API कॉल करें।
             
             switch (serverType) {
+                case 'vidsrcpro':
+                    embedUrl = `https://vidsrc.pro/embed/movie/${movieId}`;
+                    break;
                 case 'superembed':
+                    embedUrl = `https://supere.mpbed.com/tmdb/movie?id=${movieId}`;
+                    break;
+                case 'multiembed':
                     embedUrl = `https://multiembed.mov/?video_id=${movieId}&tmdb=1`;
                     break;
-                case 'smashy':
+                case 'smashystream':
                     embedUrl = `https://embed.smashystream.com/play/${movieId}`;
                     break;
-                case 'movieweb':
-                    embedUrl = `https://movie-web.app/media/tmdb-movie-${movieId}`;
-                    break;
-                case '2embed_cc':
-                    // 2embed के लिए IMDb ID चाहिए, इसलिए इसके लिए अलग से कॉल करें
-                    const externalIdsDataFor2Embed = await fetchFromTMDbAPI(`movie/${movieId}/external_ids`);
-                    const imdbIdFor2Embed = externalIdsDataFor2Embed ? externalIdsDataFor2Embed.imdb_id : null;
-                    if (imdbIdFor2Embed) {
-                        embedUrl = `https://2embed.cc/embed/${imdbIdFor2Embed}`;
-                    } else {
-                        alert('Could not find source for Server 4.'); return;
-                    }
-                    break;
-                case 'vidsrc_to': 
+                case '2embed': 
                 default:
-                    embedUrl = `https://vidsrc.to/embed/movie/${movieId}`; 
+                    embedUrl = `https://www.2embed.cc/embed/tmdb/movie?id=${movieId}`; 
                     break;
             }
             
-            playCustomMovie(embedUrl); // सीधे प्ले फंक्शन का उपयोग करें
+            playCustomMovie(embedUrl);
         }
 
         
@@ -3734,7 +3824,9 @@
             navigateTo('movie-player-screen');
             setTimeout(() => {
                 const iframe = document.getElementById('movie-player-iframe-container');
-                if (iframe) iframe.src = embedUrl;
+                if (iframe) {
+                    iframe.src = embedUrl;
+                }
                 setupMoviePlayerControls();
             }, 100);
         }
@@ -3760,6 +3852,20 @@
         function removeChannelFromList(event, channelId) { /* Unchanged */ }
         function provideHapticFeedback() { /* Unchanged */ }
         function loadHapticPreference() { /* Unchanged */ }
+        
+        // ★★★★★★★★★★ नया फंक्शन: अपलोड फॉर्म की कैटेगरी भरने के लिए ★★★★★★★★★★
+        function populateCategoryDropdown() {
+            const selectElement = document.getElementById('movie-category-select');
+            if (!selectElement) return;
+
+            MOVIE_CATEGORIES.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.title;
+                selectElement.appendChild(option);
+            });
+        }
+
 
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.nav-item').forEach(item => {
@@ -3781,6 +3887,70 @@
             });
 
             initializeApp();
+            
+            // ★★★★★★★★★★ नया लॉजिक: अपलोड फॉर्म को संभालने के लिए ★★★★★★★★★★
+            populateCategoryDropdown();
+            const uploadForm = document.getElementById('upload-movie-form');
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const submitBtn = document.getElementById('submit-movie-btn');
+                    const statusMsg = document.getElementById('upload-status-message');
+
+                    const movieName = document.getElementById('movie-name-input').value.trim();
+                    const movieLink = document.getElementById('movie-link-input').value.trim();
+                    const imageLink = document.getElementById('movie-image-input').value.trim();
+                    const categoryId = document.getElementById('movie-category-select').value;
+                    
+                    statusMsg.textContent = '';
+                    statusMsg.className = '';
+
+                    if (!movieName || !movieLink || !imageLink || !categoryId) {
+                        statusMsg.textContent = 'Please fill all fields.';
+                        statusMsg.classList.add('error');
+                        return;
+                    }
+
+                    const embedUrl = convertMegaLinkToEmbed(movieLink);
+                    if (!embedUrl) {
+                        statusMsg.textContent = 'Invalid Mega.nz link format.';
+                        statusMsg.classList.add('error');
+                        return;
+                    }
+
+                    submitBtn.disabled = true;
+                    statusMsg.textContent = 'Uploading...';
+
+                    try {
+                        const movieData = {
+                            title: movieName,
+                            embedUrl: embedUrl,
+                            poster_path: imageLink,
+                            genre_ids: [parseInt(categoryId)],
+                            addedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        };
+                        await db.collection('custom_movies').add(movieData);
+
+                        statusMsg.textContent = 'Movie uploaded successfully!';
+                        statusMsg.classList.add('success');
+                        uploadForm.reset();
+                        
+                        // मूवी लिस्ट को रिफ्रेश करें ताकि नई मूवी दिखे
+                        if(appState.currentScreen === 'movies-screen') {
+                           loadMovieContentForLanguage(appState.movies.currentLanguage);
+                        }
+
+                    } catch (error) {
+                        console.error("Error uploading movie:", error);
+                        statusMsg.textContent = 'Upload failed. Please try again.';
+                        statusMsg.classList.add('error');
+                    } finally {
+                        submitBtn.disabled = false;
+                        setTimeout(() => { statusMsg.textContent = ''; }, 4000);
+                    }
+                });
+            }
+
 
             document.getElementById('get-started-btn')?.addEventListener('click', () => {
                 userHasInteracted = true;
