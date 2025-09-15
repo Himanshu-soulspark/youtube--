@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="en"> <!-- ★★★ MODIFIED: Language set to English -->
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -17,9 +17,9 @@
 
     <style>
         /* ================================================= /
-        / === Shubhzone App Styles (Code 2) - FINAL v6.0 === /
+        / === Shubhzone App Styles (Code 2) - FINAL v7.0 === /
         / === MODIFIED AS PER USER REQUEST - SEP 2025    === /
-        / === SOLVED: Styles for New Movie/Series UI     === /
+        / === SOLVED: New Categories & Hindi-Only Filter === /
         / ================================================= */
 
         /* Design Style Guide */
@@ -2350,19 +2350,18 @@
             viewingHistory: [],
             youtubeNextPageTokens: { long: null, shorts: null, search: null },
             
-            // ★★★ REWORKED: State object for Movies and Web Series ★★★
             content: {
                 movies: {
                     isLoading: false,
                     bannerInterval: null,
-                    currentCategory: 'bollywood',
-                    categoryPages: {}, // { bollywood: 1, hollywood: 1 }
-                    cache: new Map() // To store fetched movie lists
+                    currentCategory: 'hindi_cinema', // ★★★ MODIFIED: Default category
+                    categoryPages: {}, 
+                    cache: new Map() 
                 },
                 webseries: {
                     isLoading: false,
                     bannerInterval: null,
-                    currentCategory: 'popular',
+                    currentCategory: 'hindi_cinema', // ★★★ MODIFIED: Default category
                     categoryPages: {},
                     cache: new Map()
                 }
@@ -2423,7 +2422,7 @@
         }
         
         async function fetchFromTMDbAPI(endpoint, params = {}) {
-            // ★★★ MODIFIED: Added Hindi language support consistently ★★★
+            // ★★★ MODIFIED: Enforce Hindi language for all API calls ★★★
             params.language = 'hi-IN';
             params.include_image_language = 'en,hi,null';
 
@@ -2477,6 +2476,10 @@
                 const iframe = document.getElementById('movie-player-iframe-container');
                 if (iframe) iframe.src = 'about:blank';
             }
+             // ★★★ MODIFIED: Clear banner interval on navigation ★★★
+            if (appState.content.movies.bannerInterval) clearInterval(appState.content.movies.bannerInterval);
+            if (appState.content.webseries.bannerInterval) clearInterval(appState.content.webseries.bannerInterval);
+            
             if (appState.currentScreen === 'creator-page-screen' && appState.creatorPagePlayers.long) {
                  appState.creatorPagePlayers.long.destroy();
                  appState.creatorPagePlayers.long = null;
@@ -2492,8 +2495,8 @@
             activateScreen(nextScreenId);
 
             // Initialize new screen
-            if (nextScreenId === 'movies-screen') setupMoviesScreen();
-            if (nextScreenId === 'webseries-screen') setupWebseriesScreen();
+            if (nextScreenId === 'movies-screen') setupContentScreen('movie');
+            if (nextScreenId === 'webseries-screen') setupContentScreen('tv'); // ★★★ MODIFIED: use 'tv' as type
             if (nextScreenId === 'episode-list-screen' && payload) showEpisodeList(payload);
             
             // (Other screen initializations remain)
@@ -2512,7 +2515,9 @@
                 const iframe = document.getElementById('movie-player-iframe-container');
                 if (iframe) iframe.src = 'about:blank';
             }
-            // (Other screen cleanup logic remains the same)
+            // ★★★ MODIFIED: Clear banner interval on navigation ★★★
+            if (appState.content.movies.bannerInterval) clearInterval(appState.content.movies.bannerInterval);
+            if (appState.content.webseries.bannerInterval) clearInterval(appState.content.webseries.bannerInterval);
 
             if (appState.navigationStack.length <= 1) {
                 navigateTo('main-home-screen');
@@ -2536,30 +2541,53 @@
         // ★★★ NEW & REWORKED MOVIE/SERIES LOGIC - START ★★★
         // =================================================================
 
-        const MOVIE_CATEGORIES = {
-            'bollywood': { title: 'Bollywood', params: { with_original_language: 'hi' } },
-            'hollywood': { title: 'Hollywood (Dubbed)', params: { with_original_language: 'en', with_keywords: '4344|9735' } }, // 4344=dubbing, 9735=remake
-            'south': { title: 'South (Dubbed)', params: { with_original_language: 'te,ta,kn,ml', with_keywords: '4344|9735' } },
-            'action': { title: 'Action', params: { with_genres: 28, 'with_original_language': 'hi,en,te,ta' } },
-            'comedy': { title: 'Comedy', params: { with_genres: 35, 'with_original_language': 'hi,en,te,ta' } },
-            'horror': { title: 'Horror', params: { with_genres: 27, 'with_original_language': 'hi,en,te,ta' } },
+        // ★★★ NEW: Top level categories (Tabs) ★★★
+        const CONTENT_REGIONS = {
+            'hindi_cinema': { title: 'Hindi Cinema', params: { with_original_language: 'hi', region: 'IN' } },
+            'telugu_cinema': { title: 'Telugu Cinema', params: { with_original_language: 'te', region: 'IN' } },
+            'tamil_cinema': { title: 'Tamil Cinema', params: { with_original_language: 'ta', region: 'IN' } },
+            'malayalam_cinema': { title: 'Malayalam Cinema', params: { with_original_language: 'ml', region: 'IN' } },
+            'kannada_cinema': { title: 'Kannada Cinema', params: { with_original_language: 'kn', region: 'IN' } },
+            'punjabi_cinema': { title: 'Punjabi Cinema', params: { with_original_language: 'pa', region: 'IN' } },
+            'hollywood': { title: 'Hollywood', params: { with_original_language: 'en', region: 'US' } },
+            'nollywood': { title: 'Nollywood', params: { region: 'NG' } },
+            'lollywood': { title: 'Lollywood', params: { with_original_language: 'ur', region: 'PK' } },
+            'chinese_cinema': { title: 'Chinese Cinema', params: { with_original_language: 'zh', region: 'CN' } },
+            'korean_cinema': { title: 'Korean Cinema', params: { with_original_language: 'ko', region: 'KR' } },
+            'japanese_cinema': { title: 'Japanese Cinema', params: { with_original_language: 'ja', region: 'JP' } },
+            'french_cinema': { title: 'French Cinema', params: { with_original_language: 'fr', region: 'FR' } },
+            'british_cinema': { title: 'British Cinema', params: { region: 'GB' } },
+            'spanish_cinema': { title: 'Spanish/Latin', params: { with_original_language: 'es' } },
         };
-        
-        const WEBSERIES_CATEGORIES = {
-            'popular': { title: 'Popular', params: { with_original_language: 'hi' } },
-            'crime': { title: 'Crime & Thriller', params: { with_genres: '80,53', with_original_language: 'hi,en' } },
-            'drama': { title: 'Drama', params: { with_genres: 18, with_original_language: 'hi,en' } },
-            'comedy': { title: 'Comedy', params: { with_genres: 35, with_original_language: 'hi,en' } },
+
+        // ★★★ NEW: Bottom level categories (Rows) ★★★
+        const CONTENT_GENRES = {
+            'latest': { title: 'Latest', params: { sort_by: 'primary_release_date.desc' } },
+            'action': { title: 'Action', params: { with_genres: 28 } },
+            'comedy': { title: 'Comedy', params: { with_genres: 35 } },
+            'romance': { title: 'Romance', params: { with_genres: 10749 } },
+            'drama': { title: 'Drama', params: { with_genres: 18 } },
+            'thriller': { title: 'Thriller', params: { with_genres: 53 } },
+            'horror': { title: 'Horror', params: { with_genres: 27 } },
+            'mystery': { title: 'Mystery', params: { with_genres: 9648 } },
+            'scifi': { title: 'Sci-Fi', params: { with_genres: 878 } },
+            'fantasy': { title: 'Fantasy', params: { with_genres: 14 } },
+            'animation': { title: 'Animation', params: { with_genres: 16 } },
+            'musical': { title: 'Musical', params: { with_genres: 10402 } },
+            'historical': { title: 'Historical', params: { with_genres: 36 } },
+            'documentary': { title: 'Documentary', params: { with_genres: 99 } },
+            'biopic': { title: 'Biopic', params: { with_keywords: '9845' } }, // TMDb doesn't have a 'biopic' genre, using keyword
         };
+
 
         // --- Generic Content Rendering ---
 
         function renderContentBanner(type, items) {
-            const carousel = document.getElementById(`${type}-banner-carousel`);
+            const carousel = document.getElementById(`${type === 'movie' ? 'movie' : 'webseries'}-banner-carousel`);
             if (!carousel) return;
 
             if (!items || items.length === 0) {
-                carousel.innerHTML = '<p class="static-message">No trending content found.</p>';
+                carousel.innerHTML = '<p class="static-message">No trending content found in Hindi.</p>';
                 return;
             }
             
@@ -2579,7 +2607,7 @@
                 card.addEventListener('click', () => {
                     if (type === 'movie') {
                         playMovieFromTMDB(card.dataset.id);
-                    } else {
+                    } else { // type is 'tv'
                         navigateTo('episode-list-screen', { seriesId: card.dataset.id });
                     }
                 });
@@ -2589,7 +2617,8 @@
         }
 
         function renderContentCategoryRow(type, categoryKey, title, items, hasMore) {
-            const rowsContainer = document.getElementById(`${type}-category-rows`);
+            const screenType = type === 'movie' ? 'movie' : 'webseries';
+            const rowsContainer = document.getElementById(`${screenType}-category-rows`);
             if (!rowsContainer) return;
             
             const row = document.createElement('div');
@@ -2604,17 +2633,12 @@
                 </div>`;
             }).join('');
             
-            const loadMoreHTML = hasMore ? `
-                <div class="load-more-card haptic-trigger" data-category="${categoryKey}" data-type="${type}">
-                    <i class="fas fa-arrow-right"></i>
-                    <span>Load More</span>
-                </div>` : '';
+            rowsContainer.appendChild(row);
 
+            // ★★★ MODIFIED: Load More button is removed as per new design of random rows on refresh ★★★
             row.innerHTML = `
                 <h3 class="content-category-title">${title}</h3>
-                <div class="content-row-scroller">${scrollerHTML}${loadMoreHTML}</div>`;
-            
-            rowsContainer.appendChild(row);
+                <div class="content-row-scroller">${scrollerHTML}</div>`;
             
             // Add event listeners after appending
             row.querySelectorAll('.content-vertical-card').forEach(card => {
@@ -2626,26 +2650,20 @@
                     }
                 });
             });
-
-            const loadMoreBtn = row.querySelector('.load-more-card');
-            if(loadMoreBtn) {
-                loadMoreBtn.addEventListener('click', () => {
-                    loadMoreContent(type, categoryKey, loadMoreBtn);
-                });
-            }
         }
         
-        // --- Movie Screen Logic ---
-
-        function setupMoviesScreen() {
-            const tabsContainer = document.getElementById('movie-category-tabs');
-            const searchInput = document.getElementById('movie-search-input');
-            const searchBtn = document.getElementById('movie-search-btn');
+        // --- Generic Setup Function ---
+        
+        function setupContentScreen(type) { // type is 'movie' or 'tv'
+            const screenType = type === 'movie' ? 'movie' : 'webseries';
+            const tabsContainer = document.getElementById(`${screenType}-category-tabs`);
+            const searchInput = document.getElementById(`${screenType}-search-input`);
+            const searchBtn = document.getElementById(`${screenType}-search-btn`);
 
             if (!tabsContainer.hasChildNodes()) { // Render tabs only once
-                tabsContainer.innerHTML = Object.keys(MOVIE_CATEGORIES).map(key => `
-                    <div class="content-category-tab haptic-trigger ${key === 'bollywood' ? 'active' : ''}" data-category="${key}">
-                        ${MOVIE_CATEGORIES[key].title}
+                tabsContainer.innerHTML = Object.keys(CONTENT_REGIONS).map(key => `
+                    <div class="content-category-tab haptic-trigger ${key === 'hindi_cinema' ? 'active' : ''}" data-category="${key}">
+                        ${CONTENT_REGIONS[key].title}
                     </div>
                 `).join('');
                 
@@ -2653,172 +2671,101 @@
                     tab.addEventListener('click', () => {
                          tabsContainer.querySelector('.active')?.classList.remove('active');
                          tab.classList.add('active');
-                         appState.content.movies.currentCategory = tab.dataset.category;
-                         loadAllMovieContent(true); // Force reload for new main category
+                         const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
+                         state.currentCategory = tab.dataset.category;
+                         loadAllContent(type, true); // Force reload for new main category
                     });
                 });
             }
 
-            searchBtn.onclick = () => searchContent('movie', searchInput.value);
-            searchInput.onkeypress = (e) => { if (e.key === 'Enter') searchContent('movie', searchInput.value); };
+            searchBtn.onclick = () => searchContent(type, searchInput.value);
+            searchInput.onkeypress = (e) => { if (e.key === 'Enter') searchContent(type, searchInput.value); };
 
-            loadAllMovieContent();
+            loadAllContent(type);
         }
 
-        async function loadAllMovieContent(forceRefresh = false) {
-            const mainCategoryKey = appState.content.movies.currentCategory;
-            const bannerCacheKey = `${mainCategoryKey}-banner`;
-            const rowsCacheKey = `${mainCategoryKey}-rows`;
-
-            const bannerContainer = document.getElementById('movie-banner-carousel');
-            const rowsContainer = document.getElementById('movie-category-rows');
+        async function loadAllContent(type, forceRefresh = false) {
+            const screenType = type === 'movie' ? 'movie' : 'webseries';
+            const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
             
-            if (!forceRefresh && appState.content.movies.cache.has(bannerCacheKey)) {
-                console.log("Loading movies from cache...");
-                renderContentBanner('movie', appState.content.movies.cache.get(bannerCacheKey));
-                rowsContainer.innerHTML = appState.content.movies.cache.get(rowsCacheKey);
-                 // Re-attach event listeners for cached content
-                reAttachEventListeners('movie', rowsContainer);
+            const mainCategoryKey = state.currentCategory;
+            const bannerCacheKey = `${mainCategoryKey}-${type}-banner`;
+            
+            const bannerContainer = document.getElementById(`${screenType}-banner-carousel`);
+            const rowsContainer = document.getElementById(`${screenType}-category-rows`);
+            
+            // ★★★ MODIFIED: No caching for rows to ensure they are new on every load ★★★
+            if (!forceRefresh && state.cache.has(bannerCacheKey)) {
+                console.log(`Loading ${type} banner from cache...`);
+                renderContentBanner(type, state.cache.get(bannerCacheKey));
             } else {
-                console.log("Fetching fresh movie data...");
+                console.log(`Fetching fresh ${type} data...`);
                 bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-                rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
                 
-                appState.content.movies.categoryPages = {}; // Reset pages
+                // Fetch banner data (trending/popular from the main region category)
+                const regionParams = CONTENT_REGIONS[mainCategoryKey].params;
+                const bannerParams = { ...regionParams, sort_by: 'vote_average.desc', page: 1 };
+                const bannerData = await fetchFromTMDbAPI(`discover/${type}`, bannerParams);
                 
-                // Fetch banner data (popular from the main category)
-                const bannerParams = { ...MOVIE_CATEGORIES[mainCategoryKey].params, sort_by: 'popularity.desc', page: 1 };
-                const bannerData = await fetchFromTMDbAPI('discover/movie', bannerParams);
-                const shuffledBannerItems = shuffleArray(bannerData.results || []);
-                renderContentBanner('movie', shuffledBannerItems);
-                appState.content.movies.cache.set(bannerCacheKey, shuffledBannerItems);
-
-                // Fetch data for all categories in parallel
-                rowsContainer.innerHTML = '';
-                const categoryPromises = Object.keys(MOVIE_CATEGORIES).map(async (key) => {
-                    appState.content.movies.categoryPages[key] = 1;
-                    const params = { ...MOVIE_CATEGORIES[key].params, page: 1 };
-                    const data = await fetchFromTMDbAPI('discover/movie', params);
-                    const items = data.results || [];
-                    if (items.length > 0) {
-                        renderContentCategoryRow('movie', key, MOVIE_CATEGORIES[key].title, items, data.total_pages > 1);
-                    }
-                });
-                
-                await Promise.all(categoryPromises);
-                appState.content.movies.cache.set(rowsCacheKey, rowsContainer.innerHTML);
+                // Filter out items without a backdrop image for a better UI
+                const bannerItems = (bannerData.results || []).filter(item => item.backdrop_path);
+                renderContentBanner(type, bannerItems.slice(0, 10)); // Show top 10
+                state.cache.set(bannerCacheKey, bannerItems);
             }
-        }
-        
-        // --- Web Series Screen Logic ---
-
-        function setupWebseriesScreen() {
-            const tabsContainer = document.getElementById('webseries-category-tabs');
-            const searchInput = document.getElementById('webseries-search-input');
-            const searchBtn = document.getElementById('webseries-search-btn');
-
-            if (!tabsContainer.hasChildNodes()) {
-                 tabsContainer.innerHTML = Object.keys(WEBSERIES_CATEGORIES).map(key => `
-                    <div class="content-category-tab haptic-trigger ${key === 'popular' ? 'active' : ''}" data-category="${key}">
-                        ${WEBSERIES_CATEGORIES[key].title}
-                    </div>
-                `).join('');
-                
-                 tabsContainer.querySelectorAll('.content-category-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                         tabsContainer.querySelector('.active')?.classList.remove('active');
-                         tab.classList.add('active');
-                         appState.content.webseries.currentCategory = tab.dataset.category;
-                         loadAllWebseriesContent(true);
-                    });
-                });
-            }
-
-            searchBtn.onclick = () => searchContent('webseries', searchInput.value);
-            searchInput.onkeypress = (e) => { if (e.key === 'Enter') searchContent('webseries', searchInput.value); };
-
-            loadAllWebseriesContent();
-        }
-
-        async function loadAllWebseriesContent(forceRefresh = false) {
-             const bannerContainer = document.getElementById('webseries-banner-carousel');
-             const rowsContainer = document.getElementById('webseries-category-rows');
-             
-             bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-             
-             appState.content.webseries.categoryPages = {};
-
-             // Fetch banner (most popular Hindi series)
-             const bannerParams = { ...WEBSERIES_CATEGORIES['popular'].params, sort_by: 'popularity.desc', page: 1 };
-             const bannerData = await fetchFromTMDbAPI('discover/tv', bannerParams);
-             renderContentBanner('webseries', shuffleArray(bannerData.results || []));
-
-             // Fetch all category rows
-             rowsContainer.innerHTML = '';
-             const categoryPromises = Object.keys(WEBSERIES_CATEGORIES).map(async (key) => {
-                 appState.content.webseries.categoryPages[key] = 1;
-                 const params = { ...WEBSERIES_CATEGORIES[key].params, page: 1 };
-                 const data = await fetchFromTMDbAPI('discover/tv', params);
-                 if (data.results && data.results.length > 0) {
-                    renderContentCategoryRow('webseries', key, WEBSERIES_CATEGORIES[key].title, data.results, data.total_pages > 1);
-                 }
-             });
-             await Promise.all(categoryPromises);
-        }
-
-        // --- Common Logic (Load More, Search, Player) ---
-        
-        async function loadMoreContent(type, categoryKey, button) {
-            button.innerHTML = `<div class="loader" style="width:20px; height:20px;"></div>`;
-            const state = appState.content[type === 'movie' ? 'movies' : 'webseries'];
-            state.categoryPages[categoryKey]++;
-            const page = state.categoryPages[categoryKey];
-
-            const categories = type === 'movie' ? MOVIE_CATEGORIES : WEBSERIES_CATEGORIES;
-            const params = { ...categories[categoryKey].params, page: page };
-            const endpoint = type === 'movie' ? 'discover/movie' : 'discover/tv';
-
-            const data = await fetchFromTMDbAPI(endpoint, params);
             
-            const scroller = button.closest('.content-row-scroller');
-            button.remove(); // Remove the button itself
+            // Fetch genre rows every time for fresh, random content
+            rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            state.categoryPages = {}; // Reset pages
 
-            if (data.results && data.results.length > 0) {
-                const newItemsHTML = data.results.map(item => {
-                    const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750.png?text=No+Image';
-                    return `<div class="content-vertical-card haptic-trigger" data-id="${item.id}" data-type="${type}" style="background-image: url('${posterPath}')"></div>`;
-                }).join('');
+            rowsContainer.innerHTML = '';
+            const categoryPromises = Object.keys(CONTENT_GENRES).map(async (key) => {
+                const randomPage = Math.floor(Math.random() * 10) + 1; // Get a random page from 1-10
+                const regionParams = CONTENT_REGIONS[mainCategoryKey].params;
+                const genreParams = CONTENT_GENRES[key].params;
                 
-                const hasMore = page < data.total_pages;
-                const loadMoreHTML = hasMore ? `<div class="load-more-card haptic-trigger" data-category="${categoryKey}" data-type="${type}"><i class="fas fa-arrow-right"></i><span>Load More</span></div>` : '';
+                // Combine parameters: region + genre + random page
+                const params = { ...regionParams, ...genreParams, page: randomPage };
+                
+                const data = await fetchFromTMDbAPI(`discover/${type}`, params);
+                const items = data.results || [];
 
-                scroller.insertAdjacentHTML('beforeend', newItemsHTML + loadMoreHTML);
-                reAttachEventListeners(type, scroller.parentElement); // Re-attach listeners for the whole row
-            }
+                // Filter out items without a poster
+                const validItems = items.filter(item => item.poster_path);
+                
+                if (validItems.length > 0) {
+                    renderContentCategoryRow(type, key, CONTENT_GENRES[key].title, validItems, false);
+                }
+            });
+            
+            await Promise.all(categoryPromises);
         }
+
+        // --- Common Logic (Search, Player, etc.) ---
         
         async function searchContent(type, query) {
             if (!query) return;
-            const rowsContainer = document.getElementById(`${type}-category-rows`);
+            const screenType = type === 'movie' ? 'movie' : 'webseries';
+            const rowsContainer = document.getElementById(`${screenType}-category-rows`);
             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
             
-            const endpoint = type === 'movie' ? 'search/movie' : 'search/tv';
+            const endpoint = `search/${type}`;
             const data = await fetchFromTMDbAPI(endpoint, { query: query, page: 1 });
             
             rowsContainer.innerHTML = ''; // Clear loader
             if (data.results && data.results.length > 0) {
-                renderContentCategoryRow(type, 'search', `Search Results for "${query}"`, data.results, false);
+                 const validItems = data.results.filter(item => item.poster_path); // Filter search results too
+                renderContentCategoryRow(type, 'search', `Search Results for "${query}"`, validItems, false);
             } else {
                 rowsContainer.innerHTML = `<p class="static-message">No results found for "${query}".</p>`;
             }
         }
         
         function startBannerAutoscroll(type) {
-            const state = appState.content[type === 'movie' ? 'movies' : 'webseries'];
+            const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
             if (state.bannerInterval) clearInterval(state.bannerInterval);
 
-            const carousel = document.getElementById(`${type}-banner-carousel`);
+            const screenType = type === 'movie' ? 'movie' : 'webseries';
+            const carousel = document.getElementById(`${screenType}-banner-carousel`);
             if (!carousel || carousel.children.length <= 1) return;
             
             let currentIndex = 0;
@@ -2830,23 +2777,7 @@
                     left: carousel.children[currentIndex].offsetLeft - (carousel.offsetWidth * 0.05),
                     behavior: 'smooth'
                 });
-            }, 3000);
-        }
-        
-        function reAttachEventListeners(type, container) {
-             container.querySelectorAll('.content-vertical-card').forEach(card => {
-                 if(card.dataset.listenerAttached) return;
-                 card.onclick = () => {
-                    if (type === 'movie') playMovieFromTMDB(card.dataset.id);
-                    else navigateTo('episode-list-screen', { seriesId: card.dataset.id });
-                 };
-                 card.dataset.listenerAttached = "true";
-             });
-             container.querySelectorAll('.load-more-card').forEach(button => {
-                 if(button.dataset.listenerAttached) return;
-                 button.onclick = () => loadMoreContent(type, button.dataset.category, button);
-                 button.dataset.listenerAttached = "true";
-             });
+            }, 3000); // ★★★ SET TO 3 SECONDS ★★★
         }
         
         async function showEpisodeList({ seriesId }) {
@@ -2894,13 +2825,11 @@
         }
         
         function playMovieFromTMDB(tmdbId) {
-             // ★★★ MODIFIED: Using a more reliable embed source and TMDB ID directly ★★★
             const playerUrl = `https://vidsrc.to/embed/movie/${tmdbId}`;
             setupAndNavigateToPlayer(playerUrl);
         }
         
         function playSeriesEpisode(tmdbId, season, episode) {
-             // ★★★ MODIFIED: Using a more reliable embed source for TV shows ★★★
             const playerUrl = `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
             setupAndNavigateToPlayer(playerUrl);
         }
