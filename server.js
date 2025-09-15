@@ -1,7 +1,6 @@
 // ====================================================================
-// === Shubhzone - YouTube API Server (Node.js) ===
-// === ★★★ इस फ़ाइल में कोई बदलाव आवश्यक नहीं है ★★★ ===
-// === यह फ़ाइल YouTube API के लिए है और पहले की तरह काम करती रहेगी ===
+// === Shubhzone - API Server (Node.js) - ★★★ FINAL SECURE VERSION ★★★ ===
+// === ★★★ TMDb API को सुरक्षित करने के लिए इसमें ज़रूरी बदलाव किए गए हैं ★★★ ===
 // ====================================================================
 
 // 1. ज़रूरी पैकेज इम्पोर्ट करें
@@ -13,9 +12,7 @@ const path = require('path');
 
 // 2. Firebase एडमिन को शुरू करें
 let db; 
-
 try {
-    // Render.com पर, यह पाथ आपके सीक्रेट फ़ाइल के लिए सही होना चाहिए
     const serviceAccount = require('/etc/secrets/firebase-credentials.json');
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
@@ -24,7 +21,7 @@ try {
     console.log("Firebase Admin SDK सफलतापूर्वक शुरू हो गया है।");
 } catch (error) {
     console.error("Firebase Admin SDK शुरू करने में विफल:", error.message);
-    console.log("चेतावनी: सर्वर बिना Firebase कैशिंग के चलेगा। API सीमाएं जल्दी खत्म हो सकती हैं।");
+    console.log("चेतावनी: सर्वर बिना Firebase कैशिंग के चलेगा।");
 }
 
 // 3. सर्वर सेटअप करें
@@ -32,35 +29,29 @@ const app = express();
 const port = process.env.PORT || 3000;
 app.use(cors());
 
-// 4. Render के Environment Variable से YouTube API कुंजी पढ़ें
+// 4. Render के Environment Variable से दोनों API कुंजियाँ पढ़ें
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+const TMDB_API_KEY = process.env.TMDB_API_KEY; // ★★★ नया बदलाव: TMDb की कुंजी यहाँ सुरक्षित रूप से पढ़ी गई
 
-// 5. मुख्य API रूट
+// ====================================================================
+// === YouTube API रूट (इसमें कोई बदलाव नहीं किया गया है) ===
+// ====================================================================
 app.get('/api/youtube', async (req, res) => {
-    // जांचें कि API कुंजी मौजूद है या नहीं
     if (!YOUTUBE_API_KEY) {
         console.error("त्रुटि: YOUTUBE_API_KEY एनवायरनमेंट वेरिएबल सेट नहीं है।");
         return res.status(500).json({ error: "सर्वर ठीक से कॉन्फ़िगर नहीं है। YouTube API कुंजी गायब है।" });
     }
-
     const { type, ...queryParams } = req.query;
-    
-    // कैशिंग के लिए एक यूनिक की (key) बनाएं
     const safeParams = Object.keys(queryParams).sort().map(key => `${key}=${queryParams[key]}`).join('&');
-    const cacheKey = Buffer.from(`${type}_${safeParams}`).toString('base64');
-    
+    const cacheKey = Buffer.from(`youtube_${type}_${safeParams}`).toString('base64');
     let cacheRef;
     if (db) {
-        cacheRef = db.collection('youtube_cache').doc(cacheKey);
+        cacheRef = db.collection('api_cache').doc(cacheKey);
     }
-
     let youtubeApiUrl;
     const baseUrl = 'https://www.googleapis.com/youtube/v3/';
-    
-    // अनुरोध के प्रकार के आधार पर सही YouTube API URL बनाएं
     switch (type) {
         case 'search':
-            // यह सुनिश्चित करने के लिए कि केवल वीडियो ही खोजे जाएं
             youtubeApiUrl = `${baseUrl}search?part=snippet&type=video&key=${YOUTUBE_API_KEY}&${safeParams}`;
             break;
         case 'videoDetails':
@@ -73,70 +64,79 @@ app.get('/api/youtube', async (req, res) => {
             youtubeApiUrl = `${baseUrl}playlistItems?part=snippet&key=${YOUTUBE_API_KEY}&${safeParams}`;
             break;
         default:
-            // अगर कोई प्रकार नहीं दिया गया है, तो भारत के सबसे लोकप्रिय वीडियो दिखाएं
             youtubeApiUrl = `${baseUrl}videos?part=snippet,contentDetails&chart=mostPopular&regionCode=IN&maxResults=20&key=${YOUTUBE_API_KEY}`;
     }
-
     try {
         console.log(`YouTube API को कॉल किया जा रहा है (Type: ${type})।`);
         const youtubeResponse = await fetch(youtubeApiUrl, { timeout: 8000 }); 
-        
-        if (!youtubeResponse.ok) {
-            const errorBody = await youtubeResponse.text();
-            console.error(`YouTube API से त्रुटि का मुख्य भाग: ${errorBody}`);
-            throw new Error(`YouTube API ने एरर दिया: ${youtubeResponse.statusText}`);
-        }
-
+        if (!youtubeResponse.ok) { const errorBody = await youtubeResponse.text(); throw new Error(`YouTube API ने एरर दिया: ${youtubeResponse.statusText}`); }
         const data = await youtubeResponse.json();
-
-        if (data.error) {
-            throw new Error(`YouTube API से त्रुटि: ${data.error.message}`);
-        }
-
-        // अगर Firebase कनेक्ट है, तो डेटा को कैश में सेव करें
-        if (db && cacheRef) {
-            await cacheRef.set({
-                data: data,
-                timestamp: Date.now()
-            });
-            console.log(`API कॉल सफल! डेटा Firebase में कैश किया गया और भेजा गया।`);
-        } else {
-            console.log("API कॉल सफल! डेटा बिना कैशिंग के भेजा गया।");
-        }
-        
+        if (data.error) { throw new Error(`YouTube API से त्रुटि: ${data.error.message}`); }
+        if (db && cacheRef) { await cacheRef.set({ data: data, timestamp: Date.now() }); console.log(`YouTube API कॉल सफल! डेटा कैश किया गया।`); }
         return res.status(200).json(data);
-
     } catch (error) {
-        console.warn(`API कॉल विफल हुई: ${error.message}। अब Firebase कैश से डेटा लाने का प्रयास किया जा रहा है।`);
-        
-        // अगर API कॉल विफल होती है और Firebase कनेक्ट है, तो कैश से डेटा लाने का प्रयास करें
+        console.warn(`YouTube API कॉल विफल हुई: ${error.message}। कैश से प्रयास किया जा रहा है।`);
         if (db && cacheRef) {
             try {
                 const cachedDoc = await cacheRef.get();
-                if (cachedDoc.exists) {
-                    console.log(`API विफलता के कारण बैकअप कैश का उपयोग किया गया। डेटा Firebase से भेजा गया।`);
-                    return res.status(200).json(cachedDoc.data().data);
-                } else {
-                    console.error("API विफल हो गई और इस रिक्वेस्ट के लिए कोई कैश भी उपलब्ध नहीं है।");
-                    return res.status(503).json({ error: "Service unavailable and no cache found." });
-                }
-            } catch (cacheError) {
-                console.error("API विफलता के बाद कैश पढ़ने में भी त्रुटि:", cacheError);
-                return res.status(500).json({ error: "API and cache both failed." });
-            }
-        } else {
-            // अगर Firebase कनेक्ट नहीं है, तो सिर्फ एरर भेजें
-            console.error("API विफल हो गई और Firebase कैशिंग उपलब्ध नहीं है।");
-            return res.status(503).json({ error: "Service unavailable and Firebase caching is not configured." });
-        }
+                if (cachedDoc.exists) { console.log(`बैकअप कैश का उपयोग किया गया।`); return res.status(200).json(cachedDoc.data().data); } 
+                else { return res.status(503).json({ error: "Service unavailable and no cache found." }); }
+            } catch (cacheError) { return res.status(500).json({ error: "API and cache both failed." }); }
+        } else { return res.status(503).json({ error: "Service unavailable and caching is not configured." }); }
     }
 });
+
+// ====================================================================
+// ★★★ नया ज़रूरी बदलाव: TMDb API के लिए सुरक्षित रूट ★★★
+// ====================================================================
+app.get('/api/tmdb', async (req, res) => {
+    // जांचें कि TMDb API कुंजी मौजूद है या नहीं
+    if (!TMDB_API_KEY) {
+        console.error("त्रुटि: TMDB_API_KEY एनवायरनमेंट वेरिएबल सेट नहीं है।");
+        return res.status(500).json({ error: "सर्वर ठीक से कॉन्फ़िगर नहीं है। TMDb API कुंजी गायब है।" });
+    }
+
+    // index.html से आने वाले अनुरोध से endpoint और बाकी पैरामीटर निकालें
+    const { endpoint, ...queryParams } = req.query;
+    
+    // अगर endpoint नहीं भेजा गया है, तो एरर दें
+    if (!endpoint) {
+        return res.status(400).json({ error: "TMDb endpoint is required." });
+    }
+
+    // TMDb API को भेजने के लिए URL तैयार करें
+    const paramsString = new URLSearchParams(queryParams).toString();
+    const tmdbApiUrl = `https://api.themoviedb.org/3/${endpoint}?api_key=${TMDB_API_KEY}&${paramsString}`;
+
+    try {
+        console.log(`TMDb API को कॉल किया जा रहा है (Endpoint: ${endpoint})।`);
+        const tmdbResponse = await fetch(tmdbApiUrl);
+
+        if (!tmdbResponse.ok) {
+            const errorData = await tmdbResponse.json();
+            console.error("TMDb API से त्रुटि:", errorData);
+            return res.status(tmdbResponse.status).json(errorData);
+        }
+
+        const data = await tmdbResponse.json();
+        
+        // TMDb से मिले डेटा को सीधे index.html पर वापस भेज दें
+        return res.status(200).json(data);
+
+    } catch (error) {
+        console.error("TMDb API को कॉल करने में सर्वर पर त्रुटि:", error);
+        return res.status(500).json({ error: "Failed to fetch data from TMDb." });
+    }
+});
+// ★★★ नया बदलाव यहाँ समाप्त होता है ★★★
+// ====================================================================
+
 
 // 6. स्टैटिक फाइलें (जैसे index.html) सर्व करें
 const publicPath = path.join(__dirname, '');
 app.use(express.static(publicPath));
 
-// 7. किसी भी अन्य रिक्वेस्ट के लिए index.html भेजें ताकि आपकी सिंगल-पेज ऐप काम करे
+// 7. किसी भी अन्य रिक्वेस्ट के लिए index.html भेजें
 app.get('*', (req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
