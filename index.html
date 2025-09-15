@@ -1814,6 +1814,119 @@
         }
         /* ★★★ NEW MOVIE EXPERIENCE STYLES - END ★★★ */
 
+        /* ★★★ BRAVE MODAL AND SERVER SELECTOR STYLES ★★★ */
+        .modal-content {
+            background-color: var(--secondary-background);
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            border: 1px solid rgba(var(--primary-neon-rgb), 0.2);
+        }
+        .modal-content h3 {
+            color: var(--primary-neon);
+            margin-top: 0;
+        }
+        .modal-content p {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .modal-buttons a, .modal-buttons button {
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .download-btn {
+            background-color: var(--primary-neon);
+            color: var(--background);
+        }
+        .cancel-btn {
+            background-color: var(--dark-grey);
+            color: var(--text-secondary);
+            border: 1px solid var(--text-secondary);
+        }
+        .server-selection-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        .server-btn {
+            background-color: var(--dark-grey);
+            color: var(--text-primary);
+            border: 1px solid var(--text-secondary);
+            padding: 15px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+        }
+        .server-btn:hover {
+            border-color: var(--primary-neon);
+        }
+
+        .movie-search-refresh-container {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            flex-shrink: 0;
+        }
+
+        #movie-search-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--text-secondary);
+            background-color: var(--secondary-background);
+            color: var(--text-primary);
+            font-size: 1em;
+        }
+
+        #movie-search-btn, #movie-refresh-btn {
+            background-color: var(--secondary-background);
+            border: none;
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+        #movie-search-btn:hover, #movie-refresh-btn:hover {
+            background-color: var(--primary-neon);
+        }
+        .movie-category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .more-movies-btn {
+            background: none;
+            border: 1px solid var(--text-secondary);
+            color: var(--text-secondary);
+            padding: 5px 12px;
+            font-size: 0.9em;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+        .more-movies-btn:hover {
+            color: var(--primary-neon);
+            border-color: var(--primary-neon);
+        }
     </style>
 </head>
 
@@ -1860,6 +1973,32 @@
             <img id="enlarged-image-src" src="" alt="Enlarged View">
         </div>
     </div>
+
+    <!-- ★★★ NEW: Brave Browser Modal ★★★ -->
+    <div id="brave-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Ad-Free Experience</h3>
+            <p>For the best ad-free experience, we recommend using the Brave browser.</p>
+            <div class="modal-buttons">
+                <a href="https://brave.com/download/" target="_blank" class="download-btn haptic-trigger">Download Brave</a>
+                <button id="cancel-brave-modal-btn" class="cancel-btn haptic-trigger">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★★★ NEW: Server Selection Modal ★★★ -->
+     <div id="server-selection-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="server-selection-title">Select Server</h3>
+            <div id="server-selection-list" class="server-selection-list">
+                <!-- Server buttons will be injected here -->
+            </div>
+             <div class="modal-buttons" style="margin-top: 20px;">
+                <button id="cancel-server-modal-btn" class="cancel-btn haptic-trigger">Cancel</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- === ALL MODALS END === -->
 
@@ -1987,6 +2126,14 @@
                         <option value="mr">मराठी (Marathi)</option>
                     </select>
                 </div>
+                
+                 <!-- ★★★ NEW: Movie Search and Refresh Bar ★★★ -->
+                <div class="movie-search-refresh-container">
+                    <input type="text" id="movie-search-input" placeholder="Search for a movie...">
+                    <button id="movie-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
+                    <button id="movie-refresh-btn" class="haptic-trigger"><i class="fas fa-redo"></i></button>
+                </div>
+
 
                 <!-- 16:9 Banner Carousel -->
                 <div class="movie-banner-container">
@@ -2179,7 +2326,9 @@
             movies: {
                 currentLanguage: 'hi', // डिफ़ॉल्ट भाषा
                 isLoading: false,
-                bannerInterval: null // बैनर के ऑटो-स्क्रॉल के लिए
+                bannerInterval: null, // बैनर के ऑटो-स्क्रॉल के लिए
+                nextPage: 2, // "More" button pagination
+                currentCategory: null,
             },
             longVideoSearchContext: {
                 type: 'query',
@@ -2557,8 +2706,23 @@
 
         let appStartLogicHasRun = false;
         const startAppLogic = async () => {
+            // Brave modal display logic
+            document.getElementById('brave-modal').classList.add('active');
+
+            document.getElementById('cancel-brave-modal-btn').onclick = () => {
+                document.getElementById('brave-modal').classList.remove('active');
+                proceedWithAppStart();
+            };
+
+             document.getElementById('brave-modal').querySelector('.download-btn').onclick = () => {
+                document.getElementById('brave-modal').classList.remove('active');
+                proceedWithAppStart();
+            };
+        };
+
+        const proceedWithAppStart = async () => {
             if (!appState.currentUser || !appState.currentUser.uid) {
-                setTimeout(startAppLogic, 100);
+                setTimeout(proceedWithAppStart, 100);
                 return;
             }
 
@@ -3338,8 +3502,39 @@
                     langSelector.dataset.listenerAttached = 'true';
                 }
             }
+             // Search and Refresh listeners
+            document.getElementById('movie-search-btn').onclick = performMovieSearch;
+            document.getElementById('movie-search-input').onkeypress = (e) => {
+                if (e.key === 'Enter') performMovieSearch();
+            };
+            document.getElementById('movie-refresh-btn').onclick = () => {
+                document.getElementById('movie-search-input').value = '';
+                loadMovieContentForLanguage(appState.movies.currentLanguage);
+            };
+
             // डिफ़ॉल्ट भाषा के लिए कंटेंट लोड करें
             loadMovieContentForLanguage(appState.movies.currentLanguage);
+        }
+
+         async function performMovieSearch() {
+            const query = document.getElementById('movie-search-input').value.trim();
+            if (!query) return;
+
+            const bannerContainer = document.getElementById('movie-banner-carousel');
+            const rowsContainer = document.getElementById('movie-category-rows');
+            bannerContainer.innerHTML = ''; // Clear banner for search results
+            rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+
+            const searchData = await fetchFromTMDbAPI('search/movie', {
+                query: query,
+                with_original_language: appState.movies.currentLanguage
+            });
+
+            if (searchData.results && searchData.results.length > 0) {
+                 renderMovieCategoryRow(`Search Results for "${query}"`, searchData.results, false);
+            } else {
+                 rowsContainer.innerHTML = `<p class="static-message">No results found for "${query}".</p>`;
+            }
         }
 
         async function loadMovieContentForLanguage(langCode) {
@@ -3369,7 +3564,7 @@
             rowsContainer.innerHTML = '';
             categoryData.forEach((data, index) => {
                 if (data.results && data.results.length > 0) {
-                     renderMovieCategoryRow(MOVIE_CATEGORIES[index].title, data.results);
+                     renderMovieCategoryRow(MOVIE_CATEGORIES[index].title, data.results, true, MOVIE_CATEGORIES[index].id);
                 }
             });
             
@@ -3405,34 +3600,45 @@
             
             bannerContainer.querySelectorAll('.movie-banner-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    playMovieFromTMDB(card.dataset.movieId, card.dataset.movieTitle);
+                    promptServerSelection(card.dataset.movieId, card.dataset.movieTitle);
                 });
             });
         }
         
         function setupBannerAutoscroll() {
-             const carousel = document.getElementById('movie-banner-carousel');
-             if (!carousel || carousel.children.length <= 1) return;
+            const carousel = document.getElementById('movie-banner-carousel');
+            if (!carousel || carousel.children.length <= 1) return;
 
-             let currentIndex = 0;
-             const totalItems = carousel.children.length;
+             // Clear existing interval to prevent multiple running timers
+            if (appState.movies.bannerInterval) {
+                clearInterval(appState.movies.bannerInterval);
+            }
 
-             appState.movies.bannerInterval = setInterval(() => {
-                 currentIndex = (currentIndex + 1) % totalItems;
-                 carousel.scrollTo({
-                    left: carousel.children[currentIndex].offsetLeft - (carousel.offsetWidth * 0.05), // 5% मार्जिन के लिए एडजस्ट करें
-                    behavior: 'smooth'
-                 });
-             }, 3000); // 3 सेकंड
+            let currentIndex = 0;
+            const totalItems = carousel.children.length;
+            const scrollContainer = carousel;
+
+            appState.movies.bannerInterval = setInterval(() => {
+                currentIndex = (currentIndex + 1) % totalItems;
+                const targetCard = scrollContainer.children[currentIndex];
+                 if (targetCard) {
+                    const scrollLeft = targetCard.offsetLeft - (scrollContainer.offsetWidth * 0.05); // Adjust for 5% margin
+                    scrollContainer.scrollTo({
+                        left: scrollLeft,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 3000);
         }
 
 
-        function renderMovieCategoryRow(title, movies) {
+        function renderMovieCategoryRow(title, movies, showMoreButton = true, categoryId = null) {
              const rowsContainer = document.getElementById('movie-category-rows');
              if (!rowsContainer) return;
 
              const row = document.createElement('div');
              row.className = 'movie-category-row';
+             row.dataset.categoryId = categoryId; // Store category ID for "More" button
 
              const scrollerHTML = movies.slice(0, 15).map(movie => `
                 <div class="movie-vertical-card haptic-trigger" 
@@ -3443,7 +3649,10 @@
              `).join('');
 
              row.innerHTML = `
-                <h3 class="movie-category-title">${title}</h3>
+                <div class="movie-category-header">
+                    <h3 class="movie-category-title">${title}</h3>
+                    ${showMoreButton ? `<button class="more-movies-btn haptic-trigger" data-category-id="${categoryId}">More</button>` : ''}
+                </div>
                 <div class="movie-row-scroller">
                     ${scrollerHTML}
                 </div>
@@ -3452,34 +3661,125 @@
              
              row.querySelectorAll('.movie-vertical-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    playMovieFromTMDB(card.dataset.movieId, card.dataset.movieTitle);
+                     promptServerSelection(card.dataset.movieId, card.dataset.movieTitle);
                 });
             });
+
+            if (showMoreButton) {
+                row.querySelector('.more-movies-btn').addEventListener('click', (e) => {
+                    const catId = e.target.dataset.categoryId;
+                    loadMoreMoviesForCategory(catId, row);
+                });
+            }
         }
 
-        async function playMovieFromTMDB(movieId, movieTitle) {
-            console.log(`Playing movie: ${movieTitle} (ID: ${movieId})`);
+        async function loadMoreMoviesForCategory(categoryId, rowElement) {
+            const scroller = rowElement.querySelector('.movie-row-scroller');
+            const moreBtn = rowElement.querySelector('.more-movies-btn');
+            moreBtn.textContent = 'Loading...';
+            moreBtn.disabled = true;
+
+            const nextPage = (parseInt(rowElement.dataset.page) || 1) + 1;
+            const moreMoviesData = await fetchFromTMDbAPI('discover/movie', {
+                with_genres: categoryId,
+                with_original_language: appState.movies.currentLanguage,
+                sort_by: 'popularity.desc',
+                page: nextPage
+            });
+
+            if (moreMoviesData.results && moreMoviesData.results.length > 0) {
+                 const newMoviesHTML = moreMoviesData.results.map(movie => `
+                    <div class="movie-vertical-card haptic-trigger" 
+                         data-movie-id="${movie.id}" 
+                         data-movie-title="${escapeHTML(movie.title)}"
+                         style="background-image: url('https://image.tmdb.org/t/p/w500${movie.poster_path}')">
+                    </div>
+                 `).join('');
+
+                 scroller.insertAdjacentHTML('beforeend', newMoviesHTML);
+                 
+                 // Re-attach listeners to new cards
+                 scroller.querySelectorAll('.movie-vertical-card:not([data-listener-attached])').forEach(card => {
+                    card.addEventListener('click', () => {
+                         promptServerSelection(card.dataset.movieId, card.dataset.movieTitle);
+                    });
+                    card.dataset.listenerAttached = 'true';
+                 });
+                 
+                 rowElement.dataset.page = nextPage;
+                 moreBtn.textContent = 'More';
+                 moreBtn.disabled = false;
+            } else {
+                 moreBtn.textContent = 'No More';
+                 moreBtn.disabled = true;
+            }
+        }
+
+        function promptServerSelection(movieId, movieTitle) {
+            const modal = document.getElementById('server-selection-modal');
+            const titleElement = document.getElementById('server-selection-title');
+            const listElement = document.getElementById('server-selection-list');
             
-            // पहले IMDB ID प्राप्त करें
+            titleElement.textContent = `Play "${movieTitle}"`;
+            
+            const servers = [
+                { name: 'Server 1 (vidsrc.xyz)', type: 'vidsrc_xyz' },
+                { name: 'Server 2 (vidsrc.to)', type: 'vidsrc_to' },
+                { name: 'Server 3 (2embed.cc)', type: '2embed_cc' }
+            ];
+
+            listElement.innerHTML = servers.map(server => 
+                `<button class="server-btn haptic-trigger" data-server-type="${server.type}">${server.name}</button>`
+            ).join('');
+
+            listElement.querySelectorAll('.server-btn').forEach(button => {
+                button.onclick = async () => {
+                    modal.classList.remove('active');
+                    playMovieFromTMDB(movieId, button.dataset.serverType);
+                };
+            });
+
+            document.getElementById('cancel-server-modal-btn').onclick = () => {
+                modal.classList.remove('active');
+            };
+
+            modal.classList.add('active');
+        }
+
+        async function playMovieFromTMDB(movieId, serverType) {
+            console.log(`Playing movie ID: ${movieId} from Server: ${serverType}`);
+            
             const externalIdsData = await fetchFromTMDbAPI(`movie/${movieId}/external_ids`);
             
             if (externalIdsData && externalIdsData.imdb_id) {
                 const imdbId = externalIdsData.imdb_id;
+                let embedUrl = '';
+
+                switch (serverType) {
+                    case 'vidsrc_to':
+                        embedUrl = `https://vidsrc.to/embed/movie/${imdbId}`;
+                        break;
+                    case '2embed_cc':
+                        embedUrl = `https://2embed.cc/embed/${imdbId}`;
+                        break;
+                    case 'vidsrc_xyz':
+                    default:
+                        embedUrl = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
+                        break;
+                }
+                
                 navigateTo('movie-player-screen');
                 
-                // स्क्रीन लोड होने के बाद Iframe सेट करें
                 setTimeout(() => {
                     const iframe = document.getElementById('movie-player-iframe-container');
                     if(iframe) {
-                        iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
+                        iframe.src = embedUrl;
                     }
-                    
-                    // प्लेयर कंट्रोलर को इनिशियलाइज़ करें
                     setupMoviePlayerControls();
                 }, 100);
 
             } else {
-                alert('इस मूवी के लिए प्लेयर सोर्स नहीं मिला।');
+                alert('Could not find a player source for this movie.');
                 console.error("Could not fetch IMDB ID for movie:", movieId);
             }
         }
