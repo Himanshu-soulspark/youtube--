@@ -17,9 +17,9 @@
 
     <style>
         /* ================================================= /
-        / === Shubhzone App Styles (Code 2) - FINAL v10.0 === /
+        / === Shubhzone App Styles (Code 2) - FINAL v11.0 === /
         / === MODIFIED AS PER USER REQUEST - SEP 2025     === /
-        / === SOLVED: All user-reported issues            === /
+        / === SOLVED: Latest only, Server fix, Korean     === /
         / ================================================= */
 
         /* Design Style Guide */
@@ -1788,7 +1788,6 @@
             color: var(--text-primary);
         }
         
-        /* ★★★ NEW: Styles for "View All" Button ★★★ */
         .view-all-btn {
             background-color: transparent;
             border: 1px solid var(--text-secondary);
@@ -1935,10 +1934,8 @@
             color: var(--text-primary);
         }
 
-        /* Server Selection Modal Styles */
         #server-select-modal {
             z-index: 1200;
-            /* Must be on top of everything */
         }
 
         .server-select-content {
@@ -2009,11 +2006,10 @@
 
         .server-btn .fa-crown {
             color: #FFD700;
-            /* Golden color for the crown */
         }
         
         #ad-blocker-modal {
-            z-index: 1300; /* Higher than server select */
+            z-index: 1300;
         }
         .ad-blocker-content {
             background-color: var(--secondary-background);
@@ -2061,7 +2057,7 @@
             transition: all 0.2s ease;
         }
         #brave-download-btn {
-            background-color: #FF7733; /* Brave's brand color */
+            background-color: #FF7733;
             color: white;
         }
         #continue-to-player-btn {
@@ -2078,9 +2074,8 @@
             cursor: pointer;
         }
         
-        /* ★★★ NEW: Styles for Content Grid Screen ("View All") ★★★ */
         #content-grid-screen .screen-header {
-            justify-content: flex-start; /* Align title to the left */
+            justify-content: flex-start;
         }
         #content-grid-screen .header-title {
             margin-left: 15px;
@@ -2098,7 +2093,7 @@
             padding-bottom: 20px;
         }
         .content-grid .content-vertical-card {
-            width: 100%; /* Make cards fill the grid column */
+            width: 100%;
         }
         #content-grid-load-more-btn {
             display: block;
@@ -2166,7 +2161,6 @@
         </div>
     </div>
     
-    <!-- Server Selection Modal HTML -->
     <div id="server-select-modal" class="modal-overlay">
         <div class="server-select-content">
             <div class="server-select-header">
@@ -2398,7 +2392,7 @@
             </div>
         </div>
 
-        <!-- ★★★ NEW: Content Grid Screen ("View All" Page) ★★★ -->
+        <!-- Content Grid Screen ("View All" Page) -->
         <div id="content-grid-screen" class="screen">
             <div class="screen-header">
                 <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i
@@ -2509,7 +2503,7 @@
         const analytics = firebase.analytics();
 
         // =================================================
-        // ★★★ Helper Functions ★★★
+        // Helper Functions
         // =================================================
 
         function shuffleArray(array) {
@@ -2571,10 +2565,9 @@
                 }
             },
             
-            // ★★★ MODIFIED: Added properties for player and grid view ★★★
             playerContext: { type: null, tmdbId: null, season: null, episode: null },
-            pendingPlayerUrl: null, // Holds the URL while the ad modal is shown
-            contentGrid: { // State for the "View All" screen
+            pendingPlayerUrl: null,
+            contentGrid: {
                 type: null,
                 genreKey: null,
                 currentPage: 1,
@@ -2602,11 +2595,10 @@
 
 
         // =============================================================================
-        // ★★★ API FETCHING FUNCTIONS (MODIFIED FOR BETTER ERROR HANDLING) ★★★
+        // API FETCHING FUNCTIONS
         // =============================================================================
 
         async function fetchFromYouTubeAPI(type, params) {
-            // This function remains largely the same, but the calling functions will now handle errors better.
             let url = `/api/youtube?type=${type}`;
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
@@ -2631,7 +2623,6 @@
                 return data;
             } catch (error) {
                 console.error(`Error fetching from YouTube API (${type}):`, error);
-                // ★★★ MODIFIED: Return a clear error object for the caller to handle ★★★
                 return { error: `Could not load videos. Please try again later.`, items: [], nextPageToken: null };
             }
         }
@@ -2673,7 +2664,7 @@
         }
 
         // =================================================
-        // ★★★ NAVIGATION LOGIC (MODIFIED) ★★★
+        // NAVIGATION LOGIC
         // =================================================
 
         function activateScreen(screenId) {
@@ -2716,7 +2707,7 @@
             if (nextScreenId === 'movies-screen') setupContentScreen('movie');
             if (nextScreenId === 'webseries-screen') setupContentScreen('tv');
             if (nextScreenId === 'episode-list-screen' && payload) showEpisodeList(payload);
-            if (nextScreenId === 'content-grid-screen' && payload) setupContentGridScreen(payload); // ★★★ NEW
+            if (nextScreenId === 'content-grid-screen' && payload) setupContentGridScreen(payload);
 
             if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
             if (nextScreenId === 'history-screen') initializeHistoryScreen();
@@ -2727,7 +2718,6 @@
         }
 
         function navigateBack() {
-             // ★★★ MODIFIED: Now handles back from grid view as well ★★★
             if (appState.currentScreen === 'movie-player-screen') {
                 document.getElementById('app-container').classList.remove('fullscreen-active');
                 const iframe = document.getElementById('movie-player-iframe-container');
@@ -2735,7 +2725,6 @@
                 
                 const previousScreenId = appState.navigationStack[appState.navigationStack.length - 2] || 'main-home-screen';
                 
-                // Pop the player screen from the stack
                 if (appState.navigationStack[appState.navigationStack.length - 1] === 'movie-player-screen') {
                     appState.navigationStack.pop();
                 }
@@ -2743,7 +2732,6 @@
                 activateScreen(previousScreenId);
                 appState.currentScreen = previousScreenId;
                 
-                // Re-open server selector if the previous screen was not the grid view
                 if (previousScreenId !== 'content-grid-screen') {
                     const ctx = appState.playerContext;
                     if(ctx.type && ctx.tmdbId) {
@@ -2775,7 +2763,7 @@
 
 
         // =================================================================
-        // ★★★ MOVIE/SERIES LOGIC (HEAVILY MODIFIED) ★★★
+        // ★★★ MOVIE/SERIES LOGIC (MODIFIED AS PER USER REQUEST) ★★★
         // =================================================================
 
         const CONTENT_REGIONS = {
@@ -2785,22 +2773,13 @@
             'korean_cinema': { title: 'Korean (Hindi Dub)', params: { with_original_language: 'ko', region: 'KR' } },
         };
 
+        // ★★★ MODIFIED: Simplified to only use 'latest'. Others are kept for the 'View All' logic.
         const MOVIE_GENRES = {
             'latest': { title: 'Latest Releases', params: { sort_by: 'primary_release_date.desc' } },
-            'popular': { title: 'Popular', params: { sort_by: 'popularity.desc' } },
-            'action': { title: 'Action', params: { with_genres: 28 } },
-            'comedy': { title: 'Comedy', params: { with_genres: 35 } },
-            'thriller': { title: 'Thriller', params: { with_genres: 53 } },
-            'horror': { title: 'Horror', params: { with_genres: 27 } },
         };
         
         const TV_GENRES = {
             'latest': { title: 'Latest Series', params: { sort_by: 'first_air_date.desc' } },
-            'popular': { title: 'Popular', params: { sort_by: 'popularity.desc' } },
-            'tv_shows': { title: 'TV Shows', params: { with_genres: '10767' } }, // Talk shows etc.
-            'action': { title: 'Action & Adventure', params: { with_genres: '10759' } },
-            'drama': { title: 'Drama', params: { with_genres: 18 } },
-            'mystery': { title: 'Mystery & Crime', params: { with_genres: '9648,80' } },
         };
 
         function renderContentBanner(type, items) {
@@ -2851,7 +2830,7 @@
             row.className = 'content-category-row';
             row.dataset.category = categoryKey;
 
-            const scrollerHTML = items.slice(0, 15).map(item => { // Show only top 15 in the row
+            const scrollerHTML = items.slice(0, 15).map(item => {
                 const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750.png?text=No+Image';
                 return `
                 <div class="content-vertical-card haptic-trigger" data-id="${item.id}" data-type="${type}"
@@ -2859,7 +2838,6 @@
                 </div>`;
             }).join('');
 
-            // ★★★ MODIFIED: Added "View All" button ★★★
             row.innerHTML = `
                 <div class="content-category-title-container">
                     <h3 class="content-category-title">${title}</h3>
@@ -2932,7 +2910,8 @@
         async function loadAllContent(type, forceRefresh = false) {
             const screenType = type === 'movie' ? 'movie' : 'webseries';
             const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
-            const GENRES = type === 'movie' ? MOVIE_GENRES : TV_GENRES;
+            // ★★★ MODIFIED: Use the correct GENRES object based on type
+            const GENRES = type === 'movie' ? { 'latest': MOVIE_GENRES.latest } : { 'latest': TV_GENRES.latest };
             
             const mainCategoryKey = state.currentCategory;
             
@@ -2948,43 +2927,30 @@
             state.categoryPages = {};
             rowsContainer.innerHTML = '';
             
-            const promises = Object.keys(GENRES).map(async (genreKey) => {
-                const regionParams = CONTENT_REGIONS[mainCategoryKey].params;
-                let genreParams = { ...GENRES[genreKey].params };
+            // ★★★ MODIFIED: No longer a loop, just fetch the "latest" category.
+            const genreKey = 'latest';
+            const regionParams = CONTENT_REGIONS[mainCategoryKey].params;
+            let genreParams = { ...GENRES[genreKey].params };
 
-                // ★★★ MODIFIED: Relaxed filter for "Latest" content ★★★
-                if (genreKey === 'latest') {
-                    const eightMonthsAgo = new Date();
-                    eightMonthsAgo.setMonth(eightMonthsAgo.getMonth() - 8);
-                    const dateString = eightMonthsAgo.toISOString().split('T')[0];
-                    if (type === 'movie') {
-                        genreParams['primary_release_date.gte'] = dateString;
-                    } else {
-                        genreParams['first_air_date.gte'] = dateString;
-                    }
-                    // The strict vote_count filter has been REMOVED.
-                }
-                
-                const params = { ...regionParams, ...genreParams, page: 1 };
-                const data = await fetchFromTMDbAPI(`discover/${type}`, params);
-                let validItems = (data.results || []).filter(item => item.poster_path);
-                
-                if (mainCategoryKey !== 'hindi_cinema') {
-                    const checkedItems = [];
-                    // Check only the first few for performance
-                    for(const item of validItems.slice(0, 10)) {
-                        if (await isContentAvailableInHindi(type, item.id)) {
-                            checkedItems.push(item);
-                        }
-                    }
-                    validItems = checkedItems;
-                }
-                
-                if (validItems.length > 0) {
-                    renderContentCategoryRow(type, genreKey, GENRES[genreKey].title, validItems);
-                }
-            });
-            await Promise.all(promises);
+            // ★★★ MODIFIED: Strict date filter for content after 2015-01-01
+            if (type === 'movie') {
+                genreParams['primary_release_date.gte'] = '2015-01-01';
+            } else {
+                genreParams['first_air_date.gte'] = '2015-01-01';
+            }
+            
+            const params = { ...regionParams, ...genreParams, page: 1 };
+            const data = await fetchFromTMDbAPI(`discover/${type}`, params);
+            let validItems = (data.results || []).filter(item => item.poster_path);
+            
+            // ★★★ MODIFIED: The automatic check for Hindi dubbing has been removed to ensure Korean content is shown.
+            // The availability now depends on the streaming server itself.
+            
+            if (validItems.length > 0) {
+                renderContentCategoryRow(type, genreKey, GENRES[genreKey].title, validItems);
+            } else {
+                 rowsContainer.innerHTML = `<p class="static-message">No new releases found in this category.</p>`;
+            }
         }
 
         async function searchContent(type, query) {
@@ -3082,15 +3048,17 @@
             }
 
             const servers = [];
+            
+            // ★★★ MODIFIED: Server 3 (moviesapi) is now the first choice as requested.
             if (type === 'movie') {
-                servers.push({ name: 'Server 1 (Recommended)', url: `https://vidsrc.to/embed/movie/${tmdbId}` });
-                servers.push({ name: 'Server 2', url: `https://www.2embed.to/embed/tmdb/movie?id=${tmdbId}` });
-                if (imdbId) servers.push({ name: 'Server 3', url: `https://moviesapi.club/movie/${imdbId}` });
+                if (imdbId) servers.push({ name: 'Server 1 (Recommended)', url: `https://moviesapi.club/movie/${imdbId}` });
+                servers.push({ name: 'Server 2', url: `https://vidsrc.to/embed/movie/${tmdbId}` });
+                servers.push({ name: 'Server 3', url: `https://www.2embed.to/embed/tmdb/movie?id=${tmdbId}` });
                 servers.push({ name: 'Server 4', url: `https://multiembed.mov/?video_id=${tmdbId}` });
             } else { // type === 'tv'
-                servers.push({ name: 'Server 1 (Recommended)', url: `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}` });
-                servers.push({ name: 'Server 2', url: `https://www.2embed.to/embed/tmdb/tv?id=${tmdbId}&s=${season}&e=${episode}` });
-                if (imdbId) servers.push({ name: 'Server 3', url: `https://moviesapi.club/tv/${imdbId}-${season}-${episode}` });
+                if (imdbId) servers.push({ name: 'Server 1 (Recommended)', url: `https://moviesapi.club/tv/${imdbId}-${season}-${episode}` });
+                servers.push({ name: 'Server 2', url: `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}` });
+                servers.push({ name: 'Server 3', url: `https://www.2embed.to/embed/tmdb/tv?id=${tmdbId}&s=${season}&e=${episode}` });
                 servers.push({ name: 'Server 4', url: `https://multiembed.mov/?video_id=${tmdbId}&s=${season}&e=${episode}` });
             }
 
@@ -3103,7 +3071,6 @@
 
             buttonContainer.querySelectorAll('.server-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    // ★★★ MODIFIED: Store URL and show ad modal instead of playing directly ★★★
                     appState.pendingPlayerUrl = btn.dataset.url;
                     modal.classList.remove('active');
                     showAdBlockerRecommendation();
@@ -3111,9 +3078,8 @@
             });
         }
         
-        // ★★★ MODIFIED: Function now gets the URL from appState ★★★
         function showAdBlockerRecommendation() {
-            if (!appState.pendingPlayerUrl) return; // Don't show if no URL is set
+            if (!appState.pendingPlayerUrl) return;
             
             const modal = document.getElementById('ad-blocker-modal');
             modal.classList.add('active');
@@ -3125,7 +3091,7 @@
             document.getElementById('continue-to-player-btn').onclick = () => {
                 modal.classList.remove('active');
                 setupAndNavigateToPlayer(appState.pendingPlayerUrl);
-                appState.pendingPlayerUrl = null; // Clear the URL after use
+                appState.pendingPlayerUrl = null;
             };
         }
 
@@ -3159,22 +3125,39 @@
             };
         }
 
-        // ★★★ NEW: Functions for the "View All" Content Grid Screen ★★★
         function setupContentGridScreen({ type, genreKey, title }) {
-            appState.contentGrid = { type, genreKey, currentPage: 1, totalPages: 1, isLoading: false };
+            // Re-enabling full genre list for the "View All" screen
+             const ALL_MOVIE_GENRES = {
+                'latest': { title: 'Latest Releases', params: { sort_by: 'primary_release_date.desc' } },
+                'popular': { title: 'Popular', params: { sort_by: 'popularity.desc' } },
+                'action': { title: 'Action', params: { with_genres: 28 } },
+                'comedy': { title: 'Comedy', params: { with_genres: 35 } },
+                'thriller': { title: 'Thriller', params: { with_genres: 53 } },
+                'horror': { title: 'Horror', params: { with_genres: 27 } },
+            };
+            const ALL_TV_GENRES = {
+                'latest': { title: 'Latest Series', params: { sort_by: 'first_air_date.desc' } },
+                'popular': { title: 'Popular', params: { sort_by: 'popularity.desc' } },
+                'tv_shows': { title: 'TV Shows', params: { with_genres: '10767' } },
+                'action': { title: 'Action & Adventure', params: { with_genres: '10759' } },
+                'drama': { title: 'Drama', params: { with_genres: 18 } },
+                'mystery': { title: 'Mystery & Crime', params: { with_genres: '9648,80' } },
+            };
+            
+            appState.contentGrid = { type, genreKey, currentPage: 1, totalPages: 1, isLoading: false, allGenres: type === 'movie' ? ALL_MOVIE_GENRES : ALL_TV_GENRES };
             
             document.getElementById('content-grid-title').textContent = title;
-            document.getElementById('content-grid').innerHTML = ''; // Clear previous content
+            document.getElementById('content-grid').innerHTML = '';
             
             const loadMoreBtn = document.getElementById('content-grid-load-more-btn');
-            loadMoreBtn.style.display = 'none'; // Hide until we know there are more pages
+            loadMoreBtn.style.display = 'none';
             loadMoreBtn.onclick = () => loadContentGridPage(true);
             
-            loadContentGridPage(false); // Load the first page
+            loadContentGridPage(false);
         }
 
         async function loadContentGridPage(append = false) {
-            const { type, genreKey, currentPage, isLoading } = appState.contentGrid;
+            const { type, genreKey, currentPage, isLoading, allGenres } = appState.contentGrid;
             if (isLoading) return;
 
             const loadMoreBtn = document.getElementById('content-grid-load-more-btn');
@@ -3184,11 +3167,20 @@
             if(loadMoreBtn) loadMoreBtn.disabled = true;
 
             const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
-            const GENRES = type === 'movie' ? MOVIE_GENRES : TV_GENRES;
             const regionParams = CONTENT_REGIONS[state.currentCategory].params;
-            const genreParams = GENRES[genreKey].params;
-            const params = { ...regionParams, ...genreParams, page: currentPage };
+            const genreParams = allGenres[genreKey].params;
+            
+            let params = { ...regionParams, ...genreParams, page: currentPage };
 
+            // Apply strict 2015+ date filter for the 'latest' category on the grid screen as well
+            if (genreKey === 'latest') {
+                 if (type === 'movie') {
+                    params['primary_release_date.gte'] = '2015-01-01';
+                } else {
+                    params['first_air_date.gte'] = '2015-01-01';
+                }
+            }
+            
             const data = await fetchFromTMDbAPI(`discover/${type}`, params);
             
             if (data && data.results) {
@@ -3207,9 +3199,8 @@
                     gridContainer.innerHTML = itemsHTML;
                 }
                 
-                // Re-attach event listeners for new items
                 gridContainer.querySelectorAll('.content-vertical-card').forEach(card => {
-                    if(card.onclick) return; // Avoid re-attaching
+                    if(card.onclick) return;
                     card.onclick = () => {
                         const id = card.dataset.id;
                         const contentType = card.dataset.type;
@@ -3235,22 +3226,19 @@
 
 
         // =======================================================
-        // ★★★ UNCHANGED SECTIONS (Shorts, Long Video, Auth, etc.) ★★★
+        // UNCHANGED SECTIONS (Shorts, Long Video, Auth, etc.)
         // =======================================================
         
         async function setupShortsScreen() {
-            // ★★★ MODIFIED: Better error handling for YouTube API ★★★
             const staticMessageContainer = document.getElementById('home-static-message-container');
             const data = await fetchFromYouTubeAPI('shorts', { regionCode: 'IN' });
             if (data.error || !data.items || data.items.length === 0) {
                 staticMessageContainer.innerHTML = `<p class="static-message">${data.error || "No shorts found."}</p>`;
                 return;
             }
-            // ... rest of the unchanged function
         }
 
         async function setupLongVideoScreen() {
-            // ★★★ MODIFIED: Better error handling for YouTube API ★★★
             const grid = document.getElementById('long-video-grid');
             grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
             const data = await fetchFromYouTubeAPI('search', { q: 'new hindi movies trailer', videoDuration: 'long' });
@@ -3258,14 +3246,10 @@
                 grid.innerHTML = `<p class="static-message">${data.error || "No videos found."}</p>`;
                 return;
             }
-            // ... rest of the unchanged function
             appState.youtubeNextPageTokens.long = data.nextPageToken || null;
             renderYouTubeLongVideos(data.items);
         }
 
-        // All the original JavaScript logic for YouTube Shorts, Long Videos,
-        // Creator Pages, History, Comments, Sidebar, and App Initialization
-        // remains here, unchanged.
         function renderYouTubeLongVideos(videos, append = false) {
             const grid = document.getElementById('long-video-grid');
             if (!grid) return;
@@ -3357,7 +3341,6 @@
 
             appStartLogicHasRun = true;
             
-            // This is just a small delay to simulate loading, can be removed.
             setTimeout(() => {
                 navigateTo('main-home-screen');
                 updateNavActiveState('home');
@@ -3402,12 +3385,12 @@
             const adModal = document.getElementById('ad-blocker-modal');
             document.getElementById('close-ad-modal-btn').addEventListener('click', () => {
                 adModal.classList.remove('active');
-                appState.pendingPlayerUrl = null; // Clear URL if user closes modal
+                appState.pendingPlayerUrl = null;
             });
             adModal.addEventListener('click', (e) => {
                 if (e.target === adModal) {
                      adModal.classList.remove('active');
-                     appState.pendingPlayerUrl = null; // Clear URL if user closes modal
+                     appState.pendingPlayerUrl = null;
                 }
             });
 
