@@ -1643,8 +1643,8 @@
         }
 
 
-        /* ★★★ NEW MOVIE & WEB SERIES EXPERIENCE STYLES - START ★★★ */
-        #movies-screen-content, #web-series-screen-content {
+        /* ★★★ NEW MOVIE EXPERIENCE STYLES - START ★★★ */
+        #movies-screen-content {
             width: 100%;
             height: 100%;
             overflow-y: auto;
@@ -1664,7 +1664,7 @@
             border-bottom: 1px solid var(--secondary-background);
         }
 
-        #movie-language-selector, #series-language-selector {
+        #movie-language-selector {
             background-color: var(--secondary-background);
             color: var(--text-primary);
             border: 1px solid var(--text-secondary);
@@ -1674,7 +1674,7 @@
             font-weight: 500;
         }
         
-        #movie-category-rows, #series-category-rows {
+        #movie-category-rows {
             padding: 10px 15px;
             display: flex;
             flex-direction: column;
@@ -1833,7 +1833,7 @@
             flex-shrink: 0;
         }
 
-        #movie-search-input, #series-search-input {
+        #movie-search-input {
             flex-grow: 1;
             padding: 10px 15px;
             border-radius: 20px;
@@ -1843,7 +1843,7 @@
             font-size: 1em;
         }
 
-        #movie-search-btn, #movie-refresh-btn, #series-search-btn, #series-refresh-btn {
+        #movie-search-btn, #movie-refresh-btn {
             background-color: var(--secondary-background);
             border: none;
             color: var(--text-primary);
@@ -1857,7 +1857,7 @@
             justify-content: center;
             transition: background-color 0.2s ease;
         }
-        #movie-search-btn:hover, #movie-refresh-btn:hover, #series-search-btn:hover, #series-refresh-btn:hover {
+        #movie-search-btn:hover, #movie-refresh-btn:hover {
             background-color: var(--primary-neon);
         }
         .movie-category-header {
@@ -2038,7 +2038,6 @@
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="web-series"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -2060,7 +2059,6 @@
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="web-series"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -2089,7 +2087,6 @@
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="web-series"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -2119,8 +2116,6 @@
                     <button id="movie-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
                     <button id="movie-refresh-btn" class="haptic-trigger"><i class="fas fa-redo"></i></button>
                 </div>
-
-                <!-- ★★★ REMOVED BANNER CAROUSEL ★★★ -->
                 
                 <!-- 9:16 Category Rows -->
                 <div id="movie-category-rows">
@@ -2136,52 +2131,11 @@
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item active" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="web-series"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
         <!-- ★★★ NEW MOVIE EXPERIENCE - END ★★★ -->
-
-        <!-- ★★★ NEW WEB SERIES SCREEN - START ★★★ -->
-        <div id="web-series-screen" class="screen">
-            <div id="web-series-screen-content">
-                <div class="movies-header">
-                    <div id="series-menu-icon" class="home-menu-icon haptic-trigger">
-                        <i class="fas fa-bars"></i>
-                    </div>
-                    <select id="series-language-selector" class="haptic-trigger">
-                        <option value="hi">हिन्दी (Hindi)</option>
-                        <option value="en">English</option>
-                        <option value="ko">한국어 (Korean)</option>
-                        <option value="ja">日本語 (Japanese)</option>
-                         <option value="es">Español (Spanish)</option>
-                    </select>
-                </div>
-                
-                <div class="movie-search-refresh-container">
-                    <input type="text" id="series-search-input" placeholder="Search for a web series...">
-                    <button id="series-search-btn" class="haptic-trigger"><i class="fas fa-search"></i></button>
-                    <button id="series-refresh-btn" class="haptic-trigger"><i class="fas fa-redo"></i></button>
-                </div>
-                
-                <div id="series-category-rows">
-                    <div class="loader-container"><div class="loader"></div></div>
-                </div>
-
-                <div class="movie-disclaimer">
-                    <strong>Disclaimer:</strong> Content shown here is provided by third-party sources. We do not host any content. Availability and quality depend on the provider and may contain ads.
-                </div>
-            </div>
-            <div class="bottom-nav">
-                <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
-                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item active" data-nav="web-series"><i class="fas fa-tv"></i>Web Series</div>
-                <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            </div>
-        </div>
-        <!-- ★★★ NEW WEB SERIES SCREEN - END ★★★ -->
 
         <!-- ★★★ NEW "MORE MOVIES" SCREEN - START ★★★ -->
         <div id="more-movies-screen" class="screen">
@@ -2197,22 +2151,6 @@
             </div>
         </div>
         <!-- ★★★ NEW "MORE MOVIES" SCREEN - END ★★★ -->
-
-         <!-- ★★★ NEW "MORE SERIES" SCREEN - START ★★★ -->
-        <div id="more-series-screen" class="screen">
-            <div class="screen-header">
-                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-                <h3 id="more-series-title" class="header-title">Web Series</h3>
-            </div>
-            <div class="more-content-container">
-                <div id="more-series-grid" class="more-content-grid">
-                    <!-- Series cards will be injected here -->
-                </div>
-                <button id="load-more-series-btn" class="load-more-grid-btn haptic-trigger">Load More</button>
-            </div>
-        </div>
-        <!-- ★★★ NEW "MORE SERIES" SCREEN - END ★★★ -->
-
 
         <!-- ★★★ NEW MOVIE PLAYER SCREEN - START ★★★ -->
         <div id="movie-player-screen" class="screen">
@@ -2263,7 +2201,6 @@
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="web-series"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -2377,16 +2314,7 @@
                 currentLanguage: 'hi',
                 isLoading: false,
             },
-            webSeries: {
-                currentLanguage: 'hi',
-                isLoading: false,
-            },
             moreMovies: {
-                categoryId: null,
-                categoryName: null,
-                nextPage: 1
-            },
-            moreSeries: {
                 categoryId: null,
                 categoryName: null,
                 nextPage: 1
@@ -2661,7 +2589,7 @@
         }
 
         function navigateTo(nextScreenId, payload = null) {
-            if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && !['creator-page-screen', 'more-movies-screen', 'more-series-screen'].includes(nextScreenId)) return;
+            if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && !['creator-page-screen', 'more-movies-screen'].includes(nextScreenId)) return;
 
             if (nextScreenId !== 'splash-screen') {
                 localStorage.setItem('shubhzone_lastScreen', nextScreenId);
@@ -2699,15 +2627,11 @@
             if (nextScreenId === 'history-screen') initializeHistoryScreen();
             if (nextScreenId === 'home-screen') setupShortsScreen();
             if (nextScreenId === 'movies-screen') setupMoviesScreen();
-            if (nextScreenId === 'web-series-screen') setupWebSeriesScreen();
             if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
                 initializeCreatorPage(payload);
             }
             if (nextScreenId === 'more-movies-screen' && payload) {
                 setupMoreMoviesScreen(payload);
-            }
-             if (nextScreenId === 'more-series-screen' && payload) {
-                setupMoreSeriesScreen(payload);
             }
         }
 
@@ -3528,11 +3452,10 @@
         // =======================================================
         
         
-        // ★★★ MOVIE & SERIES LOGIC (HEAVILY MODIFIED) - START ★★★
+        // ★★★ MOVIE LOGIC (HEAVILY MODIFIED) - START ★★★
 
         const MOVIE_CATEGORIES = [ { title: "एक्शन (Action)", id: 28 }, { title: "कॉमेडी (Comedy)", id: 35 }, { title: "हॉरर (Horror)", id: 27 }, { title: "रोमांस (Romance)", id: 10749 }, { title: "थ्रिलर (Thriller)", id: 53 }, { title: "साइंस फिक्शन (Sci-Fi)", id: 878 }, { title: "ड्रामा (Drama)", id: 18 }, { title: "एनिमेटेड (Animated)", id: 16 }, { title: "फैमिली (Family)", id: 10751 }, { title: "क्राइम (Crime)", id: 80 }, { title: "मिस्ट्री (Mystery)", id: 9648 }, { title: "फैंटेसी (Fantasy)", id: 14 }, { title: "एडवेंचर (Adventure)", id: 12 }, { title: "डॉक्यूमेंट्री (Documentary)", id: 99 }, { title: "वॉर (War)", id: 10752 } ];
-        const SERIES_CATEGORIES = [ { title: "एक्शन और एडवेंचर", id: 10759 }, { title: "एनिमेशन", id: 16 }, { title: "कॉमेडी", id: 35 }, { title: "क्राइम", id: 80 }, { title: "डॉक्यूमेंट्री", id: 99 }, { title: "ड्रामा", id: 18 }, { title: "फैमिली", id: 10751 }, { title: "किड्स", id: 10762 }, { title: "मिस्ट्री", id: 9648 }, { title: "रियलिटी", id: 10764 }, { title: "साइ-फाई और फैंटेसी", id: 10765 }, { title: "सोप", id: 10766 }, { title: "टॉक", id: 10767 }, { title: "वॉर और पॉलिटिक्स", id: 10768 } ];
-
+        
         // --- Movie Functions ---
         function setupMoviesScreen() {
             const langSelector = document.getElementById('movie-language-selector');
@@ -3552,6 +3475,19 @@
                 loadMovieContentForLanguage(appState.movies.currentLanguage);
             };
             loadMovieContentForLanguage(appState.movies.currentLanguage);
+        }
+
+        async function loadCustomMovies() {
+            try {
+                const snapshot = await db.collection('custom_movies').orderBy('addedAt', 'desc').get();
+                if (snapshot.empty) {
+                    return [];
+                }
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCustom: true }));
+            } catch (error) {
+                console.error("Error fetching custom movies:", error);
+                return [];
+            }
         }
 
         async function performMovieSearch() {
@@ -3574,14 +3510,35 @@
             appState.movies.isLoading = true;
             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
             
-            const categoryData = await Promise.all(
-                MOVIE_CATEGORIES.map(cat => fetchFromTMDbAPI('discover/movie', { with_genres: cat.id, with_original_language: langCode, sort_by: 'popularity.desc' }))
-            );
+            // Fetch both custom and TMDB movies in parallel
+            const [customMovies, ...categoryData] = await Promise.all([
+                loadCustomMovies(),
+                ...MOVIE_CATEGORIES.map(cat => fetchFromTMDbAPI('discover/movie', { with_genres: cat.id, with_original_language: langCode, sort_by: 'popularity.desc' }))
+            ]);
 
             rowsContainer.innerHTML = '';
+
+            // 1. Render "Latest Additions" from Admin Panel
+            if (customMovies.length > 0) {
+                 renderMovieCategoryRow("Latest Additions", customMovies, false, 'custom');
+            }
+
+            // 2. Render TMDB categories, injecting custom movies where genres match
             categoryData.forEach((data, index) => {
-                if (data.results && data.results.length > 0) {
-                     renderMovieCategoryRow(MOVIE_CATEGORIES[index].title, data.results, true, MOVIE_CATEGORIES[index].id);
+                const category = MOVIE_CATEGORIES[index];
+                let combinedMovies = data.results ? [...data.results] : [];
+
+                // Inject custom movies into their respective categories
+                const relevantCustomMovies = customMovies.filter(cm => cm.genre_ids && cm.genre_ids.includes(category.id));
+                
+                // Add custom movies to the front, avoiding duplicates if any
+                const existingTitles = new Set(combinedMovies.map(m => m.title));
+                const uniqueCustomMoviesToAdd = relevantCustomMovies.filter(cm => !existingTitles.has(cm.title));
+                
+                combinedMovies = [...uniqueCustomMoviesToAdd, ...combinedMovies];
+
+                if (combinedMovies.length > 0) {
+                     renderMovieCategoryRow(category.title, combinedMovies, true, category.id);
                 }
             });
             
@@ -3597,13 +3554,17 @@
              const row = document.createElement('div');
              row.className = 'movie-category-row';
 
-             const scrollerHTML = movies.slice(0, 15).map(movie => `
+             const scrollerHTML = movies.slice(0, 15).map(movie => {
+                const isCustom = movie.isCustom === true;
+                return `
                 <div class="movie-vertical-card haptic-trigger" 
-                     data-movie-id="${movie.id}" 
-                     data-movie-title="${escapeHTML(movie.title)}"
-                     style="background-image: url('https://image.tmdb.org/t/p/w500${movie.poster_path}')">
+                     data-id="${isCustom ? movie.id : movie.id}" 
+                     data-name="${escapeHTML(movie.title)}"
+                     data-is-custom="${isCustom}"
+                     ${isCustom ? `data-embed-url="${escapeHTML(movie.embedUrl)}"` : ''}
+                     style="background-image: url('${isCustom ? movie.poster_path : `https://image.tmdb.org/t/p/w500${movie.poster_path}`}')">
                 </div>
-             `).join('');
+             `}).join('');
 
              row.innerHTML = `
                 <div class="movie-category-header">
@@ -3615,107 +3576,20 @@
              rowsContainer.appendChild(row);
              
              row.querySelectorAll('.movie-vertical-card').forEach(card => {
-                card.addEventListener('click', () => promptServerSelection(card.dataset.movieId, card.dataset.movieTitle, 'movie'));
+                card.addEventListener('click', (e) => {
+                    const { id, name, isCustom, embedUrl } = e.currentTarget.dataset;
+                    if (isCustom === 'true') {
+                        playCustomMovie(embedUrl);
+                    } else {
+                        promptServerSelection(id, name);
+                    }
+                });
             });
 
             if (showMoreButton) {
                 row.querySelector('.more-movies-btn').addEventListener('click', (e) => {
                     const { categoryId, categoryName } = e.target.dataset;
                     navigateTo('more-movies-screen', { categoryId, categoryName });
-                });
-            }
-        }
-
-        // --- Web Series Functions ---
-        function setupWebSeriesScreen() {
-            const langSelector = document.getElementById('series-language-selector');
-            if (langSelector && !langSelector.dataset.listenerAttached) {
-                langSelector.addEventListener('change', (e) => {
-                    appState.webSeries.currentLanguage = e.target.value;
-                    loadWebSeriesContentForLanguage(e.target.value);
-                });
-                langSelector.dataset.listenerAttached = 'true';
-            }
-            document.getElementById('series-menu-icon').onclick = () => document.getElementById('main-sidebar').classList.add('open');
-            document.getElementById('series-search-btn').onclick = performWebSeriesSearch;
-            document.getElementById('series-search-input').onkeypress = (e) => {
-                if (e.key === 'Enter') performWebSeriesSearch();
-            };
-            document.getElementById('series-refresh-btn').onclick = () => {
-                document.getElementById('series-search-input').value = '';
-                loadWebSeriesContentForLanguage(appState.webSeries.currentLanguage);
-            };
-            loadWebSeriesContentForLanguage(appState.webSeries.currentLanguage);
-        }
-
-        async function performWebSeriesSearch() {
-            const query = document.getElementById('series-search-input').value.trim();
-            if (!query) return;
-            const rowsContainer = document.getElementById('series-category-rows');
-            rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            const searchData = await fetchFromTMDbAPI('search/tv', { query: query, with_original_language: appState.webSeries.currentLanguage });
-            rowsContainer.innerHTML = '';
-            if (searchData.results && searchData.results.length > 0) {
-                 renderSeriesCategoryRow(`Search Results for "${query}"`, searchData.results, false);
-            } else {
-                 rowsContainer.innerHTML = `<p class="static-message">No results found for "${query}".</p>`;
-            }
-        }
-
-        async function loadWebSeriesContentForLanguage(langCode) {
-            const rowsContainer = document.getElementById('series-category-rows');
-            if (appState.webSeries.isLoading) return;
-            appState.webSeries.isLoading = true;
-            rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            
-            const categoryData = await Promise.all(
-                SERIES_CATEGORIES.map(cat => fetchFromTMDbAPI('discover/tv', { with_genres: cat.id, with_original_language: langCode, sort_by: 'popularity.desc' }))
-            );
-
-            rowsContainer.innerHTML = '';
-            categoryData.forEach((data, index) => {
-                if (data.results && data.results.length > 0) {
-                     renderSeriesCategoryRow(SERIES_CATEGORIES[index].title, data.results, true, SERIES_CATEGORIES[index].id);
-                }
-            });
-            
-            if (rowsContainer.innerHTML === '') {
-                rowsContainer.innerHTML = '<p class="static-message">No series found for this language.</p>';
-            }
-            appState.webSeries.isLoading = false;
-        }
-
-        function renderSeriesCategoryRow(title, series, showMoreButton = true, categoryId = null) {
-             const rowsContainer = document.getElementById('series-category-rows');
-             if (!rowsContainer) return;
-             const row = document.createElement('div');
-             row.className = 'movie-category-row';
-
-             const scrollerHTML = series.slice(0, 15).map(item => `
-                <div class="movie-vertical-card haptic-trigger" 
-                     data-series-id="${item.id}" 
-                     data-series-name="${escapeHTML(item.name)}"
-                     style="background-image: url('https://image.tmdb.org/t/p/w500${item.poster_path}')">
-                </div>
-             `).join('');
-
-             row.innerHTML = `
-                <div class="movie-category-header">
-                    <h3 class="movie-category-title">${title}</h3>
-                    ${showMoreButton ? `<button class="more-movies-btn haptic-trigger" data-category-id="${categoryId}" data-category-name="${escapeHTML(title)}">More</button>` : ''}
-                </div>
-                <div class="movie-row-scroller">${scrollerHTML}</div>
-             `;
-             rowsContainer.appendChild(row);
-             
-             row.querySelectorAll('.movie-vertical-card').forEach(card => {
-                card.addEventListener('click', () => promptServerSelection(card.dataset.seriesId, card.dataset.seriesName, 'tv'));
-            });
-
-            if (showMoreButton) {
-                row.querySelector('.more-movies-btn').addEventListener('click', (e) => {
-                    const { categoryId, categoryName } = e.target.dataset;
-                    navigateTo('more-series-screen', { categoryId, categoryName });
                 });
             }
         }
@@ -3731,25 +3605,13 @@
             
             await loadMoreContentOnGrid('movie');
         }
-        
-        async function setupMoreSeriesScreen(payload) {
-            appState.moreSeries.categoryId = payload.categoryId;
-            appState.moreSeries.categoryName = payload.categoryName;
-            appState.moreSeries.nextPage = 1;
 
-            document.getElementById('more-series-title').textContent = appState.moreSeries.categoryName;
-            document.getElementById('more-series-grid').innerHTML = '';
-            
-            await loadMoreContentOnGrid('series');
-        }
-
-        async function loadMoreContentOnGrid(type) {
-            const isMovie = type === 'movie';
-            const state = isMovie ? appState.moreMovies : appState.moreSeries;
-            const gridId = isMovie ? 'more-movies-grid' : 'more-series-grid';
-            const buttonId = isMovie ? 'load-more-movies-btn' : 'load-more-series-btn';
-            const lang = isMovie ? appState.movies.currentLanguage : appState.webSeries.currentLanguage;
-            const endpoint = isMovie ? 'discover/movie' : 'discover/tv';
+        async function loadMoreContentOnGrid(type) { // type is always 'movie' now
+            const state = appState.moreMovies;
+            const gridId = 'more-movies-grid';
+            const buttonId = 'load-more-movies-btn';
+            const lang = appState.movies.currentLanguage;
+            const endpoint = 'discover/movie';
 
             const button = document.getElementById(buttonId);
             button.disabled = true;
@@ -3767,13 +3629,14 @@
                  const newContentHTML = data.results.map(item => `
                     <div class="movie-vertical-card haptic-trigger" 
                          data-id="${item.id}" 
-                         data-name="${escapeHTML(isMovie ? item.title : item.name)}"
+                         data-name="${escapeHTML(item.title)}"
+                         data-is-custom="false"
                          style="background-image: url('https://image.tmdb.org/t/p/w500${item.poster_path}')">
                     </div>
                  `).join('');
                 grid.insertAdjacentHTML('beforeend', newContentHTML);
                 grid.querySelectorAll('.movie-vertical-card:not([data-listener-attached])').forEach(card => {
-                    card.addEventListener('click', () => promptServerSelection(card.dataset.id, card.dataset.name, isMovie ? 'movie' : 'tv'));
+                    card.addEventListener('click', () => promptServerSelection(card.dataset.id, card.dataset.name));
                     card.dataset.listenerAttached = 'true';
                 });
                 state.nextPage++;
@@ -3786,12 +3649,12 @@
 
 
         // --- Player & Server Functions ---
-        function promptServerSelection(id, name, type) {
+        function promptServerSelection(movieId, movieName) {
             const modal = document.getElementById('server-selection-modal');
             const titleElement = document.getElementById('server-selection-title');
             const listElement = document.getElementById('server-selection-list');
             
-            titleElement.textContent = `Play "${name}"`;
+            titleElement.textContent = `Play "${movieName}"`;
             
             const servers = [ { name: 'Server 1 (vidsrc.to)', type: 'vidsrc_to' }, { name: 'Server 2 (2embed.cc)', type: '2embed_cc' } ];
 
@@ -3802,7 +3665,7 @@
             listElement.querySelectorAll('.server-btn').forEach(button => {
                 button.onclick = () => {
                     modal.classList.remove('active');
-                    playContentFromTMDB(id, type, button.dataset.serverType);
+                    playContentFromTMDB(movieId, button.dataset.serverType);
                 };
             });
 
@@ -3810,26 +3673,21 @@
             modal.classList.add('active');
         }
 
-        async function playContentFromTMDB(id, type, serverType) {
+        async function playContentFromTMDB(movieId, serverType) {
             let embedUrl = '';
+            const externalIdsData = await fetchFromTMDbAPI(`movie/${movieId}/external_ids`);
+            const imdbId = externalIdsData ? externalIdsData.imdb_id : null;
+            if (!imdbId) { alert('Could not find player source for this movie.'); return; }
             
-            if (type === 'movie') {
-                 // For movies, we need the IMDB ID for some servers
-                 const externalIdsData = await fetchFromTMDbAPI(`movie/${id}/external_ids`);
-                 const imdbId = externalIdsData ? externalIdsData.imdb_id : null;
-                 if (!imdbId) { alert('Could not find player source for this movie.'); return; }
-                
-                 switch (serverType) {
-                    case '2embed_cc': embedUrl = `https://2embed.cc/embed/${imdbId}`; break;
-                    case 'vidsrc_to': default: embedUrl = `https://vidsrc.to/embed/movie/${imdbId}`; break;
-                }
-            } else { // type is 'tv'
-                 switch (serverType) {
-                    case '2embed_cc': embedUrl = `https://2embed.cc/embed/tv?id=${id}&s=1&e=1`; break;
-                    case 'vidsrc_to': default: embedUrl = `https://vidsrc.to/embed/tv/${id}`; break;
-                }
+            switch (serverType) {
+                case '2embed_cc': embedUrl = `https://2embed.cc/embed/${imdbId}`; break;
+                case 'vidsrc_to': default: embedUrl = `https://vidsrc.to/embed/movie/${imdbId}`; break;
             }
             
+            playCustomMovie(embedUrl); // Reuse the direct play function
+        }
+        
+        function playCustomMovie(embedUrl) {
             navigateTo('movie-player-screen');
             setTimeout(() => {
                 const iframe = document.getElementById('movie-player-iframe-container');
@@ -3837,7 +3695,7 @@
                 setupMoviePlayerControls();
             }, 100);
         }
-        
+
         function setupMoviePlayerControls() {
             document.getElementById('movie-player-rotate-btn').onclick = () => document.getElementById('app-container').classList.toggle('fullscreen-active');
             let currentZoom = 1.0;
@@ -3851,7 +3709,7 @@
         function navigateBackFromMoviePlayer() {
             navigateBack();
         }
-        // ★★★ MOVIE & SERIES LOGIC - END ★★★
+        // ★★★ MOVIE LOGIC - END ★★★
 
 
         async function addChannelToList(event, channelId) { /* Unchanged */ }
@@ -3887,7 +3745,6 @@
             });
             
             document.getElementById('load-more-movies-btn').onclick = () => loadMoreContentOnGrid('movie');
-            document.getElementById('load-more-series-btn').onclick = () => loadMoreContentOnGrid('series');
 
 
             appContainer.addEventListener('click', (event) => {
@@ -3913,7 +3770,6 @@
             document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('movies-menu-icon')?.addEventListener('click', openSidebar);
-             document.getElementById('series-menu-icon')?.addEventListener('click', openSidebar); // For new series screen
             
             document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
                 document.getElementById('main-sidebar').classList.remove('open');
