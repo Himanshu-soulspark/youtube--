@@ -17,9 +17,9 @@
 
     <style>
         /* ================================================= /
-        / === Shubhzone App Styles (Code 2) - FINAL v8.0 === /
+        / === Shubhzone App Styles (Code 2) - FINAL v9.0 === /
         / === MODIFIED AS PER USER REQUEST - SEP 2025    === /
-        / === SOLVED: Multi-Server Selection Modal       === /
+        / === SOLVED: All user-reported issues           === /
         / ================================================= */
 
         /* Design Style Guide */
@@ -1625,9 +1625,9 @@
             -webkit-overflow-scrolling: touch;
             display: flex;
             flex-direction: column;
-            padding-bottom: 60px; 
+            padding-bottom: 60px;
         }
-        
+
         .content-header {
             padding: 10px 15px;
             background-color: var(--background);
@@ -1640,6 +1640,7 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
         .content-header::-webkit-scrollbar {
             display: none;
         }
@@ -1665,6 +1666,7 @@
             white-space: nowrap;
             border: 1px solid var(--text-secondary);
         }
+
         .content-category-tab.active {
             background-color: var(--primary-neon);
             color: var(--background);
@@ -1679,7 +1681,7 @@
             flex-shrink: 0;
             padding: 15px 0;
         }
-        
+
         .content-banner-carousel {
             display: flex;
         }
@@ -1696,22 +1698,22 @@
             overflow: hidden;
             display: flex;
             align-items: flex-end;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             transition: transform 0.3s ease;
         }
-        
+
         .content-banner-card:hover {
             transform: scale(1.02);
         }
 
         .content-banner-card::after {
-             content: '';
-             position: absolute;
-             bottom: 0;
-             left: 0;
-             width: 100%;
-             height: 50%;
-             background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
         }
 
         .content-banner-title {
@@ -1720,9 +1722,9 @@
             font-weight: 700;
             padding: 15px;
             z-index: 2;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
         }
-        
+
         .content-search-container {
             display: flex;
             align-items: center;
@@ -1756,6 +1758,7 @@
             justify-content: center;
             transition: background-color 0.2s ease;
         }
+
         .content-search-btn:hover {
             background-color: var(--primary-neon);
         }
@@ -1786,11 +1789,11 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        
+
         .content-row-scroller::-webkit-scrollbar {
             display: none;
         }
-        
+
         .content-vertical-card {
             flex-shrink: 0;
             width: 120px;
@@ -1848,23 +1851,26 @@
             height: 100%;
             border: none;
         }
-        
+
         #episode-list-screen .screen-header {
-             justify-content: flex-start;
+            justify-content: flex-start;
         }
+
         #episode-list-screen .header-title {
             margin-left: 15px;
         }
-        
+
         .episode-list-content {
             width: 100%;
             height: 100%;
             padding: 60px 0 60px 0;
             overflow-y: auto;
         }
+
         .season-container {
             padding: 10px 15px;
         }
+
         .season-title {
             font-size: 1.4em;
             font-weight: 700;
@@ -1872,11 +1878,13 @@
             border-bottom: 2px solid var(--primary-neon);
             margin-bottom: 10px;
         }
+
         .episodes-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 10px;
         }
+
         .episode-card {
             background-color: var(--secondary-background);
             border-radius: 8px;
@@ -1887,36 +1895,42 @@
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
+
         .episode-card:hover {
             background-color: var(--dark-grey);
         }
+
         .episode-number {
             font-size: 1.2em;
             font-weight: 700;
             color: var(--text-secondary);
         }
+
         .episode-name {
             font-size: 1.1em;
             font-weight: 500;
             color: var(--text-primary);
         }
 
-        /* ★★★ NEW: Styles for Server Selection Modal ★★★ */
+        /* Server Selection Modal Styles */
         #server-select-modal {
-            z-index: 1200; /* Must be on top of everything */
+            z-index: 1200;
+            /* Must be on top of everything */
         }
+
         .server-select-content {
             background-color: var(--secondary-background);
             padding: 20px;
             border-radius: 15px;
             width: 90%;
             max-width: 350px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
             border: 1px solid var(--primary-neon);
             display: flex;
             flex-direction: column;
             position: relative;
         }
+
         .server-select-header {
             display: flex;
             justify-content: space-between;
@@ -1925,17 +1939,20 @@
             padding-bottom: 10px;
             border-bottom: 1px solid var(--text-secondary);
         }
+
         .server-select-header h3 {
             margin: 0;
             color: var(--text-primary);
             font-size: 1.3em;
         }
+
         .close-server-modal-btn {
             font-size: 1.8em;
             color: var(--text-secondary);
             cursor: pointer;
             line-height: 1;
         }
+
         .server-select-buttons {
             display: flex;
             flex-direction: column;
@@ -1943,6 +1960,7 @@
             max-height: 50vh;
             overflow-y: auto;
         }
+
         .server-btn {
             background-color: var(--dark-grey);
             border: 1px solid var(--text-secondary);
@@ -1959,13 +1977,83 @@
             align-items: center;
             gap: 10px;
         }
+
         .server-btn:hover {
             border-color: var(--primary-neon);
             color: var(--primary-neon);
             background-color: rgba(var(--primary-neon-rgb), 0.1);
         }
+
         .server-btn .fa-crown {
-            color: #FFD700; /* Golden color for the crown */
+            color: #FFD700;
+            /* Golden color for the crown */
+        }
+        
+        /* ★★★ NEW: Styles for Ad Blocker Recommendation Modal ★★★ */
+        #ad-blocker-modal {
+            z-index: 1300; /* Higher than server select */
+        }
+        .ad-blocker-content {
+            background-color: var(--secondary-background);
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 360px;
+            box-shadow: 0 5px 25px rgba(var(--primary-neon-rgb), 0.2);
+            border: 1px solid var(--primary-neon);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+        .ad-blocker-content .brave-icon {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+        }
+        .ad-blocker-content h3 {
+            margin: 0 0 10px 0;
+            color: var(--text-primary);
+            font-size: 1.4em;
+        }
+        .ad-blocker-content p {
+            margin: 0 0 20px 0;
+            color: var(--text-secondary);
+            font-size: 1em;
+            line-height: 1.5;
+        }
+        .ad-blocker-buttons {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 10px;
+        }
+        .ad-blocker-btn {
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #brave-download-btn {
+            background-color: #FF7733; /* Brave's brand color */
+            color: white;
+        }
+        #continue-to-player-btn {
+            background-color: var(--dark-grey);
+            color: var(--text-primary);
+            border: 1px solid var(--text-secondary);
+        }
+        .close-ad-modal-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.8em;
+            color: var(--text-secondary);
+            cursor: pointer;
         }
 
     </style>
@@ -2014,9 +2102,8 @@
             <img id="enlarged-image-src" src="" alt="Enlarged View">
         </div>
     </div>
-    <!-- === ALL MODALS END === -->
-
-    <!-- ★★★ NEW: Server Selection Modal HTML ★★★ -->
+    
+    <!-- Server Selection Modal HTML -->
     <div id="server-select-modal" class="modal-overlay">
         <div class="server-select-content">
             <div class="server-select-header">
@@ -2024,13 +2111,28 @@
                 <span id="close-server-modal-btn" class="close-server-modal-btn haptic-trigger">×</span>
             </div>
             <div id="server-select-buttons" class="server-select-buttons">
-                <!-- Server buttons will be injected here by JavaScript -->
                 <div class="loader-container">
                     <div class="loader"></div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- ★★★ NEW: Ad Blocker Recommendation Modal HTML ★★★ -->
+    <div id="ad-blocker-modal" class="modal-overlay">
+        <div class="ad-blocker-content">
+            <span id="close-ad-modal-btn" class="close-ad-modal-btn haptic-trigger">×</span>
+            <img src="https://brave.com/static-assets/images/brave-logo-sans-text.svg" alt="Brave Browser Icon" class="brave-icon">
+            <h3>Block Ads for Free</h3>
+            <p>For the best ad-free viewing experience, we recommend using the <strong>Brave Browser</strong>.</p>
+            <div class="ad-blocker-buttons">
+                <button id="brave-download-btn" class="ad-blocker-btn haptic-trigger">Download Brave (Free)</button>
+                <button id="continue-to-player-btn" class="ad-blocker-btn haptic-trigger">Continue Anyway</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- === ALL MODALS END === -->
 
     <div class="app-container" id="app-container">
 
@@ -2059,7 +2161,7 @@
             </div>
         </div>
 
-        <!-- ★★★ HOME SCREEN ★★★ -->
+        <!-- HOME SCREEN -->
         <div id="main-home-screen" class="screen">
             <div style="flex-grow: 1; width: 100%; overflow-y: auto;">
                 <div class="home-grid-container">
@@ -2145,18 +2247,28 @@
                 </div>
                 <div class="content-banner-container">
                     <div id="movie-banner-carousel" class="content-banner-carousel">
-                        <div class="loader-container"><div class="loader"></div></div>
+                        <div class="loader-container">
+                            <div class="loader"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="content-search-container">
-                    <input type="text" id="movie-search-input" class="content-search-input" placeholder="Search for movies...">
-                    <button id="movie-search-btn" class="content-search-btn haptic-trigger"><i class="fas fa-search"></i></button>
+                    <input type="text" id="movie-search-input" class="content-search-input"
+                        placeholder="Search for movies...">
+                    <button id="movie-search-btn" class="content-search-btn haptic-trigger"><i
+                            class="fas fa-search"></i></button>
+                    <!-- ★★★ NEW: Refresh Button ★★★ -->
+                    <button id="movie-refresh-btn" class="content-search-btn haptic-trigger"><i
+                            class="fas fa-sync-alt"></i></button>
                 </div>
                 <div id="movie-category-rows" class="content-category-rows">
-                    <div class="loader-container"><div class="loader"></div></div>
+                    <div class="loader-container">
+                        <div class="loader"></div>
+                    </div>
                 </div>
                 <div class="content-disclaimer">
-                    <strong>Disclaimer:</strong> Content is provided by third-party sources. We do not host any content. Availability, quality, and ads are determined by the provider.
+                    <strong>Disclaimer:</strong> Content is provided by third-party sources. We do not host any
+                    content. Availability, quality, and ads are determined by the provider.
                 </div>
             </div>
             <div class="bottom-nav">
@@ -2179,18 +2291,28 @@
                 </div>
                 <div class="content-banner-container">
                     <div id="webseries-banner-carousel" class="content-banner-carousel">
-                         <div class="loader-container"><div class="loader"></div></div>
+                        <div class="loader-container">
+                            <div class="loader"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="content-search-container">
-                    <input type="text" id="webseries-search-input" class="content-search-input" placeholder="Search for web series...">
-                    <button id="webseries-search-btn" class="content-search-btn haptic-trigger"><i class="fas fa-search"></i></button>
+                    <input type="text" id="webseries-search-input" class="content-search-input"
+                        placeholder="Search for web series...">
+                    <button id="webseries-search-btn" class="content-search-btn haptic-trigger"><i
+                            class="fas fa-search"></i></button>
+                    <!-- ★★★ NEW: Refresh Button ★★★ -->
+                    <button id="webseries-refresh-btn" class="content-search-btn haptic-trigger"><i
+                            class="fas fa-sync-alt"></i></button>
                 </div>
                 <div id="webseries-category-rows" class="content-category-rows">
-                    <div class="loader-container"><div class="loader"></div></div>
+                    <div class="loader-container">
+                        <div class="loader"></div>
+                    </div>
                 </div>
-                 <div class="content-disclaimer">
-                    <strong>Disclaimer:</strong> Content is provided by third-party sources. We do not host any content. Availability, quality, and ads are determined by the provider.
+                <div class="content-disclaimer">
+                    <strong>Disclaimer:</strong> Content is provided by third-party sources. We do not host any
+                    content. Availability, quality, and ads are determined by the provider.
                 </div>
             </div>
             <div class="bottom-nav">
@@ -2201,22 +2323,25 @@
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
-        
+
         <!-- EPISODE LIST SCREEN -->
         <div id="episode-list-screen" class="screen">
-             <div class="screen-header">
-                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+            <div class="screen-header">
+                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i
+                        class="fas fa-arrow-left"></i></div>
                 <h2 id="series-title-header" class="header-title">Episodes</h2>
             </div>
             <div id="episode-list-content" class="episode-list-content">
-                <div class="loader-container"><div class="loader"></div></div>
+                <div class="loader-container">
+                    <div class="loader"></div>
+                </div>
             </div>
         </div>
 
         <!-- MOVIE & SERIES PLAYER SCREEN -->
         <div id="movie-player-screen" class="screen">
             <div id="movie-player-container">
-                 <div class="player-controls-header">
+                <div class="player-controls-header">
                     <div class="player-back-button haptic-trigger" onclick="navigateBack()">
                         <i class="fas fa-arrow-left"></i>
                     </div>
@@ -2233,10 +2358,8 @@
                     </button>
                 </div>
                 <div class="player-wrapper">
-                    <iframe id="movie-player-iframe-container" 
-                            src=""
-                            allow="autoplay; encrypted-media"
-                            allowfullscreen>
+                    <iframe id="movie-player-iframe-container" src="" allow="autoplay; encrypted-media"
+                        allowfullscreen>
                     </iframe>
                 </div>
             </div>
@@ -2328,7 +2451,7 @@
             div.appendChild(document.createTextNode(str));
             return div.innerHTML;
         }
-        
+
         function formatNumber(num) {
             if (num === null || num === undefined) return 0;
             if (num >= 10000000) return (num / 10000000).toFixed(1).replace(/\.0$/, '') + 'Cr';
@@ -2355,24 +2478,27 @@
             currentScreenPayload: null,
             viewingHistory: [],
             youtubeNextPageTokens: { long: null, shorts: null, search: null },
-            
+
             content: {
                 movies: {
                     isLoading: false,
                     bannerInterval: null,
-                    currentCategory: 'hindi_cinema', 
-                    categoryPages: {}, 
-                    cache: new Map() 
+                    currentCategory: 'hindi_cinema',
+                    categoryPages: {},
+                    cache: new Map()
                 },
                 webseries: {
                     isLoading: false,
                     bannerInterval: null,
-                    currentCategory: 'hindi_cinema', 
+                    currentCategory: 'hindi_cinema',
                     categoryPages: {},
                     cache: new Map()
                 }
             },
             
+            // ★★★ MODIFIED: Added playerContext to remember what's playing ★★★
+            playerContext: { type: null, tmdbId: null, season: null, episode: null },
+
             longVideoSearchContext: { type: 'query', value: null },
             uploadDetails: { category: null, audience: 'all', lengthType: 'short' },
             activeComments: { videoId: null, videoOwnerUid: null, channelId: null },
@@ -2393,7 +2519,7 @@
 
 
         // =============================================================================
-        // ★★★ API FETCHING FUNCTIONS ★★★
+        // ★★★ API FETCHING FUNCTIONS (MODIFIED) ★★★
         // =============================================================================
 
         async function fetchFromYouTubeAPI(type, params) {
@@ -2424,8 +2550,9 @@
                 return { error: error.message, items: [], nextPageToken: null };
             }
         }
-        
+
         async function fetchFromTMDbAPI(endpoint, params = {}) {
+            // ★★★ MODIFIED: Added more robust language parameters ★★★
             params.language = 'hi-IN';
             params.include_image_language = 'en,hi,null';
 
@@ -2448,8 +2575,23 @@
             }
         }
         
+        // ★★★ NEW: Function to check for Hindi availability ★★★
+        async function isContentAvailableInHindi(type, id) {
+            try {
+                // This is a heuristic. A Hindi trailer or clip is a strong indicator of Hindi audio availability.
+                const data = await fetchFromTMDbAPI(`${type}/${id}/videos`);
+                if (data.results && data.results.length > 0) {
+                    return data.results.some(video => video.iso_639_1 === 'hi');
+                }
+                return false;
+            } catch (error) {
+                console.warn(`Could not verify Hindi availability for ${type} ${id}:`, error);
+                return false; // Fail safely
+            }
+        }
+
         // =================================================
-        // ★★★ NAVIGATION LOGIC ★★★
+        // ★★★ NAVIGATION LOGIC (MODIFIED) ★★★
         // =================================================
 
         function activateScreen(screenId) {
@@ -2464,35 +2606,36 @@
             }
             appState.currentScreen = screenId;
         }
-        
+
         function navigateTo(nextScreenId, payload = null) {
             if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && !['creator-page-screen', 'episode-list-screen'].includes(nextScreenId)) return;
-            
+
             if (appState.currentScreen === 'movie-player-screen') {
                 document.getElementById('app-container').classList.remove('fullscreen-active');
                 const iframe = document.getElementById('movie-player-iframe-container');
                 if (iframe) iframe.src = 'about:blank';
             }
+            // ★★★ MODIFIED: Clear intervals on navigation ★★★
             if (appState.content.movies.bannerInterval) clearInterval(appState.content.movies.bannerInterval);
             if (appState.content.webseries.bannerInterval) clearInterval(appState.content.webseries.bannerInterval);
-            
+
             if (appState.currentScreen === 'creator-page-screen' && appState.creatorPagePlayers.long) {
-                 appState.creatorPagePlayers.long.destroy();
-                 appState.creatorPagePlayers.long = null;
-                 document.getElementById('app-container').classList.remove('fullscreen-active');
+                appState.creatorPagePlayers.long.destroy();
+                appState.creatorPagePlayers.long = null;
+                document.getElementById('app-container').classList.remove('fullscreen-active');
             }
 
             if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
                 appState.navigationStack.push(nextScreenId);
             }
-            
+
             appState.currentScreenPayload = payload;
             activateScreen(nextScreenId);
 
             if (nextScreenId === 'movies-screen') setupContentScreen('movie');
             if (nextScreenId === 'webseries-screen') setupContentScreen('tv');
             if (nextScreenId === 'episode-list-screen' && payload) showEpisodeList(payload);
-            
+
             if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
             if (nextScreenId === 'history-screen') initializeHistoryScreen();
             if (nextScreenId === 'home-screen') setupShortsScreen();
@@ -2500,13 +2643,33 @@
                 initializeCreatorPage(payload);
             }
         }
-        
+
         function navigateBack() {
+             // ★★★ MODIFIED: Special handling for player back button to return to server list ★★★
             if (appState.currentScreen === 'movie-player-screen') {
+                // 1. Close the player iframe
                 document.getElementById('app-container').classList.remove('fullscreen-active');
                 const iframe = document.getElementById('movie-player-iframe-container');
                 if (iframe) iframe.src = 'about:blank';
+                
+                // 2. Go back to the screen *before* the player, which is the movies/webseries/episodes screen
+                const previousScreenId = appState.navigationStack[appState.navigationStack.length - 2] || 'main-home-screen';
+                activateScreen(previousScreenId);
+                appState.currentScreen = previousScreenId;
+                
+                // 3. Re-open the server selector for the same content using stored context
+                const ctx = appState.playerContext;
+                if(ctx.type && ctx.tmdbId) {
+                    setTimeout(() => showServerSelector(ctx.type, ctx.tmdbId, ctx.season, ctx.episode), 50);
+                }
+                
+                // 4. Manually remove the player from the stack so we don't get stuck in a loop
+                if (appState.navigationStack[appState.navigationStack.length - 1] === 'movie-player-screen') {
+                    appState.navigationStack.pop();
+                }
+                return; // End execution here to prevent default back behavior
             }
+            
             if (appState.content.movies.bannerInterval) clearInterval(appState.content.movies.bannerInterval);
             if (appState.content.webseries.bannerInterval) clearInterval(appState.content.webseries.bannerInterval);
 
@@ -2518,7 +2681,7 @@
             const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'main-home-screen';
             navigateTo(previousScreenId, null);
         }
-        
+
         function updateNavActiveState(activeNav) {
             document.querySelectorAll('.bottom-nav').forEach(navBar => {
                 navBar.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
@@ -2534,38 +2697,30 @@
 
         const CONTENT_REGIONS = {
             'hindi_cinema': { title: 'Hindi Cinema', params: { with_original_language: 'hi', region: 'IN' } },
-            'telugu_cinema': { title: 'Telugu Cinema', params: { with_original_language: 'te', region: 'IN' } },
-            'tamil_cinema': { title: 'Tamil Cinema', params: { with_original_language: 'ta', region: 'IN' } },
-            'malayalam_cinema': { title: 'Malayalam Cinema', params: { with_original_language: 'ml', region: 'IN' } },
-            'kannada_cinema': { title: 'Kannada Cinema', params: { with_original_language: 'kn', region: 'IN' } },
-            'punjabi_cinema': { title: 'Punjabi Cinema', params: { with_original_language: 'pa', region: 'IN' } },
-            'hollywood': { title: 'Hollywood', params: { with_original_language: 'en', region: 'US' } },
-            'nollywood': { title: 'Nollywood', params: { region: 'NG' } },
-            'lollywood': { title: 'Lollywood', params: { with_original_language: 'ur', region: 'PK' } },
-            'chinese_cinema': { title: 'Chinese Cinema', params: { with_original_language: 'zh', region: 'CN' } },
-            'korean_cinema': { title: 'Korean Cinema', params: { with_original_language: 'ko', region: 'KR' } },
-            'japanese_cinema': { title: 'Japanese Cinema', params: { with_original_language: 'ja', region: 'JP' } },
-            'french_cinema': { title: 'French Cinema', params: { with_original_language: 'fr', region: 'FR' } },
-            'british_cinema': { title: 'British Cinema', params: { region: 'GB' } },
-            'spanish_cinema': { title: 'Spanish/Latin', params: { with_original_language: 'es' } },
+            'hollywood': { title: 'Hollywood (Hindi Dub)', params: { with_original_language: 'en', region: 'US' } },
+            'south_cinema': { title: 'South (Hindi Dub)', params: { with_original_language: 'te,ta,ml,kn', region: 'IN' } },
+            'korean_cinema': { title: 'Korean (Hindi Dub)', params: { with_original_language: 'ko', region: 'KR' } },
+            'more_regions': { title: 'More Regions', params: {} }, // Placeholder
         };
 
-        const CONTENT_GENRES = {
-            'latest': { title: 'Latest', params: { sort_by: 'primary_release_date.desc' } },
+        const MOVIE_GENRES = {
+            'latest': { title: 'Latest Releases', params: { sort_by: 'primary_release_date.desc' } },
             'action': { title: 'Action', params: { with_genres: 28 } },
             'comedy': { title: 'Comedy', params: { with_genres: 35 } },
             'romance': { title: 'Romance', params: { with_genres: 10749 } },
-            'drama': { title: 'Drama', params: { with_genres: 18 } },
             'thriller': { title: 'Thriller', params: { with_genres: 53 } },
             'horror': { title: 'Horror', params: { with_genres: 27 } },
-            'mystery': { title: 'Mystery', params: { with_genres: 9648 } },
-            'scifi': { title: 'Sci-Fi', params: { with_genres: 878 } },
-            'fantasy': { title: 'Fantasy', params: { with_genres: 14 } },
+            'scifi': { title: 'Sci-Fi & Fantasy', params: { with_genres: '878,14' } },
+        };
+        
+        const TV_GENRES = {
+            'latest': { title: 'Latest Series', params: { sort_by: 'first_air_date.desc' } },
+            'tv_shows': { title: 'Popular TV Shows', params: { sort_by: 'popularity.desc' } },
+            'action': { title: 'Action & Adventure', params: { with_genres: '10759' } },
+            'comedy': { title: 'Comedy', params: { with_genres: 35 } },
+            'drama': { title: 'Drama', params: { with_genres: 18 } },
+            'mystery': { title: 'Mystery & Crime', params: { with_genres: '9648,80' } },
             'animation': { title: 'Animation', params: { with_genres: 16 } },
-            'musical': { title: 'Musical', params: { with_genres: 10402 } },
-            'historical': { title: 'Historical', params: { with_genres: 36 } },
-            'documentary': { title: 'Documentary', params: { with_genres: 99 } },
-            'biopic': { title: 'Biopic', params: { with_keywords: '9845' } },
         };
 
         function renderContentBanner(type, items) {
@@ -2573,28 +2728,34 @@
             if (!carousel) return;
 
             if (!items || items.length === 0) {
-                carousel.innerHTML = '<p class="static-message">No trending content found in Hindi.</p>';
+                carousel.innerHTML = '<p class="static-message">No trending content found.</p>';
                 return;
             }
-            
+
             const topItems = items.slice(0, 10);
             carousel.innerHTML = topItems.map(item => {
                 const title = item.title || item.name;
+                const backdropPath = item.backdrop_path ? `https://image.tmdb.org/t/p/w780${item.backdrop_path}` : '';
                 return `
                 <div class="content-banner-card haptic-trigger" 
                      data-id="${item.id}" 
                      data-type="${type}"
-                     style="background-image: url('https://image.tmdb.org/t/p/w780${item.backdrop_path}')">
+                     style="background-image: url('${backdropPath}')">
                     <div class="content-banner-title">${escapeHTML(title)}</div>
                 </div>`;
             }).join('');
 
             carousel.querySelectorAll('.content-banner-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    showServerSelector(card.dataset.type, card.dataset.id);
+                    const id = card.dataset.id;
+                    const contentType = card.dataset.type;
+                    if(contentType === 'tv'){
+                        navigateTo('episode-list-screen', { seriesId: id });
+                    } else {
+                        showServerSelector(contentType, id);
+                    }
                 });
             });
-            
             startBannerAutoscroll(type);
         }
 
@@ -2603,101 +2764,141 @@
             const rowsContainer = document.getElementById(`${screenType}-category-rows`);
             if (!rowsContainer) return;
             
+            const existingRow = rowsContainer.querySelector(`[data-category="${categoryKey}"]`);
+            if(existingRow) existingRow.remove();
+
             const row = document.createElement('div');
             row.className = 'content-category-row';
             row.dataset.category = categoryKey;
-            
+
             const scrollerHTML = items.map(item => {
-                 const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750.png?text=No+Image';
-                 return `
+                const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750.png?text=No+Image';
+                return `
                 <div class="content-vertical-card haptic-trigger" data-id="${item.id}" data-type="${type}"
                      style="background-image: url('${posterPath}')">
                 </div>`;
             }).join('');
-            
-            rowsContainer.appendChild(row);
 
             row.innerHTML = `
                 <h3 class="content-category-title">${title}</h3>
                 <div class="content-row-scroller">${scrollerHTML}</div>`;
-            
+                
+            rowsContainer.appendChild(row);
+
             row.querySelectorAll('.content-vertical-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    showServerSelector(card.dataset.type, card.dataset.id);
+                    const id = card.dataset.id;
+                    const contentType = card.dataset.type;
+                    if(contentType === 'tv'){
+                        navigateTo('episode-list-screen', { seriesId: id });
+                    } else {
+                        showServerSelector(contentType, id);
+                    }
                 });
             });
         }
-        
+
         function setupContentScreen(type) {
             const screenType = type === 'movie' ? 'movie' : 'webseries';
             const tabsContainer = document.getElementById(`${screenType}-category-tabs`);
             const searchInput = document.getElementById(`${screenType}-search-input`);
             const searchBtn = document.getElementById(`${screenType}-search-btn`);
+            const refreshBtn = document.getElementById(`${screenType}-refresh-btn`);
 
             if (!tabsContainer.hasChildNodes()) {
-                tabsContainer.innerHTML = Object.keys(CONTENT_REGIONS).map(key => `
-                    <div class="content-category-tab haptic-trigger ${key === 'hindi_cinema' ? 'active' : ''}" data-category="${key}">
+                tabsContainer.innerHTML = Object.keys(CONTENT_REGIONS).map(key => {
+                    if (key === 'more_regions') return ''; // Skip placeholder
+                    return `<div class="content-category-tab haptic-trigger ${key === 'hindi_cinema' ? 'active' : ''}" data-category="${key}">
                         ${CONTENT_REGIONS[key].title}
-                    </div>
-                `).join('');
-                
+                    </div>`
+                }).join('');
+
                 tabsContainer.querySelectorAll('.content-category-tab').forEach(tab => {
                     tab.addEventListener('click', () => {
-                         tabsContainer.querySelector('.active')?.classList.remove('active');
-                         tab.classList.add('active');
-                         const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
-                         state.currentCategory = tab.dataset.category;
-                         loadAllContent(type, true);
+                        tabsContainer.querySelector('.active')?.classList.remove('active');
+                        tab.classList.add('active');
+                        const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
+                        state.currentCategory = tab.dataset.category;
+                        loadAllContent(type, true); // Force refresh on category change
                     });
                 });
             }
 
             searchBtn.onclick = () => searchContent(type, searchInput.value);
             searchInput.onkeypress = (e) => { if (e.key === 'Enter') searchContent(type, searchInput.value); };
-
-            loadAllContent(type);
+            refreshBtn.onclick = () => loadAllContent(type, true); // Refresh button forces reload
+            
+            // ★★★ MODIFIED: Load content only if the view is empty ★★★
+            const rowsContainer = document.getElementById(`${screenType}-category-rows`);
+            if(rowsContainer.children.length <= 1) { // Only load if it's empty or just has a loader
+                loadAllContent(type);
+            }
         }
 
         async function loadAllContent(type, forceRefresh = false) {
             const screenType = type === 'movie' ? 'movie' : 'webseries';
             const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
+            const GENRES = type === 'movie' ? MOVIE_GENRES : TV_GENRES;
             
             const mainCategoryKey = state.currentCategory;
-            const bannerCacheKey = `${mainCategoryKey}-${type}-banner`;
             
             const bannerContainer = document.getElementById(`${screenType}-banner-carousel`);
             const rowsContainer = document.getElementById(`${screenType}-category-rows`);
-            
-            if (!forceRefresh && state.cache.has(bannerCacheKey)) {
-                renderContentBanner(type, state.cache.get(bannerCacheKey));
-            } else {
-                bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-                const regionParams = CONTENT_REGIONS[mainCategoryKey].params;
-                const bannerParams = { ...regionParams, sort_by: 'vote_average.desc', 'vote_count.gte': 100, page: 1 };
-                const bannerData = await fetchFromTMDbAPI(`discover/${type}`, bannerParams);
-                
-                const bannerItems = (bannerData.results || []).filter(item => item.backdrop_path);
-                renderContentBanner(type, bannerItems.slice(0, 10));
-                state.cache.set(bannerCacheKey, bannerItems);
-            }
-            
+
+            // Banner Loading
+            bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            // ★★★ MODIFIED: Use trending endpoint for banner ★★★
+            const bannerData = await fetchFromTMDbAPI(`trending/${type}/week`, { region: 'IN' });
+            const bannerItems = (bannerData.results || []).filter(item => item.backdrop_path);
+            renderContentBanner(type, bannerItems);
+
+            // Category Rows Loading
             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            state.categoryPages = {}; 
+            state.categoryPages = {};
             rowsContainer.innerHTML = '';
-            const categoryPromises = Object.keys(CONTENT_GENRES).map(async (key) => {
-                const randomPage = Math.floor(Math.random() * 10) + 1;
+            
+            const promises = Object.keys(GENRES).map(async (genreKey) => {
                 const regionParams = CONTENT_REGIONS[mainCategoryKey].params;
-                const genreParams = CONTENT_GENRES[key].params;
-                const params = { ...regionParams, ...genreParams, page: randomPage };
+                let genreParams = { ...GENRES[genreKey].params };
+
+                // ★★★ MODIFIED: Add smarter filters for "Latest" content ★★★
+                if (genreKey === 'latest') {
+                    const sixMonthsAgo = new Date();
+                    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+                    const dateString = sixMonthsAgo.toISOString().split('T')[0];
+                    if (type === 'movie') {
+                        genreParams['primary_release_date.gte'] = dateString;
+                        genreParams['vote_count.gte'] = 150; // Filter out unpopular new movies
+                    } else {
+                        genreParams['first_air_date.gte'] = dateString;
+                        genreParams['vote_count.gte'] = 100; // For new series
+                    }
+                }
                 
+                if (genreKey === 'tv_shows' && type === 'tv') {
+                     genreParams['vote_count.gte'] = 500; // For popular, established shows
+                }
+                
+                const params = { ...regionParams, ...genreParams, page: 1 };
                 const data = await fetchFromTMDbAPI(`discover/${type}`, params);
-                const validItems = (data.results || []).filter(item => item.poster_path);
+                let validItems = (data.results || []).filter(item => item.poster_path);
+                
+                // ★★★ MODIFIED: Filter by Hindi availability for non-Hindi original content ★★★
+                if (mainCategoryKey !== 'hindi_cinema') {
+                    const checkedItems = [];
+                    for(const item of validItems) {
+                        if (await isContentAvailableInHindi(type, item.id)) {
+                            checkedItems.push(item);
+                        }
+                    }
+                    validItems = checkedItems;
+                }
                 
                 if (validItems.length > 0) {
-                    renderContentCategoryRow(type, key, CONTENT_GENRES[key].title, validItems);
+                    renderContentCategoryRow(type, genreKey, GENRES[genreKey].title, validItems);
                 }
             });
-            await Promise.all(categoryPromises);
+            await Promise.all(promises);
         }
 
         async function searchContent(type, query) {
@@ -2705,19 +2906,18 @@
             const screenType = type === 'movie' ? 'movie' : 'webseries';
             const rowsContainer = document.getElementById(`${screenType}-category-rows`);
             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            
-            const endpoint = `search/${type}`;
-            const data = await fetchFromTMDbAPI(endpoint, { query: query, page: 1 });
-            
-            rowsContainer.innerHTML = ''; 
+
+            const data = await fetchFromTMDbAPI(`search/${type}`, { query: query, page: 1 });
+
+            rowsContainer.innerHTML = '';
             if (data.results && data.results.length > 0) {
-                 const validItems = data.results.filter(item => item.poster_path);
+                const validItems = data.results.filter(item => item.poster_path);
                 renderContentCategoryRow(type, 'search', `Search Results for "${query}"`, validItems);
             } else {
                 rowsContainer.innerHTML = `<p class="static-message">No results found for "${query}".</p>`;
             }
         }
-        
+
         function startBannerAutoscroll(type) {
             const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
             if (state.bannerInterval) clearInterval(state.bannerInterval);
@@ -2732,57 +2932,59 @@
                     left: carousel.children[currentIndex].offsetLeft - (carousel.offsetWidth * 0.05),
                     behavior: 'smooth'
                 });
-            }, 3000);
+            }, 3500); // Slightly increased time
         }
-        
+
         async function showEpisodeList({ seriesId }) {
             navigateTo('episode-list-screen');
             const contentContainer = document.getElementById('episode-list-content');
             contentContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            
+
             const seriesData = await fetchFromTMDbAPI(`tv/${seriesId}`);
             if (!seriesData) {
-                 contentContainer.innerHTML = '<p class="static-message">Could not load series details.</p>';
-                 return;
+                contentContainer.innerHTML = '<p class="static-message">Could not load series details.</p>';
+                return;
             }
-            
+
             document.getElementById('series-title-header').textContent = seriesData.name;
             contentContainer.innerHTML = '';
-            
+
             for (const season of seriesData.seasons) {
-                if (season.season_number === 0) continue;
-                
+                if (season.season_number === 0 || season.episode_count === 0) continue;
+
                 const seasonData = await fetchFromTMDbAPI(`tv/${seriesId}/season/${season.season_number}`);
                 if (seasonData && seasonData.episodes && seasonData.episodes.length > 0) {
-                     const seasonEl = document.createElement('div');
-                     seasonEl.className = 'season-container';
-                     
-                     const episodesHTML = seasonData.episodes.map(ep => `
+                    const seasonEl = document.createElement('div');
+                    seasonEl.className = 'season-container';
+
+                    const episodesHTML = seasonData.episodes.map(ep => `
                         <div class="episode-card haptic-trigger" data-series-id="${seriesId}" data-season="${ep.season_number}" data-episode="${ep.episode_number}">
                             <div class="episode-number">${ep.episode_number}</div>
                             <div class="episode-name">${escapeHTML(ep.name)}</div>
                         </div>
                      `).join('');
-                     
-                     seasonEl.innerHTML = `
+
+                    seasonEl.innerHTML = `
                         <h3 class="season-title">${escapeHTML(season.name)}</h3>
                         <div class="episodes-grid">${episodesHTML}</div>`;
-                     contentContainer.appendChild(seasonEl);
+                    contentContainer.appendChild(seasonEl);
                 }
             }
-            
+
             contentContainer.querySelectorAll('.episode-card').forEach(card => {
                 card.addEventListener('click', () => {
                     showServerSelector('tv', card.dataset.seriesId, card.dataset.season, card.dataset.episode);
                 });
             });
         }
-        
-        // ★★★ NEW: Core function to show the server selection modal ★★★
+
         async function showServerSelector(type, tmdbId, season = null, episode = null) {
+            // ★★★ MODIFIED: Store context for the back button logic ★★★
+            appState.playerContext = { type, tmdbId, season, episode };
+
             const modal = document.getElementById('server-select-modal');
             const buttonContainer = document.getElementById('server-select-buttons');
-            
+
             modal.classList.add('active');
             buttonContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
 
@@ -2791,7 +2993,7 @@
                 const externalIds = await fetchFromTMDbAPI(`${type}/${tmdbId}/external_ids`);
                 imdbId = externalIds.imdb_id;
             } catch (e) {
-                console.warn("Could not fetch IMDb ID. Some servers may not be available.");
+                console.warn("Could not fetch IMDb ID.");
             }
 
             const servers = [];
@@ -2806,7 +3008,7 @@
                 servers.push({ name: 'Server 2', url: `https://www.2embed.to/embed/tmdb/tv?id=${tmdbId}&s=${season}&e=${episode}` });
                 servers.push({ name: 'Server 3', url: `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}` });
                 if (imdbId) servers.push({ name: 'Server 4', url: `https://moviesapi.club/tv/${imdbId}-${season}-${episode}` });
-                 servers.push({ name: 'Server 5', url: `https://multiembed.mov/?video_id=${tmdbId}&s=${season}&e=${episode}` });
+                servers.push({ name: 'Server 5', url: `https://multiembed.mov/?video_id=${tmdbId}&s=${season}&e=${episode}` });
             }
 
             buttonContainer.innerHTML = servers.map(server => `
@@ -2820,11 +3022,27 @@
                 btn.addEventListener('click', () => {
                     const url = btn.dataset.url;
                     modal.classList.remove('active');
-                    setupAndNavigateToPlayer(url);
+                    // ★★★ MODIFIED: Show ad recommendation before playing ★★★
+                    showAdBlockerRecommendation(url);
                 });
             });
         }
         
+        // ★★★ NEW: Function to show Ad Blocker modal ★★★
+        function showAdBlockerRecommendation(playerUrl) {
+            const modal = document.getElementById('ad-blocker-modal');
+            modal.classList.add('active');
+
+            document.getElementById('brave-download-btn').onclick = () => {
+                window.open('https://brave.com/download/', '_blank');
+            };
+            
+            document.getElementById('continue-to-player-btn').onclick = () => {
+                modal.classList.remove('active');
+                setupAndNavigateToPlayer(playerUrl);
+            };
+        }
+
         function setupAndNavigateToPlayer(url) {
             navigateTo('movie-player-screen');
             setTimeout(() => {
@@ -2833,7 +3051,7 @@
                 setupMoviePlayerControls();
             }, 100);
         }
-        
+
         function setupMoviePlayerControls() {
             document.getElementById('movie-player-rotate-btn').onclick = () => {
                 document.getElementById('app-container').classList.toggle('fullscreen-active');
@@ -2842,6 +3060,9 @@
             const playerWrapper = document.querySelector('#movie-player-container .player-wrapper');
             const zoomInBtn = document.getElementById('movie-player-zoom-in-btn');
             const zoomOutBtn = document.getElementById('movie-player-zoom-out-btn');
+            
+            playerWrapper.style.transform = `scale(1.0)`; // Reset zoom on new video
+            
             zoomInBtn.onclick = () => {
                 currentZoom = Math.min(2.5, currentZoom + 0.1);
                 playerWrapper.style.transform = `scale(${currentZoom})`;
@@ -3077,16 +3298,10 @@
                     let targetScreen;
 
                     switch (targetNav) {
-                        case 'home':
-                            targetScreen = 'main-home-screen';
-                            break;
-                        case 'shorts':
-                            targetScreen = 'home-screen';
-                            break;
-                        default:
-                            targetScreen = `${targetNav}-screen`;
+                        case 'home': targetScreen = 'main-home-screen'; break;
+                        case 'shorts': targetScreen = 'home-screen'; break;
+                        default: targetScreen = `${targetNav}-screen`;
                     }
-
                     navigateTo(targetScreen);
                     updateNavActiveState(targetNav);
                 });
@@ -3098,15 +3313,19 @@
                 userHasInteracted = true;
                 startAppLogic();
             });
-            
-            // ★★★ NEW: Event listeners for the new server modal ★★★
+
+            // Event listeners for the server modal
             const serverModal = document.getElementById('server-select-modal');
-            const closeServerModalBtn = document.getElementById('close-server-modal-btn');
-            closeServerModalBtn.addEventListener('click', () => serverModal.classList.remove('active'));
+            document.getElementById('close-server-modal-btn').addEventListener('click', () => serverModal.classList.remove('active'));
             serverModal.addEventListener('click', (e) => {
-                if (e.target === serverModal) {
-                    serverModal.classList.remove('active');
-                }
+                if (e.target === serverModal) serverModal.classList.remove('active');
+            });
+            
+            // ★★★ NEW: Event listeners for Ad Blocker modal ★★★
+            const adModal = document.getElementById('ad-blocker-modal');
+            document.getElementById('close-ad-modal-btn').addEventListener('click', () => adModal.classList.remove('active'));
+            adModal.addEventListener('click', (e) => {
+                if (e.target === adModal) adModal.classList.remove('active');
             });
 
 
@@ -3125,7 +3344,7 @@
             document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') performLongVideoSearch();
             });
-            
+
             const openSidebar = () => {
                 document.getElementById('main-sidebar').classList.add('open');
                 document.getElementById('sidebar-overlay').classList.add('open');
@@ -3134,15 +3353,13 @@
             document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('movies-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('webseries-menu-icon')?.addEventListener('click', openSidebar);
-            
-            document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
-                document.getElementById('main-sidebar').classList.remove('open');
+
+            const closeSidebar = () => {
+                 document.getElementById('main-sidebar').classList.remove('open');
                 document.getElementById('sidebar-overlay').classList.remove('open');
-            });
-            document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-                document.getElementById('main-sidebar').classList.remove('open');
-                document.getElementById('sidebar-overlay').classList.remove('open');
-            });
+            }
+            document.getElementById('close-sidebar-btn')?.addEventListener('click', closeSidebar);
+            document.getElementById('sidebar-overlay')?.addEventListener('click', closeSidebar);
 
             document.getElementById('long-video-history-btn')?.addEventListener('click', () => navigateTo('history-screen'));
             document.getElementById('back-from-history-btn')?.addEventListener('click', () => navigateBack());
