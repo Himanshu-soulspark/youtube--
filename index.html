@@ -17,9 +17,9 @@
 
     <style>
         /* ================================================= /
-        / === Shubhzone App Styles (Code 2) - FINAL v7.0 === /
+        / === Shubhzone App Styles (Code 2) - FINAL v8.0 === /
         / === MODIFIED AS PER USER REQUEST - SEP 2025    === /
-        / === SOLVED: New Categories & Hindi-Only Filter === /
+        / === SOLVED: Multi-Server Selection Modal       === /
         / ================================================= */
 
         /* Design Style Guide */
@@ -95,15 +95,12 @@
             transition: all 0.3s ease-in-out;
         }
 
-        /* ★★★ FIX: फ़ुलस्क्रीन रोटेशन के लिए कंटेनर स्टाइल (REWORKED) ★★★ */
         .app-container.fullscreen-active {
             position: fixed;
             top: 50%;
             left: 50%;
             width: 100vh;
-            /* चौड़ाई को स्क्रीन की ऊंचाई के बराबर करें */
             height: 100vw;
-            /* ऊंचाई को स्क्रीन की चौड़ाई के बराबर करें */
             max-width: none;
             z-index: 5000;
             border-radius: 0;
@@ -111,7 +108,6 @@
             box-shadow: none;
             transform-origin: center center;
             transform: translate(-50%, -50%) rotate(90deg);
-            /* बीच में रखकर 90 डिग्री घुमाएं */
         }
 
         .app-container::before {
@@ -1141,7 +1137,6 @@
             cursor: pointer;
         }
 
-        /* ★★★ FIX: वीडियो कार्ड को 16:9 का अनुपात दिया गया ★★★ */
         .long-video-thumbnail {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -1434,7 +1429,6 @@
             width: 100%;
         }
 
-        /* ★★★ NEW & MODIFIED: नए वीडियो प्लेयर पेज के लिए स्टाइल ★★★ */
         #creator-page-player-container {
             width: 100%;
             height: 100%;
@@ -1457,15 +1451,12 @@
             padding: 0 15px;
             z-index: 30;
             pointer-events: none;
-            /* ताकि बटन के अलावा कहीं और क्लिक करने पर वीडियो पर क्लिक हो */
         }
 
         .player-controls-header>* {
             pointer-events: auto;
-            /* बटनों को क्लिक करने योग्य बनाएं */
         }
 
-        /* MODIFIED: पुरानी स्टाइल हटाई गई, क्योंकि अब यह फ्लेक्स आइटम है */
         .player-back-button {
             color: var(--text-primary);
             background-color: rgba(0, 0, 0, 0.5);
@@ -1479,13 +1470,11 @@
             cursor: pointer;
         }
 
-        /* NEW: ज़ूम कंट्रोल कंटेनर के लिए स्टाइल */
         .player-zoom-controls {
             display: flex;
             gap: 10px;
         }
 
-        /* NEW: प्लेयर हेडर में सभी बटनों के लिए सामान्य स्टाइल */
         .player-controls-header button {
             color: var(--text-primary);
             background-color: rgba(0, 0, 0, 0.5);
@@ -1505,11 +1494,6 @@
             background-color: rgba(255, 255, 255, 0.2);
         }
 
-        /* MODIFIED: पुरानी स्टाइल हटाई गई */
-        #player-rotate-btn {
-            /* अब सामान्य बटन स्टाइल का उपयोग करेगा */
-        }
-
         #player-rotate-btn i {
             transition: transform 0.3s ease;
         }
@@ -1518,13 +1502,11 @@
             transform: rotate(90deg);
         }
 
-        /* MODIFIED: ज़ूम इफ़ेक्ट के लिए ट्रांजीशन जोड़ा गया */
         .player-wrapper {
             width: 100%;
             aspect-ratio: 16 / 9;
             background-color: #000;
             transition: transform 0.3s ease;
-            /* स्मूथ ज़ूम के लिए */
         }
 
         #creator-page-player-long {
@@ -1636,7 +1618,6 @@
             border-bottom-width: 2px;
         }
 
-        /* ★★★ NEW & REWORKED STYLES FOR MOVIES & SERIES - START ★★★ */
         .content-screen-content {
             width: 100%;
             height: 100%;
@@ -1644,7 +1625,7 @@
             -webkit-overflow-scrolling: touch;
             display: flex;
             flex-direction: column;
-            padding-bottom: 60px; /* bottom-nav के लिए जगह */
+            padding-bottom: 60px; 
         }
         
         .content-header {
@@ -1701,7 +1682,6 @@
         
         .content-banner-carousel {
             display: flex;
-            /* JS will handle the scrolling transform */
         }
 
         .content-banner-card {
@@ -1811,34 +1791,6 @@
             display: none;
         }
         
-        .load-more-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            width: 120px;
-            background-color: var(--secondary-background);
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px dashed var(--text-secondary);
-            color: var(--text-secondary);
-            transition: all 0.2s ease;
-        }
-        .load-more-card:hover {
-            border-color: var(--primary-neon);
-            color: var(--primary-neon);
-        }
-        .load-more-card i {
-            font-size: 2em;
-            margin-bottom: 5px;
-        }
-        .load-more-card span {
-            font-size: 0.9em;
-            font-weight: 500;
-        }
-        
-
         .content-vertical-card {
             flex-shrink: 0;
             width: 120px;
@@ -1870,7 +1822,7 @@
             border: 1px dashed var(--text-disabled);
         }
 
-        #movie-player-screen, #webseries-player-screen {
+        #movie-player-screen {
             background-color: #000;
             padding: 0;
         }
@@ -1949,8 +1901,72 @@
             color: var(--text-primary);
         }
 
-
-        /* ★★★ NEW & REWORKED STYLES FOR MOVIES & SERIES - END ★★★ */
+        /* ★★★ NEW: Styles for Server Selection Modal ★★★ */
+        #server-select-modal {
+            z-index: 1200; /* Must be on top of everything */
+        }
+        .server-select-content {
+            background-color: var(--secondary-background);
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            border: 1px solid var(--primary-neon);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .server-select-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--text-secondary);
+        }
+        .server-select-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.3em;
+        }
+        .close-server-modal-btn {
+            font-size: 1.8em;
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 1;
+        }
+        .server-select-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        .server-btn {
+            background-color: var(--dark-grey);
+            border: 1px solid var(--text-secondary);
+            color: var(--text-primary);
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 500;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .server-btn:hover {
+            border-color: var(--primary-neon);
+            color: var(--primary-neon);
+            background-color: rgba(var(--primary-neon-rgb), 0.1);
+        }
+        .server-btn .fa-crown {
+            color: #FFD700; /* Golden color for the crown */
+        }
 
     </style>
 </head>
@@ -1998,8 +2014,23 @@
             <img id="enlarged-image-src" src="" alt="Enlarged View">
         </div>
     </div>
-
     <!-- === ALL MODALS END === -->
+
+    <!-- ★★★ NEW: Server Selection Modal HTML ★★★ -->
+    <div id="server-select-modal" class="modal-overlay">
+        <div class="server-select-content">
+            <div class="server-select-header">
+                <h3>Choose a Server</h3>
+                <span id="close-server-modal-btn" class="close-server-modal-btn haptic-trigger">×</span>
+            </div>
+            <div id="server-select-buttons" class="server-select-buttons">
+                <!-- Server buttons will be injected here by JavaScript -->
+                <div class="loader-container">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="app-container" id="app-container">
 
@@ -2047,7 +2078,6 @@
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <!-- ★★★ NEW: Web Series Nav Item ★★★ -->
                 <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
@@ -2104,36 +2134,27 @@
             </div>
         </div>
 
-        <!-- ★★★ REWORKED MOVIE SCREEN - START ★★★ -->
+        <!-- MOVIE SCREEN -->
         <div id="movies-screen" class="screen">
             <div class="content-screen-content">
                 <div class="content-header">
                     <div id="movies-menu-icon" class="home-menu-icon haptic-trigger">
                         <i class="fas fa-bars"></i>
                     </div>
-                    <!-- New Category Tabs -->
                     <div id="movie-category-tabs" class="content-category-tabs"></div>
                 </div>
-
-                <!-- Banner Carousel -->
                 <div class="content-banner-container">
                     <div id="movie-banner-carousel" class="content-banner-carousel">
                         <div class="loader-container"><div class="loader"></div></div>
                     </div>
                 </div>
-                
-                <!-- Search Bar -->
                 <div class="content-search-container">
                     <input type="text" id="movie-search-input" class="content-search-input" placeholder="Search for movies...">
                     <button id="movie-search-btn" class="content-search-btn haptic-trigger"><i class="fas fa-search"></i></button>
                 </div>
-
-                <!-- Category Rows -->
                 <div id="movie-category-rows" class="content-category-rows">
                     <div class="loader-container"><div class="loader"></div></div>
                 </div>
-
-                <!-- Disclaimer -->
                 <div class="content-disclaimer">
                     <strong>Disclaimer:</strong> Content is provided by third-party sources. We do not host any content. Availability, quality, and ads are determined by the provider.
                 </div>
@@ -2146,38 +2167,28 @@
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
-        <!-- ★★★ REWORKED MOVIE SCREEN - END ★★★ -->
 
-        <!-- ★★★ NEW WEB SERIES SCREEN - START ★★★ -->
+        <!-- WEB SERIES SCREEN -->
         <div id="webseries-screen" class="screen">
             <div class="content-screen-content">
                 <div class="content-header">
                     <div id="webseries-menu-icon" class="home-menu-icon haptic-trigger">
                         <i class="fas fa-bars"></i>
                     </div>
-                    <!-- New Category Tabs -->
                     <div id="webseries-category-tabs" class="content-category-tabs"></div>
                 </div>
-
-                <!-- Banner Carousel -->
                 <div class="content-banner-container">
                     <div id="webseries-banner-carousel" class="content-banner-carousel">
                          <div class="loader-container"><div class="loader"></div></div>
                     </div>
                 </div>
-                
-                <!-- Search Bar -->
                 <div class="content-search-container">
                     <input type="text" id="webseries-search-input" class="content-search-input" placeholder="Search for web series...">
                     <button id="webseries-search-btn" class="content-search-btn haptic-trigger"><i class="fas fa-search"></i></button>
                 </div>
-
-                <!-- Category Rows -->
                 <div id="webseries-category-rows" class="content-category-rows">
                     <div class="loader-container"><div class="loader"></div></div>
                 </div>
-
-                <!-- Disclaimer -->
                  <div class="content-disclaimer">
                     <strong>Disclaimer:</strong> Content is provided by third-party sources. We do not host any content. Availability, quality, and ads are determined by the provider.
                 </div>
@@ -2190,22 +2201,19 @@
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
-        <!-- ★★★ NEW WEB SERIES SCREEN - END ★★★ -->
         
-        <!-- ★★★ NEW EPISODE LIST SCREEN - START ★★★ -->
+        <!-- EPISODE LIST SCREEN -->
         <div id="episode-list-screen" class="screen">
              <div class="screen-header">
                 <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
                 <h2 id="series-title-header" class="header-title">Episodes</h2>
             </div>
             <div id="episode-list-content" class="episode-list-content">
-                <!-- Seasons and episodes will be injected here -->
                 <div class="loader-container"><div class="loader"></div></div>
             </div>
         </div>
-        <!-- ★★★ NEW EPISODE LIST SCREEN - END ★★★ -->
 
-        <!-- ★★★ MOVIE & SERIES PLAYER SCREEN (UNIFIED) - START ★★★ -->
+        <!-- MOVIE & SERIES PLAYER SCREEN -->
         <div id="movie-player-screen" class="screen">
             <div id="movie-player-container">
                  <div class="player-controls-header">
@@ -2233,9 +2241,8 @@
                 </div>
             </div>
         </div>
-        <!-- ★★★ MOVIE & SERIES PLAYER SCREEN (UNIFIED) - END ★★★ -->
 
-        <!-- === HISTORY SCREEN === -->
+        <!-- HISTORY SCREEN -->
         <div id="history-screen" class="screen">
             <div class="history-content">
                 <div id="history-top-bar">
@@ -2259,7 +2266,7 @@
             </div>
         </div>
 
-        <!-- === CREATOR PAGE SCREEN === -->
+        <!-- CREATOR PAGE SCREEN -->
         <div id="creator-page-screen" class="screen">
             <div class="screen-header">
                 <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i
@@ -2322,7 +2329,6 @@
             return div.innerHTML;
         }
         
-        // (Other helper functions like formatNumber, extractYouTubeId are unchanged and remain here)
         function formatNumber(num) {
             if (num === null || num === undefined) return 0;
             if (num >= 10000000) return (num / 10000000).toFixed(1).replace(/\.0$/, '') + 'Cr';
@@ -2354,20 +2360,19 @@
                 movies: {
                     isLoading: false,
                     bannerInterval: null,
-                    currentCategory: 'hindi_cinema', // ★★★ MODIFIED: Default category
+                    currentCategory: 'hindi_cinema', 
                     categoryPages: {}, 
                     cache: new Map() 
                 },
                 webseries: {
                     isLoading: false,
                     bannerInterval: null,
-                    currentCategory: 'hindi_cinema', // ★★★ MODIFIED: Default category
+                    currentCategory: 'hindi_cinema', 
                     categoryPages: {},
                     cache: new Map()
                 }
             },
             
-            // (Other state properties remain unchanged)
             longVideoSearchContext: { type: 'query', value: null },
             uploadDetails: { category: null, audience: 'all', lengthType: 'short' },
             activeComments: { videoId: null, videoOwnerUid: null, channelId: null },
@@ -2376,7 +2381,6 @@
             specialVideoPlayer: null,
         };
 
-        // (Global variables like isYouTubeApiReady, players, etc., remain unchanged)
         let isYouTubeApiReady = false;
         let players = {};
         let videoObserver;
@@ -2389,7 +2393,7 @@
 
 
         // =============================================================================
-        // ★★★ API FETCHING FUNCTIONS (REFACTORED) ★★★
+        // ★★★ API FETCHING FUNCTIONS ★★★
         // =============================================================================
 
         async function fetchFromYouTubeAPI(type, params) {
@@ -2422,7 +2426,6 @@
         }
         
         async function fetchFromTMDbAPI(endpoint, params = {}) {
-            // ★★★ MODIFIED: Enforce Hindi language for all API calls ★★★
             params.language = 'hi-IN';
             params.include_image_language = 'en,hi,null';
 
@@ -2445,13 +2448,8 @@
             }
         }
         
-        // (All YouTube video rendering, player creation, and shorts/long video logic remains unchanged)
-        // ...
-        // ... (Omitting unchanged YouTube functions for brevity)
-        // ...
-
         // =================================================
-        // ★★★ NAVIGATION LOGIC (UPDATED) ★★★
+        // ★★★ NAVIGATION LOGIC ★★★
         // =================================================
 
         function activateScreen(screenId) {
@@ -2470,13 +2468,11 @@
         function navigateTo(nextScreenId, payload = null) {
             if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && !['creator-page-screen', 'episode-list-screen'].includes(nextScreenId)) return;
             
-            // Clean up from previous screen
             if (appState.currentScreen === 'movie-player-screen') {
                 document.getElementById('app-container').classList.remove('fullscreen-active');
                 const iframe = document.getElementById('movie-player-iframe-container');
                 if (iframe) iframe.src = 'about:blank';
             }
-             // ★★★ MODIFIED: Clear banner interval on navigation ★★★
             if (appState.content.movies.bannerInterval) clearInterval(appState.content.movies.bannerInterval);
             if (appState.content.webseries.bannerInterval) clearInterval(appState.content.webseries.bannerInterval);
             
@@ -2485,7 +2481,6 @@
                  appState.creatorPagePlayers.long = null;
                  document.getElementById('app-container').classList.remove('fullscreen-active');
             }
-            // (Other cleanups remain)
 
             if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
                 appState.navigationStack.push(nextScreenId);
@@ -2494,12 +2489,10 @@
             appState.currentScreenPayload = payload;
             activateScreen(nextScreenId);
 
-            // Initialize new screen
             if (nextScreenId === 'movies-screen') setupContentScreen('movie');
-            if (nextScreenId === 'webseries-screen') setupContentScreen('tv'); // ★★★ MODIFIED: use 'tv' as type
+            if (nextScreenId === 'webseries-screen') setupContentScreen('tv');
             if (nextScreenId === 'episode-list-screen' && payload) showEpisodeList(payload);
             
-            // (Other screen initializations remain)
             if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
             if (nextScreenId === 'history-screen') initializeHistoryScreen();
             if (nextScreenId === 'home-screen') setupShortsScreen();
@@ -2509,13 +2502,11 @@
         }
         
         function navigateBack() {
-             // Clean up current screen before navigating away
             if (appState.currentScreen === 'movie-player-screen') {
                 document.getElementById('app-container').classList.remove('fullscreen-active');
                 const iframe = document.getElementById('movie-player-iframe-container');
                 if (iframe) iframe.src = 'about:blank';
             }
-            // ★★★ MODIFIED: Clear banner interval on navigation ★★★
             if (appState.content.movies.bannerInterval) clearInterval(appState.content.movies.bannerInterval);
             if (appState.content.webseries.bannerInterval) clearInterval(appState.content.webseries.bannerInterval);
 
@@ -2538,10 +2529,9 @@
 
 
         // =================================================================
-        // ★★★ NEW & REWORKED MOVIE/SERIES LOGIC - START ★★★
+        // ★★★ MOVIE/SERIES LOGIC (HEAVILY MODIFIED) ★★★
         // =================================================================
 
-        // ★★★ NEW: Top level categories (Tabs) ★★★
         const CONTENT_REGIONS = {
             'hindi_cinema': { title: 'Hindi Cinema', params: { with_original_language: 'hi', region: 'IN' } },
             'telugu_cinema': { title: 'Telugu Cinema', params: { with_original_language: 'te', region: 'IN' } },
@@ -2560,7 +2550,6 @@
             'spanish_cinema': { title: 'Spanish/Latin', params: { with_original_language: 'es' } },
         };
 
-        // ★★★ NEW: Bottom level categories (Rows) ★★★
         const CONTENT_GENRES = {
             'latest': { title: 'Latest', params: { sort_by: 'primary_release_date.desc' } },
             'action': { title: 'Action', params: { with_genres: 28 } },
@@ -2576,11 +2565,8 @@
             'musical': { title: 'Musical', params: { with_genres: 10402 } },
             'historical': { title: 'Historical', params: { with_genres: 36 } },
             'documentary': { title: 'Documentary', params: { with_genres: 99 } },
-            'biopic': { title: 'Biopic', params: { with_keywords: '9845' } }, // TMDb doesn't have a 'biopic' genre, using keyword
+            'biopic': { title: 'Biopic', params: { with_keywords: '9845' } },
         };
-
-
-        // --- Generic Content Rendering ---
 
         function renderContentBanner(type, items) {
             const carousel = document.getElementById(`${type === 'movie' ? 'movie' : 'webseries'}-banner-carousel`);
@@ -2605,18 +2591,14 @@
 
             carousel.querySelectorAll('.content-banner-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    if (type === 'movie') {
-                        playMovieFromTMDB(card.dataset.id);
-                    } else { // type is 'tv'
-                        navigateTo('episode-list-screen', { seriesId: card.dataset.id });
-                    }
+                    showServerSelector(card.dataset.type, card.dataset.id);
                 });
             });
             
             startBannerAutoscroll(type);
         }
 
-        function renderContentCategoryRow(type, categoryKey, title, items, hasMore) {
+        function renderContentCategoryRow(type, categoryKey, title, items) {
             const screenType = type === 'movie' ? 'movie' : 'webseries';
             const rowsContainer = document.getElementById(`${screenType}-category-rows`);
             if (!rowsContainer) return;
@@ -2635,32 +2617,24 @@
             
             rowsContainer.appendChild(row);
 
-            // ★★★ MODIFIED: Load More button is removed as per new design of random rows on refresh ★★★
             row.innerHTML = `
                 <h3 class="content-category-title">${title}</h3>
                 <div class="content-row-scroller">${scrollerHTML}</div>`;
             
-            // Add event listeners after appending
             row.querySelectorAll('.content-vertical-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    if (type === 'movie') {
-                        playMovieFromTMDB(card.dataset.id);
-                    } else {
-                         navigateTo('episode-list-screen', { seriesId: card.dataset.id });
-                    }
+                    showServerSelector(card.dataset.type, card.dataset.id);
                 });
             });
         }
         
-        // --- Generic Setup Function ---
-        
-        function setupContentScreen(type) { // type is 'movie' or 'tv'
+        function setupContentScreen(type) {
             const screenType = type === 'movie' ? 'movie' : 'webseries';
             const tabsContainer = document.getElementById(`${screenType}-category-tabs`);
             const searchInput = document.getElementById(`${screenType}-search-input`);
             const searchBtn = document.getElementById(`${screenType}-search-btn`);
 
-            if (!tabsContainer.hasChildNodes()) { // Render tabs only once
+            if (!tabsContainer.hasChildNodes()) {
                 tabsContainer.innerHTML = Object.keys(CONTENT_REGIONS).map(key => `
                     <div class="content-category-tab haptic-trigger ${key === 'hindi_cinema' ? 'active' : ''}" data-category="${key}">
                         ${CONTENT_REGIONS[key].title}
@@ -2673,7 +2647,7 @@
                          tab.classList.add('active');
                          const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
                          state.currentCategory = tab.dataset.category;
-                         loadAllContent(type, true); // Force reload for new main category
+                         loadAllContent(type, true);
                     });
                 });
             }
@@ -2694,54 +2668,38 @@
             const bannerContainer = document.getElementById(`${screenType}-banner-carousel`);
             const rowsContainer = document.getElementById(`${screenType}-category-rows`);
             
-            // ★★★ MODIFIED: No caching for rows to ensure they are new on every load ★★★
             if (!forceRefresh && state.cache.has(bannerCacheKey)) {
-                console.log(`Loading ${type} banner from cache...`);
                 renderContentBanner(type, state.cache.get(bannerCacheKey));
             } else {
-                console.log(`Fetching fresh ${type} data...`);
                 bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-                
-                // Fetch banner data (trending/popular from the main region category)
                 const regionParams = CONTENT_REGIONS[mainCategoryKey].params;
-                const bannerParams = { ...regionParams, sort_by: 'vote_average.desc', page: 1 };
+                const bannerParams = { ...regionParams, sort_by: 'vote_average.desc', 'vote_count.gte': 100, page: 1 };
                 const bannerData = await fetchFromTMDbAPI(`discover/${type}`, bannerParams);
                 
-                // Filter out items without a backdrop image for a better UI
                 const bannerItems = (bannerData.results || []).filter(item => item.backdrop_path);
-                renderContentBanner(type, bannerItems.slice(0, 10)); // Show top 10
+                renderContentBanner(type, bannerItems.slice(0, 10));
                 state.cache.set(bannerCacheKey, bannerItems);
             }
             
-            // Fetch genre rows every time for fresh, random content
             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            state.categoryPages = {}; // Reset pages
-
+            state.categoryPages = {}; 
             rowsContainer.innerHTML = '';
             const categoryPromises = Object.keys(CONTENT_GENRES).map(async (key) => {
-                const randomPage = Math.floor(Math.random() * 10) + 1; // Get a random page from 1-10
+                const randomPage = Math.floor(Math.random() * 10) + 1;
                 const regionParams = CONTENT_REGIONS[mainCategoryKey].params;
                 const genreParams = CONTENT_GENRES[key].params;
-                
-                // Combine parameters: region + genre + random page
                 const params = { ...regionParams, ...genreParams, page: randomPage };
                 
                 const data = await fetchFromTMDbAPI(`discover/${type}`, params);
-                const items = data.results || [];
-
-                // Filter out items without a poster
-                const validItems = items.filter(item => item.poster_path);
+                const validItems = (data.results || []).filter(item => item.poster_path);
                 
                 if (validItems.length > 0) {
-                    renderContentCategoryRow(type, key, CONTENT_GENRES[key].title, validItems, false);
+                    renderContentCategoryRow(type, key, CONTENT_GENRES[key].title, validItems);
                 }
             });
-            
             await Promise.all(categoryPromises);
         }
 
-        // --- Common Logic (Search, Player, etc.) ---
-        
         async function searchContent(type, query) {
             if (!query) return;
             const screenType = type === 'movie' ? 'movie' : 'webseries';
@@ -2751,10 +2709,10 @@
             const endpoint = `search/${type}`;
             const data = await fetchFromTMDbAPI(endpoint, { query: query, page: 1 });
             
-            rowsContainer.innerHTML = ''; // Clear loader
+            rowsContainer.innerHTML = ''; 
             if (data.results && data.results.length > 0) {
-                 const validItems = data.results.filter(item => item.poster_path); // Filter search results too
-                renderContentCategoryRow(type, 'search', `Search Results for "${query}"`, validItems, false);
+                 const validItems = data.results.filter(item => item.poster_path);
+                renderContentCategoryRow(type, 'search', `Search Results for "${query}"`, validItems);
             } else {
                 rowsContainer.innerHTML = `<p class="static-message">No results found for "${query}".</p>`;
             }
@@ -2763,24 +2721,22 @@
         function startBannerAutoscroll(type) {
             const state = type === 'movie' ? appState.content.movies : appState.content.webseries;
             if (state.bannerInterval) clearInterval(state.bannerInterval);
-
             const screenType = type === 'movie' ? 'movie' : 'webseries';
             const carousel = document.getElementById(`${screenType}-banner-carousel`);
             if (!carousel || carousel.children.length <= 1) return;
-            
             let currentIndex = 0;
             const totalItems = carousel.children.length;
-            
             state.bannerInterval = setInterval(() => {
                 currentIndex = (currentIndex + 1) % totalItems;
                 carousel.scrollTo({
                     left: carousel.children[currentIndex].offsetLeft - (carousel.offsetWidth * 0.05),
                     behavior: 'smooth'
                 });
-            }, 3000); // ★★★ SET TO 3 SECONDS ★★★
+            }, 3000);
         }
         
         async function showEpisodeList({ seriesId }) {
+            navigateTo('episode-list-screen');
             const contentContainer = document.getElementById('episode-list-content');
             contentContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
             
@@ -2794,7 +2750,6 @@
             contentContainer.innerHTML = '';
             
             for (const season of seriesData.seasons) {
-                // Skip "Specials" season if it has no episodes or is season 0
                 if (season.season_number === 0) continue;
                 
                 const seasonData = await fetchFromTMDbAPI(`tv/${seriesId}/season/${season.season_number}`);
@@ -2812,26 +2767,62 @@
                      seasonEl.innerHTML = `
                         <h3 class="season-title">${escapeHTML(season.name)}</h3>
                         <div class="episodes-grid">${episodesHTML}</div>`;
-                        
                      contentContainer.appendChild(seasonEl);
                 }
             }
             
             contentContainer.querySelectorAll('.episode-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    playSeriesEpisode(card.dataset.seriesId, card.dataset.season, card.dataset.episode);
+                    showServerSelector('tv', card.dataset.seriesId, card.dataset.season, card.dataset.episode);
                 });
             });
         }
         
-        function playMovieFromTMDB(tmdbId) {
-            const playerUrl = `https://vidsrc.to/embed/movie/${tmdbId}`;
-            setupAndNavigateToPlayer(playerUrl);
-        }
-        
-        function playSeriesEpisode(tmdbId, season, episode) {
-            const playerUrl = `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
-            setupAndNavigateToPlayer(playerUrl);
+        // ★★★ NEW: Core function to show the server selection modal ★★★
+        async function showServerSelector(type, tmdbId, season = null, episode = null) {
+            const modal = document.getElementById('server-select-modal');
+            const buttonContainer = document.getElementById('server-select-buttons');
+            
+            modal.classList.add('active');
+            buttonContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+
+            let imdbId = null;
+            try {
+                const externalIds = await fetchFromTMDbAPI(`${type}/${tmdbId}/external_ids`);
+                imdbId = externalIds.imdb_id;
+            } catch (e) {
+                console.warn("Could not fetch IMDb ID. Some servers may not be available.");
+            }
+
+            const servers = [];
+            if (type === 'movie') {
+                servers.push({ name: 'Server 1 (Recommended)', url: `https://vidsrc.to/embed/movie/${tmdbId}`, premium: true });
+                servers.push({ name: 'Server 2', url: `https://www.2embed.to/embed/tmdb/movie?id=${tmdbId}` });
+                servers.push({ name: 'Server 3', url: `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}` });
+                if (imdbId) servers.push({ name: 'Server 4', url: `https://moviesapi.club/movie/${imdbId}` });
+                servers.push({ name: 'Server 5', url: `https://multiembed.mov/?video_id=${tmdbId}` });
+            } else { // type === 'tv'
+                servers.push({ name: 'Server 1 (Recommended)', url: `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`, premium: true });
+                servers.push({ name: 'Server 2', url: `https://www.2embed.to/embed/tmdb/tv?id=${tmdbId}&s=${season}&e=${episode}` });
+                servers.push({ name: 'Server 3', url: `https://embed.smashystream.com/playere.php?tmdb=${tmdbId}&season=${season}&episode=${episode}` });
+                if (imdbId) servers.push({ name: 'Server 4', url: `https://moviesapi.club/tv/${imdbId}-${season}-${episode}` });
+                 servers.push({ name: 'Server 5', url: `https://multiembed.mov/?video_id=${tmdbId}&s=${season}&e=${episode}` });
+            }
+
+            buttonContainer.innerHTML = servers.map(server => `
+                <button class="server-btn haptic-trigger" data-url="${server.url}">
+                    ${server.premium ? '<i class="fas fa-crown"></i>' : '<i class="fas fa-server"></i>'}
+                    <span>${server.name}</span>
+                </button>
+            `).join('');
+
+            buttonContainer.querySelectorAll('.server-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const url = btn.dataset.url;
+                    modal.classList.remove('active');
+                    setupAndNavigateToPlayer(url);
+                });
+            });
         }
         
         function setupAndNavigateToPlayer(url) {
@@ -2861,23 +2852,12 @@
             };
         }
 
-        // ★★★ NEW & REWORKED MOVIE/SERIES LOGIC - END ★★★
-        // =================================================================
-
-        
         // =======================================================
         // ★★★ UNCHANGED SECTIONS (Shorts, Long Video, Auth, etc.) ★★★
         // =======================================================
         // All the original JavaScript logic for YouTube Shorts, Long Videos,
         // Creator Pages, History, Comments, Sidebar, and App Initialization
-        // remains here, unchanged. I'm omitting it for brevity, but it is
-        // assumed to be present in the final code.
-        // For example:
-        // function initializeApp() { ... }
-        // function startAppLogic() { ... }
-        // function setupShortsScreen() { ... }
-        // etc.
-        // ... (The rest of the original, unchanged JS code goes here) ...
+        // remains here, unchanged.
         function renderYouTubeLongVideos(videos, append = false) {
             const grid = document.getElementById('long-video-grid');
             const loadMoreBtn = document.getElementById('long-video-load-more-btn');
@@ -3118,6 +3098,17 @@
                 userHasInteracted = true;
                 startAppLogic();
             });
+            
+            // ★★★ NEW: Event listeners for the new server modal ★★★
+            const serverModal = document.getElementById('server-select-modal');
+            const closeServerModalBtn = document.getElementById('close-server-modal-btn');
+            closeServerModalBtn.addEventListener('click', () => serverModal.classList.remove('active'));
+            serverModal.addEventListener('click', (e) => {
+                if (e.target === serverModal) {
+                    serverModal.classList.remove('active');
+                }
+            });
+
 
             appContainer.addEventListener('click', (event) => {
                 if (!userHasInteracted) {
