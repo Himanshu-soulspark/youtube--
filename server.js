@@ -101,7 +101,12 @@ app.get('/api/tmdb', async (req, res) => {
 
     // TMDb API को भेजने के लिए URL तैयार करें
     const paramsString = new URLSearchParams(queryParams).toString();
-    const tmdbApiUrl = `https://api.themoviedb.org/3/${endpoint}?api_key=${TMDB_API_KEY}&${paramsString}`;
+    
+    // ★★★★★★★★★★ यही एकमात्र जरूरी बदलाव है ★★★★★★★★★★
+    // यहाँ &language=hi-IN&region=IN जोड़ा गया है। 
+    // यह सुनिश्चित करेगा कि API हमेशा भारत के लिए हिंदी में रिजल्ट्स दे।
+    const tmdbApiUrl = `https://api.themoviedb.org/3/${endpoint}?api_key=${TMDB_API_KEY}&language=hi-IN&region=IN&${paramsString}`;
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
     try {
         console.log(`TMDb API को कॉल किया जा रहा है (Endpoint: ${endpoint})।`);
