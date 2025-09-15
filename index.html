@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="en"> <!-- ★★★ MODIFIED: Language set to English -->
+<html lang="hi">
 
 <head>
     <meta charset="UTF-8">
@@ -18,8 +18,8 @@
     <style>
         /* ================================================= /
         / === Shubhzone App Styles (Code 2) - FINAL v6.0 === /
-        / === MODIFIED AS PER USER REQUEST - SEP 2025    === /
-        / === SOLVED: Styles for New Movie/Series UI     === /
+        / === MODIFIED AS PER USER REQUEST - AUG 2025    === /
+        / === SOLVED: Styles for Reward System & UI/UX   === /
         / ================================================= */
 
         /* Design Style Guide */
@@ -378,14 +378,13 @@
             border-radius: 8px;
             font-size: 1.1em;
         }
-
+        
         #long-video-load-more-btn:disabled {
             background-color: var(--text-disabled);
             cursor: not-allowed;
         }
 
-        #home-screen,
-        #main-home-screen {
+        #home-screen, #main-home-screen {
             padding: 0;
             overflow: hidden;
             display: flex;
@@ -1537,7 +1536,7 @@
             height: 100%;
             aspect-ratio: auto;
         }
-
+       
         .continue-btn {
             background-color: var(--primary-neon);
             color: var(--background);
@@ -1575,6 +1574,7 @@
                 justify-content: center;
                 align-items: center;
                 padding: 20px;
+                /* ★ बदलाव: बैकग्राउंड पैटर्न को हटा दिया गया है */
                 background-color: var(--background);
             }
 
@@ -1591,10 +1591,11 @@
             }
         }
 
+        /* ★★★★★★★★★★ आपके अनुरोध के अनुसार नए स्टाइल यहाँ जोड़े गए हैं ★★★★★★★★★★ */
         .home-grid-container {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            grid-template-columns: 1fr 1fr; /* दो बराबर कॉलम */
+            gap: 15px; /* कार्ड के बीच में जगह */
             padding: 20px;
             width: 100%;
         }
@@ -1611,7 +1612,7 @@
 
         .home-grid-card img {
             width: 100%;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 1 / 1; /* 1:1 का अनुपात */
             object-fit: cover;
             border-radius: 8px;
         }
@@ -1628,16 +1629,18 @@
             font-size: 1em;
             cursor: pointer;
             transition: all 0.1s ease-in-out;
-            border-bottom: 4px solid #00AFAF;
+            /* 3D प्रभाव के लिए */
+            border-bottom: 4px solid #00AFAF; /* थोड़ा गहरा शेड */
         }
 
         .btn-3d:active {
+             /* बटन दबाने पर */
             transform: translateY(2px);
             border-bottom-width: 2px;
         }
 
-        /* ★★★ NEW & REWORKED STYLES FOR MOVIES & SERIES - START ★★★ */
-        .content-screen-content {
+        /* ★★★ NEW MOVIES SECTION START ★★★ */
+        #movies-screen-content {
             width: 100%;
             height: 100%;
             overflow-y: auto;
@@ -1646,311 +1649,120 @@
             flex-direction: column;
             padding-bottom: 60px; /* bottom-nav के लिए जगह */
         }
-        
-        .content-header {
-            padding: 10px 15px;
-            background-color: var(--background);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-            border-bottom: 1px solid var(--secondary-background);
-            overflow-x: auto;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .content-header::-webkit-scrollbar {
-            display: none;
+
+        #movies-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 कॉलम का ग्रिड */
+            gap: 15px;
+            padding: 20px;
+            width: 100%;
         }
 
-        .content-header .home-menu-icon {
-            flex-shrink: 0;
-        }
-
-        .content-category-tabs {
-            display: flex;
-            gap: 10px;
-            flex-grow: 1;
-        }
-
-        .content-category-tab {
-            padding: 8px 15px;
+        .movie-card {
             background-color: var(--secondary-background);
-            color: var(--text-primary);
-            border-radius: 20px;
-            font-size: 0.9em;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            border: 1px solid var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* टेक्स्ट को बीच में रखने के लिए */
+            align-items: center;
+            aspect-ratio: 2 / 3; /* पोस्टर जैसा अनुपात */
+            padding: 10px;
+            text-align: center;
+            border: 1px solid transparent;
+            transition: border-color 0.3s ease, transform 0.3s ease;
         }
-        .content-category-tab.active {
+
+        .movie-card:hover {
+            transform: scale(1.05);
+            border-color: var(--primary-neon);
+        }
+
+        .movie-card-title {
+            font-size: 0.9em;
+            font-weight: 500;
+            color: var(--text-primary);
+            /* Clamp text to 3 lines */
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        #movies-load-more-btn {
             background-color: var(--primary-neon);
             color: var(--background);
-            border-color: var(--primary-neon);
             font-weight: 700;
-        }
-
-        .content-banner-container {
-            width: 100%;
-            overflow: hidden;
-            position: relative;
-            flex-shrink: 0;
-            padding: 15px 0;
-        }
-        
-        .content-banner-carousel {
-            display: flex;
-            /* JS will handle the scrolling transform */
-        }
-
-        .content-banner-card {
-            flex: 0 0 90%;
-            margin: 0 5%;
-            aspect-ratio: 16 / 9;
-            border-radius: 12px;
-            background-size: cover;
-            background-position: center;
             cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: flex-end;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-            transition: transform 0.3s ease;
-        }
-        
-        .content-banner-card:hover {
-            transform: scale(1.02);
-        }
-
-        .content-banner-card::after {
-             content: '';
-             position: absolute;
-             bottom: 0;
-             left: 0;
-             width: 100%;
-             height: 50%;
-             background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-        }
-
-        .content-banner-title {
-            color: var(--text-primary);
-            font-size: 1.2em;
-            font-weight: 700;
-            padding: 15px;
-            z-index: 2;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-        
-        .content-search-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0px 20px 15px 20px;
-            border-bottom: 1px solid var(--secondary-background);
-            flex-shrink: 0;
-        }
-
-        .content-search-input {
-            flex-grow: 1;
-            padding: 10px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--text-secondary);
-            background-color: var(--secondary-background);
-            color: var(--text-primary);
-            font-size: 1em;
-        }
-
-        .content-search-btn {
-            background-color: var(--secondary-background);
+            transition: background-color 0.3s ease;
+            width: auto;
+            display: block;
+            margin: 0 auto 20px auto;
+            padding: 12px 30px;
             border: none;
-            color: var(--text-primary);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            border-radius: 8px;
             font-size: 1.1em;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background-color 0.2s ease;
-        }
-        .content-search-btn:hover {
-            background-color: var(--primary-neon);
         }
 
-        .content-category-rows {
-            padding: 20px 15px 10px 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        .content-category-row {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .content-category-title {
-            font-size: 1.3em;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .content-row-scroller {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        #movies-load-more-btn:disabled {
+            background-color: var(--text-disabled);
+            cursor: not-allowed;
         }
         
-        .content-row-scroller::-webkit-scrollbar {
-            display: none;
+        #movie-player-modal {
+            z-index: 2000; /* यह सुनिश्चित करने के लिए कि यह सबसे ऊपर हो */
         }
-        
-        .load-more-card {
+
+        .movie-player-content {
+            width: 100%;
+            height: 100%;
+            max-width: 420px; /* app-container की चौड़ाई के बराबर */
+            max-height: 95vh; /* थोड़ी जगह छोड़ने के लिए */
+            background-color: var(--background);
+            border-radius: 15px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-            width: 120px;
-            background-color: var(--secondary-background);
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px dashed var(--text-secondary);
-            color: var(--text-secondary);
-            transition: all 0.2s ease;
-        }
-        .load-more-card:hover {
-            border-color: var(--primary-neon);
-            color: var(--primary-neon);
-        }
-        .load-more-card i {
-            font-size: 2em;
-            margin-bottom: 5px;
-        }
-        .load-more-card span {
-            font-size: 0.9em;
-            font-weight: 500;
-        }
-        
-
-        .content-vertical-card {
-            flex-shrink: 0;
-            width: 120px;
-            aspect-ratio: 9 / 16;
-            background-color: var(--secondary-background);
-            border-radius: 8px;
-            background-size: cover;
-            background-position: center;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
             position: relative;
-            border: 1px solid var(--secondary-background);
-        }
-
-        .content-vertical-card:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0 15px var(--primary-neon);
-            border-color: var(--primary-neon);
-        }
-
-        .content-disclaimer {
-            background-color: var(--secondary-background);
-            color: var(--text-secondary);
-            font-size: 0.8em;
-            text-align: center;
-            padding: 15px;
-            margin: 10px 15px;
-            border-radius: 8px;
-            border: 1px dashed var(--text-disabled);
-        }
-
-        #movie-player-screen, #webseries-player-screen {
-            background-color: #000;
             padding: 0;
+            overflow: hidden;
         }
-
-        #movie-player-container {
-            width: 100%;
-            height: 100%;
+        
+        .movie-player-header {
             display: flex;
-            flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
+            padding: 10px 15px;
+            background-color: var(--secondary-background);
+            flex-shrink: 0;
+        }
+
+        .movie-player-title {
+            font-size: 1.1em;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #close-movie-player-btn {
+            font-size: 1.8em;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        .movie-player-iframe-container {
+            flex-grow: 1;
             background-color: #000;
-            position: relative;
         }
-
-        #movie-player-container .player-wrapper {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-        }
-
-        #movie-player-iframe-container {
+        
+        .movie-player-iframe-container iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
-        
-        #episode-list-screen .screen-header {
-             justify-content: flex-start;
-        }
-        #episode-list-screen .header-title {
-            margin-left: 15px;
-        }
-        
-        .episode-list-content {
-            width: 100%;
-            height: 100%;
-            padding: 60px 0 60px 0;
-            overflow-y: auto;
-        }
-        .season-container {
-            padding: 10px 15px;
-        }
-        .season-title {
-            font-size: 1.4em;
-            font-weight: 700;
-            padding: 10px 5px;
-            border-bottom: 2px solid var(--primary-neon);
-            margin-bottom: 10px;
-        }
-        .episodes-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-        .episode-card {
-            background-color: var(--secondary-background);
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-        .episode-card:hover {
-            background-color: var(--dark-grey);
-        }
-        .episode-number {
-            font-size: 1.2em;
-            font-weight: 700;
-            color: var(--text-secondary);
-        }
-        .episode-name {
-            font-size: 1.1em;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-
-        /* ★★★ NEW & REWORKED STYLES FOR MOVIES & SERIES - END ★★★ */
+        /* ★★★ NEW MOVIES SECTION END ★★★ */
 
     </style>
 </head>
@@ -1998,6 +1810,24 @@
             <img id="enlarged-image-src" src="" alt="Enlarged View">
         </div>
     </div>
+    
+    <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
+    <div id="movie-player-modal" class="modal-overlay">
+        <div class="movie-player-content">
+            <div class="movie-player-header">
+                <span id="movie-player-title" class="movie-player-title">Loading Movie...</span>
+                <span id="close-movie-player-btn" class="haptic-trigger" onclick="closeMovieModal()">×</span>
+            </div>
+            <div class="movie-player-iframe-container">
+                <iframe id="movie-player-iframe" 
+                        src="" 
+                        allow="autoplay; encrypted-media" 
+                        allowfullscreen>
+                </iframe>
+            </div>
+        </div>
+    </div>
+    <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
 
     <!-- === ALL MODALS END === -->
 
@@ -2028,33 +1858,38 @@
             </div>
         </div>
 
-        <!-- ★★★ HOME SCREEN ★★★ -->
+        <!-- ★★★ नया बदलाव: नया खाली होम स्क्रीन ★★★ -->
         <div id="main-home-screen" class="screen">
+            
+            <!-- ★★★★★★★★★★ आपके अनुरोध के अनुसार यह नया सेक्शन जोड़ा गया है ★★★★★★★★★★ -->
             <div style="flex-grow: 1; width: 100%; overflow-y: auto;">
                 <div class="home-grid-container">
+                    <!-- कार्ड 1 -->
                     <div class="home-grid-card">
-                        <img src="https://i.ibb.co/fz4R70tD/Leonardo-Phoenix-10-An-animated-scene-of-a-happy-young-boy-rec-3.jpg"
-                            alt="Reward Section">
+                        <img src="https://i.ibb.co/fz4R70tD/Leonardo-Phoenix-10-An-animated-scene-of-a-happy-young-boy-rec-3.jpg" alt="Reward Section">
                         <button class="btn-3d haptic-trigger">Reward</button>
                     </div>
+                    <!-- कार्ड 2 -->
                     <div class="home-grid-card">
-                        <img src="https://i.ibb.co/JWkN2C8z/Leonardo-Phoenix-10-A-beautiful-young-girl-stylish-and-modern-0.jpg"
-                            alt="Profile Section">
+                        <img src="https://i.ibb.co/JWkN2C8z/Leonardo-Phoenix-10-A-beautiful-young-girl-stylish-and-modern-0.jpg" alt="Profile Section">
                         <button class="btn-3d haptic-trigger">Profile</button>
                     </div>
                 </div>
+                 <!-- आप चाहें तो ग्रिड के नीचे और भी कंटेंट जोड़ सकते हैं -->
             </div>
+            <!-- ★★★★★★★★★★ नया सेक्शन यहाँ खत्म होता है ★★★★★★★★★★ -->
+
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <!-- ★★★ NEW: Web Series Nav Item ★★★ -->
-                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
+                <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
 
-        <!-- === SHORTS SCREEN === -->
+        <!-- === SHORTS SCREEN (ID 'home-screen' ही है) === -->
         <div id="home-screen" class="screen">
             <div class="home-top-bar">
                 <div id="shorts-menu-icon" class="home-menu-icon haptic-trigger">
@@ -2069,8 +1904,9 @@
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
+                <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -2094,146 +1930,43 @@
                     <button id="long-video-history-btn" class="haptic-trigger"><i class="fas fa-history"></i></button>
                 </div>
                 <div id="long-video-grid"></div>
+                <!-- "Load More" button is dynamically added here by script.js -->
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                 <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
+                <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
                 <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
 
-        <!-- ★★★ REWORKED MOVIE SCREEN - START ★★★ -->
+        <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
         <div id="movies-screen" class="screen">
-            <div class="content-screen-content">
-                <div class="content-header">
+             <div id="movies-screen-content">
+                <!-- Top bar similar to long-video screen -->
+                <div id="movies-top-bar" class="home-top-bar">
                     <div id="movies-menu-icon" class="home-menu-icon haptic-trigger">
                         <i class="fas fa-bars"></i>
                     </div>
-                    <!-- New Category Tabs -->
-                    <div id="movie-category-tabs" class="content-category-tabs"></div>
+                     <span style="font-size: 1.2em; font-weight: 700; margin: 0 auto;">Latest Movies</span>
                 </div>
 
-                <!-- Banner Carousel -->
-                <div class="content-banner-container">
-                    <div id="movie-banner-carousel" class="content-banner-carousel">
-                        <div class="loader-container"><div class="loader"></div></div>
-                    </div>
-                </div>
-                
-                <!-- Search Bar -->
-                <div class="content-search-container">
-                    <input type="text" id="movie-search-input" class="content-search-input" placeholder="Search for movies...">
-                    <button id="movie-search-btn" class="content-search-btn haptic-trigger"><i class="fas fa-search"></i></button>
+                <div id="movies-grid">
+                    <!-- Movie cards will be injected here by JavaScript -->
                 </div>
 
-                <!-- Category Rows -->
-                <div id="movie-category-rows" class="content-category-rows">
-                    <div class="loader-container"><div class="loader"></div></div>
-                </div>
-
-                <!-- Disclaimer -->
-                <div class="content-disclaimer">
-                    <strong>Disclaimer:</strong> Content is provided by third-party sources. We do not host any content. Availability, quality, and ads are determined by the provider.
-                </div>
+                <button id="movies-load-more-btn" class="haptic-trigger">Load More Movies</button>
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item active" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
-        <!-- ★★★ REWORKED MOVIE SCREEN - END ★★★ -->
-
-        <!-- ★★★ NEW WEB SERIES SCREEN - START ★★★ -->
-        <div id="webseries-screen" class="screen">
-            <div class="content-screen-content">
-                <div class="content-header">
-                    <div id="webseries-menu-icon" class="home-menu-icon haptic-trigger">
-                        <i class="fas fa-bars"></i>
-                    </div>
-                    <!-- New Category Tabs -->
-                    <div id="webseries-category-tabs" class="content-category-tabs"></div>
-                </div>
-
-                <!-- Banner Carousel -->
-                <div class="content-banner-container">
-                    <div id="webseries-banner-carousel" class="content-banner-carousel">
-                         <div class="loader-container"><div class="loader"></div></div>
-                    </div>
-                </div>
-                
-                <!-- Search Bar -->
-                <div class="content-search-container">
-                    <input type="text" id="webseries-search-input" class="content-search-input" placeholder="Search for web series...">
-                    <button id="webseries-search-btn" class="content-search-btn haptic-trigger"><i class="fas fa-search"></i></button>
-                </div>
-
-                <!-- Category Rows -->
-                <div id="webseries-category-rows" class="content-category-rows">
-                    <div class="loader-container"><div class="loader"></div></div>
-                </div>
-
-                <!-- Disclaimer -->
-                 <div class="content-disclaimer">
-                    <strong>Disclaimer:</strong> Content is provided by third-party sources. We do not host any content. Availability, quality, and ads are determined by the provider.
-                </div>
-            </div>
-            <div class="bottom-nav">
-                <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
-                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item active" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
-                <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
-                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
-            </div>
-        </div>
-        <!-- ★★★ NEW WEB SERIES SCREEN - END ★★★ -->
-        
-        <!-- ★★★ NEW EPISODE LIST SCREEN - START ★★★ -->
-        <div id="episode-list-screen" class="screen">
-             <div class="screen-header">
-                <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
-                <h2 id="series-title-header" class="header-title">Episodes</h2>
-            </div>
-            <div id="episode-list-content" class="episode-list-content">
-                <!-- Seasons and episodes will be injected here -->
-                <div class="loader-container"><div class="loader"></div></div>
-            </div>
-        </div>
-        <!-- ★★★ NEW EPISODE LIST SCREEN - END ★★★ -->
-
-        <!-- ★★★ MOVIE & SERIES PLAYER SCREEN (UNIFIED) - START ★★★ -->
-        <div id="movie-player-screen" class="screen">
-            <div id="movie-player-container">
-                 <div class="player-controls-header">
-                    <div class="player-back-button haptic-trigger" onclick="navigateBack()">
-                        <i class="fas fa-arrow-left"></i>
-                    </div>
-                    <div class="player-zoom-controls">
-                        <button id="movie-player-zoom-out-btn" class="haptic-trigger">
-                            <i class="fas fa-search-minus"></i>
-                        </button>
-                        <button id="movie-player-zoom-in-btn" class="haptic-trigger">
-                            <i class="fas fa-search-plus"></i>
-                        </button>
-                    </div>
-                    <button id="movie-player-rotate-btn" class="haptic-trigger">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-                <div class="player-wrapper">
-                    <iframe id="movie-player-iframe-container" 
-                            src=""
-                            allow="autoplay; encrypted-media"
-                            allowfullscreen>
-                    </iframe>
-                </div>
-            </div>
-        </div>
-        <!-- ★★★ MOVIE & SERIES PLAYER SCREEN (UNIFIED) - END ★★★ -->
+        <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
 
         <!-- === HISTORY SCREEN === -->
         <div id="history-screen" class="screen">
@@ -2252,8 +1985,9 @@
             </div>
             <div class="bottom-nav">
                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                 <!-- ★★★ NEW MOVIES SECTION START ★★★ -->
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
-                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
+                <!-- ★★★ NEW MOVIES SECTION END ★★★ -->
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -2294,17 +2028,19 @@
             measurementId: "G-5S0VFF21SB"
         };
 
+        // Firebase को केवल एक बार शुरू करें
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
 
+        // Firebase सेवाओं को इनिशियलाइज़ करें
         const auth = firebase.auth();
         const db = firebase.firestore();
         const storage = firebase.storage();
         const analytics = firebase.analytics();
 
         // =================================================
-        // ★★★ Helper Functions ★★★
+        // ★★★ Helper Functions - START ★★★
         // =================================================
 
         function shuffleArray(array) {
@@ -2321,8 +2057,7 @@
             div.appendChild(document.createTextNode(str));
             return div.innerHTML;
         }
-        
-        // (Other helper functions like formatNumber, extractYouTubeId are unchanged and remain here)
+
         function formatNumber(num) {
             if (num === null || num === undefined) return 0;
             if (num >= 10000000) return (num / 10000000).toFixed(1).replace(/\.0$/, '') + 'Cr';
@@ -2341,43 +2076,65 @@
             return match ? match[1] : null;
         }
 
+        // =================================================
+        // ★★★ Helper Functions - END ★★★
+        // =================================================
 
         let appState = {
-            currentUser: { uid: null },
+            currentUser: {
+                uid: null,
+            },
             currentScreen: 'splash-screen',
             navigationStack: ['splash-screen'],
             currentScreenPayload: null,
             viewingHistory: [],
-            youtubeNextPageTokens: { long: null, shorts: null, search: null },
-            
-            // ★★★ REWORKED: State object for Movies and Web Series ★★★
-            content: {
-                movies: {
-                    isLoading: false,
-                    bannerInterval: null,
-                    currentCategory: 'bollywood',
-                    categoryPages: {}, // { bollywood: 1, hollywood: 1 }
-                    cache: new Map() // To store fetched movie lists
-                },
-                webseries: {
-                    isLoading: false,
-                    bannerInterval: null,
-                    currentCategory: 'popular',
-                    categoryPages: {},
-                    cache: new Map()
-                }
+            youtubeNextPageTokens: {
+                long: null,
+                shorts: null,
+                search: null,
+                trending: null,
+                channelVideos: null,
+                channelShorts: null,
+                channelPlaylists: null,
             },
-            
-            // (Other state properties remain unchanged)
-            longVideoSearchContext: { type: 'query', value: null },
-            uploadDetails: { category: null, audience: 'all', lengthType: 'short' },
-            activeComments: { videoId: null, videoOwnerUid: null, channelId: null },
-            creatorPagePlayers: { short: null, long: null },
-            creatorPage: { currentLongVideo: { id: null, uploaderUid: null, channelId: null }, channelCache: new Map(), currentView: 'channel', currentChannelId: null },
+            // ★★★ NEW MOVIES SECTION START ★★★
+            movies: {
+                currentPage: 1,
+                isLoading: false
+            },
+            // ★★★ NEW MOVIES SECTION END ★★★
+            longVideoSearchContext: {
+                type: 'query',
+                value: null
+            },
+            uploadDetails: {
+                category: null,
+                audience: 'all',
+                lengthType: 'short'
+            },
+            activeComments: {
+                videoId: null,
+                videoOwnerUid: null,
+                channelId: null
+            },
+            creatorPagePlayers: {
+                short: null,
+                long: null
+            },
+            creatorPage: {
+                currentLongVideo: {
+                    id: null,
+                    uploaderUid: null,
+                    channelId: null
+                },
+                channelCache: new Map(),
+                currentView: 'channel',
+                currentChannelId: null,
+            },
             specialVideoPlayer: null,
         };
 
-        // (Global variables like isYouTubeApiReady, players, etc., remain unchanged)
+
         let isYouTubeApiReady = false;
         let players = {};
         let videoObserver;
@@ -2386,27 +2143,39 @@
         let hasShownAudioPopup = false;
         let hapticFeedbackEnabled = true;
         let youtubePlayerQueue = [];
+
+        // =============================================================================
+        // ★★★ YOUTUBE API INTEGRATION (REFACTORED & WITH FIREBASE CACHING) - START ★★★
+        // =============================================================================
+
         let currentVideoCache = new Map();
-
-
-        // =============================================================================
-        // ★★★ API FETCHING FUNCTIONS (REFACTORED) ★★★
-        // =============================================================================
-
+        
         async function fetchFromYouTubeAPI(type, params) {
-            let url = `/api/youtube?type=${type}`;
+            
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            // ★★★ FINAL FIX: सर्वर का URL ठीक किया गया ★★★
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            // यह सर्वर को हमेशा उसी डोमेन पर कॉल करेगा जिस पर ऐप चल रहा है।
+            // let url = `https://youtube-7lwy.onrender.com/api/youtube?type=${type}`; // <-- यह गलत था
+            let url = `/api/youtube?type=${type}`; // <-- यह सही तरीका है। यह हमेशा shboard.render.com पर ही रिक्वेस्ट भेजेगा।
+
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
                     url += `&${key}=${encodeURIComponent(params[key])}`;
                 }
             }
+            
+            console.log(`[API] सही सर्वर से डेटा लाया जा रहा है: ${url}`);
+
             try {
                 const response = await fetch(url);
                 if (!response.ok) {
                     const errorData = await response.json();
+                    console.error(`API Error for type ${type}:`, errorData);
                     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
+
                 if (data.items && data.items.length > 0) {
                     data.items.forEach(item => {
                         const videoId = item.id?.videoId || item.id;
@@ -2415,540 +2184,24 @@
                         }
                     });
                 }
+                
                 return data;
             } catch (error) {
-                console.error(`Error fetching from YouTube API (${type}):`, error);
-                return { error: error.message, items: [], nextPageToken: null };
-            }
-        }
-        
-        async function fetchFromTMDbAPI(endpoint, params = {}) {
-            // ★★★ MODIFIED: Added Hindi language support consistently ★★★
-            params.language = 'hi-IN';
-            params.include_image_language = 'en,hi,null';
-
-            let url = `/api/tmdb?endpoint=${endpoint}`;
-            for (const key in params) {
-                if (params[key] !== undefined && params[key] !== null) {
-                    url += `&${key}=${encodeURIComponent(params[key])}`;
+                console.error(`सर्वर से डेटा लाने में गंभीर त्रुटि (${type}):`, error);
+                if (type === 'search') {
+                     const grid = document.getElementById('long-video-grid');
+                     if(grid) grid.innerHTML = '<p class="static-message">Could not load videos. Please check your connection or API key.</p>';
+                     const carousel = document.getElementById('long-video-carousel-wrapper');
+                     if(carousel) carousel.innerHTML = '<p class="static-message">Could not load trending videos.</p>';
                 }
-            }
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.status_message || `HTTP error! status: ${response.status}`);
-                }
-                return await response.json();
-            } catch (error) {
-                console.error(`Error fetching from TMDb API for endpoint ${endpoint}:`, error);
-                return { error: error.message, results: [], total_pages: 0 };
+                return {
+                    error: error.message,
+                    items: [],
+                    nextPageToken: null
+                };
             }
         }
         
-        // (All YouTube video rendering, player creation, and shorts/long video logic remains unchanged)
-        // ...
-        // ... (Omitting unchanged YouTube functions for brevity)
-        // ...
-
-        // =================================================
-        // ★★★ NAVIGATION LOGIC (UPDATED) ★★★
-        // =================================================
-
-        function activateScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.style.display = 'none';
-                screen.classList.remove('active');
-            });
-            const activeScreen = document.getElementById(screenId);
-            if (activeScreen) {
-                activeScreen.style.display = 'flex';
-                setTimeout(() => activeScreen.classList.add('active'), 10);
-            }
-            appState.currentScreen = screenId;
-        }
-        
-        function navigateTo(nextScreenId, payload = null) {
-            if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && !['creator-page-screen', 'episode-list-screen'].includes(nextScreenId)) return;
-            
-            // Clean up from previous screen
-            if (appState.currentScreen === 'movie-player-screen') {
-                document.getElementById('app-container').classList.remove('fullscreen-active');
-                const iframe = document.getElementById('movie-player-iframe-container');
-                if (iframe) iframe.src = 'about:blank';
-            }
-            if (appState.currentScreen === 'creator-page-screen' && appState.creatorPagePlayers.long) {
-                 appState.creatorPagePlayers.long.destroy();
-                 appState.creatorPagePlayers.long = null;
-                 document.getElementById('app-container').classList.remove('fullscreen-active');
-            }
-            // (Other cleanups remain)
-
-            if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
-                appState.navigationStack.push(nextScreenId);
-            }
-            
-            appState.currentScreenPayload = payload;
-            activateScreen(nextScreenId);
-
-            // Initialize new screen
-            if (nextScreenId === 'movies-screen') setupMoviesScreen();
-            if (nextScreenId === 'webseries-screen') setupWebseriesScreen();
-            if (nextScreenId === 'episode-list-screen' && payload) showEpisodeList(payload);
-            
-            // (Other screen initializations remain)
-            if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
-            if (nextScreenId === 'history-screen') initializeHistoryScreen();
-            if (nextScreenId === 'home-screen') setupShortsScreen();
-            if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
-                initializeCreatorPage(payload);
-            }
-        }
-        
-        function navigateBack() {
-             // Clean up current screen before navigating away
-            if (appState.currentScreen === 'movie-player-screen') {
-                document.getElementById('app-container').classList.remove('fullscreen-active');
-                const iframe = document.getElementById('movie-player-iframe-container');
-                if (iframe) iframe.src = 'about:blank';
-            }
-            // (Other screen cleanup logic remains the same)
-
-            if (appState.navigationStack.length <= 1) {
-                navigateTo('main-home-screen');
-                return;
-            }
-            appState.navigationStack.pop();
-            const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'main-home-screen';
-            navigateTo(previousScreenId, null);
-        }
-        
-        function updateNavActiveState(activeNav) {
-            document.querySelectorAll('.bottom-nav').forEach(navBar => {
-                navBar.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-                const currentItem = navBar.querySelector(`.nav-item[data-nav="${activeNav}"]`);
-                if (currentItem) currentItem.classList.add('active');
-            });
-        }
-
-
-        // =================================================================
-        // ★★★ NEW & REWORKED MOVIE/SERIES LOGIC - START ★★★
-        // =================================================================
-
-        const MOVIE_CATEGORIES = {
-            'bollywood': { title: 'Bollywood', params: { with_original_language: 'hi' } },
-            'hollywood': { title: 'Hollywood (Dubbed)', params: { with_original_language: 'en', with_keywords: '4344|9735' } }, // 4344=dubbing, 9735=remake
-            'south': { title: 'South (Dubbed)', params: { with_original_language: 'te,ta,kn,ml', with_keywords: '4344|9735' } },
-            'action': { title: 'Action', params: { with_genres: 28, 'with_original_language': 'hi,en,te,ta' } },
-            'comedy': { title: 'Comedy', params: { with_genres: 35, 'with_original_language': 'hi,en,te,ta' } },
-            'horror': { title: 'Horror', params: { with_genres: 27, 'with_original_language': 'hi,en,te,ta' } },
-        };
-        
-        const WEBSERIES_CATEGORIES = {
-            'popular': { title: 'Popular', params: { with_original_language: 'hi' } },
-            'crime': { title: 'Crime & Thriller', params: { with_genres: '80,53', with_original_language: 'hi,en' } },
-            'drama': { title: 'Drama', params: { with_genres: 18, with_original_language: 'hi,en' } },
-            'comedy': { title: 'Comedy', params: { with_genres: 35, with_original_language: 'hi,en' } },
-        };
-
-        // --- Generic Content Rendering ---
-
-        function renderContentBanner(type, items) {
-            const carousel = document.getElementById(`${type}-banner-carousel`);
-            if (!carousel) return;
-
-            if (!items || items.length === 0) {
-                carousel.innerHTML = '<p class="static-message">No trending content found.</p>';
-                return;
-            }
-            
-            const topItems = items.slice(0, 10);
-            carousel.innerHTML = topItems.map(item => {
-                const title = item.title || item.name;
-                return `
-                <div class="content-banner-card haptic-trigger" 
-                     data-id="${item.id}" 
-                     data-type="${type}"
-                     style="background-image: url('https://image.tmdb.org/t/p/w780${item.backdrop_path}')">
-                    <div class="content-banner-title">${escapeHTML(title)}</div>
-                </div>`;
-            }).join('');
-
-            carousel.querySelectorAll('.content-banner-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    if (type === 'movie') {
-                        playMovieFromTMDB(card.dataset.id);
-                    } else {
-                        navigateTo('episode-list-screen', { seriesId: card.dataset.id });
-                    }
-                });
-            });
-            
-            startBannerAutoscroll(type);
-        }
-
-        function renderContentCategoryRow(type, categoryKey, title, items, hasMore) {
-            const rowsContainer = document.getElementById(`${type}-category-rows`);
-            if (!rowsContainer) return;
-            
-            const row = document.createElement('div');
-            row.className = 'content-category-row';
-            row.dataset.category = categoryKey;
-            
-            const scrollerHTML = items.map(item => {
-                 const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750.png?text=No+Image';
-                 return `
-                <div class="content-vertical-card haptic-trigger" data-id="${item.id}" data-type="${type}"
-                     style="background-image: url('${posterPath}')">
-                </div>`;
-            }).join('');
-            
-            const loadMoreHTML = hasMore ? `
-                <div class="load-more-card haptic-trigger" data-category="${categoryKey}" data-type="${type}">
-                    <i class="fas fa-arrow-right"></i>
-                    <span>Load More</span>
-                </div>` : '';
-
-            row.innerHTML = `
-                <h3 class="content-category-title">${title}</h3>
-                <div class="content-row-scroller">${scrollerHTML}${loadMoreHTML}</div>`;
-            
-            rowsContainer.appendChild(row);
-            
-            // Add event listeners after appending
-            row.querySelectorAll('.content-vertical-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    if (type === 'movie') {
-                        playMovieFromTMDB(card.dataset.id);
-                    } else {
-                         navigateTo('episode-list-screen', { seriesId: card.dataset.id });
-                    }
-                });
-            });
-
-            const loadMoreBtn = row.querySelector('.load-more-card');
-            if(loadMoreBtn) {
-                loadMoreBtn.addEventListener('click', () => {
-                    loadMoreContent(type, categoryKey, loadMoreBtn);
-                });
-            }
-        }
-        
-        // --- Movie Screen Logic ---
-
-        function setupMoviesScreen() {
-            const tabsContainer = document.getElementById('movie-category-tabs');
-            const searchInput = document.getElementById('movie-search-input');
-            const searchBtn = document.getElementById('movie-search-btn');
-
-            if (!tabsContainer.hasChildNodes()) { // Render tabs only once
-                tabsContainer.innerHTML = Object.keys(MOVIE_CATEGORIES).map(key => `
-                    <div class="content-category-tab haptic-trigger ${key === 'bollywood' ? 'active' : ''}" data-category="${key}">
-                        ${MOVIE_CATEGORIES[key].title}
-                    </div>
-                `).join('');
-                
-                tabsContainer.querySelectorAll('.content-category-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                         tabsContainer.querySelector('.active')?.classList.remove('active');
-                         tab.classList.add('active');
-                         appState.content.movies.currentCategory = tab.dataset.category;
-                         loadAllMovieContent(true); // Force reload for new main category
-                    });
-                });
-            }
-
-            searchBtn.onclick = () => searchContent('movie', searchInput.value);
-            searchInput.onkeypress = (e) => { if (e.key === 'Enter') searchContent('movie', searchInput.value); };
-
-            loadAllMovieContent();
-        }
-
-        async function loadAllMovieContent(forceRefresh = false) {
-            const mainCategoryKey = appState.content.movies.currentCategory;
-            const bannerCacheKey = `${mainCategoryKey}-banner`;
-            const rowsCacheKey = `${mainCategoryKey}-rows`;
-
-            const bannerContainer = document.getElementById('movie-banner-carousel');
-            const rowsContainer = document.getElementById('movie-category-rows');
-            
-            if (!forceRefresh && appState.content.movies.cache.has(bannerCacheKey)) {
-                console.log("Loading movies from cache...");
-                renderContentBanner('movie', appState.content.movies.cache.get(bannerCacheKey));
-                rowsContainer.innerHTML = appState.content.movies.cache.get(rowsCacheKey);
-                 // Re-attach event listeners for cached content
-                reAttachEventListeners('movie', rowsContainer);
-            } else {
-                console.log("Fetching fresh movie data...");
-                bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-                rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-                
-                appState.content.movies.categoryPages = {}; // Reset pages
-                
-                // Fetch banner data (popular from the main category)
-                const bannerParams = { ...MOVIE_CATEGORIES[mainCategoryKey].params, sort_by: 'popularity.desc', page: 1 };
-                const bannerData = await fetchFromTMDbAPI('discover/movie', bannerParams);
-                const shuffledBannerItems = shuffleArray(bannerData.results || []);
-                renderContentBanner('movie', shuffledBannerItems);
-                appState.content.movies.cache.set(bannerCacheKey, shuffledBannerItems);
-
-                // Fetch data for all categories in parallel
-                rowsContainer.innerHTML = '';
-                const categoryPromises = Object.keys(MOVIE_CATEGORIES).map(async (key) => {
-                    appState.content.movies.categoryPages[key] = 1;
-                    const params = { ...MOVIE_CATEGORIES[key].params, page: 1 };
-                    const data = await fetchFromTMDbAPI('discover/movie', params);
-                    const items = data.results || [];
-                    if (items.length > 0) {
-                        renderContentCategoryRow('movie', key, MOVIE_CATEGORIES[key].title, items, data.total_pages > 1);
-                    }
-                });
-                
-                await Promise.all(categoryPromises);
-                appState.content.movies.cache.set(rowsCacheKey, rowsContainer.innerHTML);
-            }
-        }
-        
-        // --- Web Series Screen Logic ---
-
-        function setupWebseriesScreen() {
-            const tabsContainer = document.getElementById('webseries-category-tabs');
-            const searchInput = document.getElementById('webseries-search-input');
-            const searchBtn = document.getElementById('webseries-search-btn');
-
-            if (!tabsContainer.hasChildNodes()) {
-                 tabsContainer.innerHTML = Object.keys(WEBSERIES_CATEGORIES).map(key => `
-                    <div class="content-category-tab haptic-trigger ${key === 'popular' ? 'active' : ''}" data-category="${key}">
-                        ${WEBSERIES_CATEGORIES[key].title}
-                    </div>
-                `).join('');
-                
-                 tabsContainer.querySelectorAll('.content-category-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                         tabsContainer.querySelector('.active')?.classList.remove('active');
-                         tab.classList.add('active');
-                         appState.content.webseries.currentCategory = tab.dataset.category;
-                         loadAllWebseriesContent(true);
-                    });
-                });
-            }
-
-            searchBtn.onclick = () => searchContent('webseries', searchInput.value);
-            searchInput.onkeypress = (e) => { if (e.key === 'Enter') searchContent('webseries', searchInput.value); };
-
-            loadAllWebseriesContent();
-        }
-
-        async function loadAllWebseriesContent(forceRefresh = false) {
-             const bannerContainer = document.getElementById('webseries-banner-carousel');
-             const rowsContainer = document.getElementById('webseries-category-rows');
-             
-             bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-             rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-             
-             appState.content.webseries.categoryPages = {};
-
-             // Fetch banner (most popular Hindi series)
-             const bannerParams = { ...WEBSERIES_CATEGORIES['popular'].params, sort_by: 'popularity.desc', page: 1 };
-             const bannerData = await fetchFromTMDbAPI('discover/tv', bannerParams);
-             renderContentBanner('webseries', shuffleArray(bannerData.results || []));
-
-             // Fetch all category rows
-             rowsContainer.innerHTML = '';
-             const categoryPromises = Object.keys(WEBSERIES_CATEGORIES).map(async (key) => {
-                 appState.content.webseries.categoryPages[key] = 1;
-                 const params = { ...WEBSERIES_CATEGORIES[key].params, page: 1 };
-                 const data = await fetchFromTMDbAPI('discover/tv', params);
-                 if (data.results && data.results.length > 0) {
-                    renderContentCategoryRow('webseries', key, WEBSERIES_CATEGORIES[key].title, data.results, data.total_pages > 1);
-                 }
-             });
-             await Promise.all(categoryPromises);
-        }
-
-        // --- Common Logic (Load More, Search, Player) ---
-        
-        async function loadMoreContent(type, categoryKey, button) {
-            button.innerHTML = `<div class="loader" style="width:20px; height:20px;"></div>`;
-            const state = appState.content[type === 'movie' ? 'movies' : 'webseries'];
-            state.categoryPages[categoryKey]++;
-            const page = state.categoryPages[categoryKey];
-
-            const categories = type === 'movie' ? MOVIE_CATEGORIES : WEBSERIES_CATEGORIES;
-            const params = { ...categories[categoryKey].params, page: page };
-            const endpoint = type === 'movie' ? 'discover/movie' : 'discover/tv';
-
-            const data = await fetchFromTMDbAPI(endpoint, params);
-            
-            const scroller = button.closest('.content-row-scroller');
-            button.remove(); // Remove the button itself
-
-            if (data.results && data.results.length > 0) {
-                const newItemsHTML = data.results.map(item => {
-                    const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750.png?text=No+Image';
-                    return `<div class="content-vertical-card haptic-trigger" data-id="${item.id}" data-type="${type}" style="background-image: url('${posterPath}')"></div>`;
-                }).join('');
-                
-                const hasMore = page < data.total_pages;
-                const loadMoreHTML = hasMore ? `<div class="load-more-card haptic-trigger" data-category="${categoryKey}" data-type="${type}"><i class="fas fa-arrow-right"></i><span>Load More</span></div>` : '';
-
-                scroller.insertAdjacentHTML('beforeend', newItemsHTML + loadMoreHTML);
-                reAttachEventListeners(type, scroller.parentElement); // Re-attach listeners for the whole row
-            }
-        }
-        
-        async function searchContent(type, query) {
-            if (!query) return;
-            const rowsContainer = document.getElementById(`${type}-category-rows`);
-            rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            
-            const endpoint = type === 'movie' ? 'search/movie' : 'search/tv';
-            const data = await fetchFromTMDbAPI(endpoint, { query: query, page: 1 });
-            
-            rowsContainer.innerHTML = ''; // Clear loader
-            if (data.results && data.results.length > 0) {
-                renderContentCategoryRow(type, 'search', `Search Results for "${query}"`, data.results, false);
-            } else {
-                rowsContainer.innerHTML = `<p class="static-message">No results found for "${query}".</p>`;
-            }
-        }
-        
-        function startBannerAutoscroll(type) {
-            const state = appState.content[type === 'movie' ? 'movies' : 'webseries'];
-            if (state.bannerInterval) clearInterval(state.bannerInterval);
-
-            const carousel = document.getElementById(`${type}-banner-carousel`);
-            if (!carousel || carousel.children.length <= 1) return;
-            
-            let currentIndex = 0;
-            const totalItems = carousel.children.length;
-            
-            state.bannerInterval = setInterval(() => {
-                currentIndex = (currentIndex + 1) % totalItems;
-                carousel.scrollTo({
-                    left: carousel.children[currentIndex].offsetLeft - (carousel.offsetWidth * 0.05),
-                    behavior: 'smooth'
-                });
-            }, 3000);
-        }
-        
-        function reAttachEventListeners(type, container) {
-             container.querySelectorAll('.content-vertical-card').forEach(card => {
-                 if(card.dataset.listenerAttached) return;
-                 card.onclick = () => {
-                    if (type === 'movie') playMovieFromTMDB(card.dataset.id);
-                    else navigateTo('episode-list-screen', { seriesId: card.dataset.id });
-                 };
-                 card.dataset.listenerAttached = "true";
-             });
-             container.querySelectorAll('.load-more-card').forEach(button => {
-                 if(button.dataset.listenerAttached) return;
-                 button.onclick = () => loadMoreContent(type, button.dataset.category, button);
-                 button.dataset.listenerAttached = "true";
-             });
-        }
-        
-        async function showEpisodeList({ seriesId }) {
-            const contentContainer = document.getElementById('episode-list-content');
-            contentContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            
-            const seriesData = await fetchFromTMDbAPI(`tv/${seriesId}`);
-            if (!seriesData) {
-                 contentContainer.innerHTML = '<p class="static-message">Could not load series details.</p>';
-                 return;
-            }
-            
-            document.getElementById('series-title-header').textContent = seriesData.name;
-            contentContainer.innerHTML = '';
-            
-            for (const season of seriesData.seasons) {
-                // Skip "Specials" season if it has no episodes or is season 0
-                if (season.season_number === 0) continue;
-                
-                const seasonData = await fetchFromTMDbAPI(`tv/${seriesId}/season/${season.season_number}`);
-                if (seasonData && seasonData.episodes && seasonData.episodes.length > 0) {
-                     const seasonEl = document.createElement('div');
-                     seasonEl.className = 'season-container';
-                     
-                     const episodesHTML = seasonData.episodes.map(ep => `
-                        <div class="episode-card haptic-trigger" data-series-id="${seriesId}" data-season="${ep.season_number}" data-episode="${ep.episode_number}">
-                            <div class="episode-number">${ep.episode_number}</div>
-                            <div class="episode-name">${escapeHTML(ep.name)}</div>
-                        </div>
-                     `).join('');
-                     
-                     seasonEl.innerHTML = `
-                        <h3 class="season-title">${escapeHTML(season.name)}</h3>
-                        <div class="episodes-grid">${episodesHTML}</div>`;
-                        
-                     contentContainer.appendChild(seasonEl);
-                }
-            }
-            
-            contentContainer.querySelectorAll('.episode-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    playSeriesEpisode(card.dataset.seriesId, card.dataset.season, card.dataset.episode);
-                });
-            });
-        }
-        
-        function playMovieFromTMDB(tmdbId) {
-             // ★★★ MODIFIED: Using a more reliable embed source and TMDB ID directly ★★★
-            const playerUrl = `https://vidsrc.to/embed/movie/${tmdbId}`;
-            setupAndNavigateToPlayer(playerUrl);
-        }
-        
-        function playSeriesEpisode(tmdbId, season, episode) {
-             // ★★★ MODIFIED: Using a more reliable embed source for TV shows ★★★
-            const playerUrl = `https://vidsrc.to/embed/tv/${tmdbId}/${season}/${episode}`;
-            setupAndNavigateToPlayer(playerUrl);
-        }
-        
-        function setupAndNavigateToPlayer(url) {
-            navigateTo('movie-player-screen');
-            setTimeout(() => {
-                const iframe = document.getElementById('movie-player-iframe-container');
-                if (iframe) iframe.src = url;
-                setupMoviePlayerControls();
-            }, 100);
-        }
-        
-        function setupMoviePlayerControls() {
-            document.getElementById('movie-player-rotate-btn').onclick = () => {
-                document.getElementById('app-container').classList.toggle('fullscreen-active');
-            };
-            let currentZoom = 1.0;
-            const playerWrapper = document.querySelector('#movie-player-container .player-wrapper');
-            const zoomInBtn = document.getElementById('movie-player-zoom-in-btn');
-            const zoomOutBtn = document.getElementById('movie-player-zoom-out-btn');
-            zoomInBtn.onclick = () => {
-                currentZoom = Math.min(2.5, currentZoom + 0.1);
-                playerWrapper.style.transform = `scale(${currentZoom})`;
-            };
-            zoomOutBtn.onclick = () => {
-                currentZoom = Math.max(0.5, currentZoom - 0.1);
-                playerWrapper.style.transform = `scale(${currentZoom})`;
-            };
-        }
-
-        // ★★★ NEW & REWORKED MOVIE/SERIES LOGIC - END ★★★
-        // =================================================================
-
-        
-        // =======================================================
-        // ★★★ UNCHANGED SECTIONS (Shorts, Long Video, Auth, etc.) ★★★
-        // =======================================================
-        // All the original JavaScript logic for YouTube Shorts, Long Videos,
-        // Creator Pages, History, Comments, Sidebar, and App Initialization
-        // remains here, unchanged. I'm omitting it for brevity, but it is
-        // assumed to be present in the final code.
-        // For example:
-        // function initializeApp() { ... }
-        // function startAppLogic() { ... }
-        // function setupShortsScreen() { ... }
-        // etc.
-        // ... (The rest of the original, unchanged JS code goes here) ...
         function renderYouTubeLongVideos(videos, append = false) {
             const grid = document.getElementById('long-video-grid');
             const loadMoreBtn = document.getElementById('long-video-load-more-btn');
@@ -2971,7 +2224,7 @@
                 if (card) fragment.appendChild(card);
             });
             grid.appendChild(fragment);
-
+            
             if (loadMoreBtn) {
                 loadMoreBtn.style.display = appState.youtubeNextPageTokens.long ? 'block' : 'none';
                 loadMoreBtn.disabled = false;
@@ -2989,7 +2242,7 @@
                 type,
                 value
             } = appState.longVideoSearchContext;
-
+            
             const params = {
                 pageToken: appState.youtubeNextPageTokens.long,
                 videoDuration: 'long'
@@ -2997,7 +2250,7 @@
 
             if (type === 'channel') {
                 params.channelId = value;
-            } else {
+            } else { 
                 params.q = value;
             }
 
@@ -3041,6 +2294,120 @@
                 videoId: videoId
             });
         }
+
+        // =============================================================================
+        // ★★★ YOUTUBE API INTEGRATION (REFACTORED & WITH FIREBASE CACHING) - END ★★★
+        // =============================================================================
+
+        // DOM Elements
+        const appContainer = document.getElementById('app-container');
+        const screens = document.querySelectorAll('.screen');
+        const commentsModal = document.getElementById('comments-modal');
+        const commentsList = document.getElementById('comments-list');
+        const commentInput = document.getElementById('comment-input');
+        const sendCommentBtn = document.getElementById('send-comment-btn');
+        const videoSwiper = document.getElementById('video-swiper');
+        const homeStaticMessageContainer = document.getElementById('home-static-message-container');
+
+        const categories = [
+            "Trending", "Music", "Gaming", "Movies", "News", "Live", "Sports",
+            "Learning", "Fashion & Beauty", "Comedy", "Entertainment", "Technology",
+            "Cooking", "Travel", "Vlogs", "Podcasts", "Dance", "Animation",
+            "Automotive", "Pets & Animals", "Science", "History", "Documentary",
+            "DIY", "Health & Fitness", "Finance", "Real Estate", "Astrology",
+            "Spirituality", "Motivation", "Bhakti", "Bollywood News", "Tollywood",
+            "Kollywood", "Sandalwood", "Art & Craft", "Booktubers"
+        ];
+        const diverseTopics = [
+            "latest movie trailers", "viral internet moments", "new tech gadgets 2025",
+            "stand up comedy india", "amazing science experiments", "top music hits 2025",
+            "travel vlogs Europe", "indian street food tour", "DIY home decor low cost",
+            "cricket highlights today", "BGMI gameplay", "political debate india",
+            "easy dinner recipes", "stock market analysis", "yoga for beginners",
+            "hindi web series review", "celebrity interviews", "unboxing new phone",
+            "ghost stories in hindi", "motivational speech sandeep maheshwari"
+        ];
+
+        function getRandomTopic() {
+            return diverseTopics[Math.floor(Math.random() * diverseTopics.length)];
+        }
+
+        function activateScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.style.display = 'none';
+                screen.classList.remove('active');
+            });
+            const activeScreen = document.getElementById(screenId);
+            if (activeScreen) {
+                activeScreen.style.display = 'flex';
+                setTimeout(() => activeScreen.classList.add('active'), 10);
+            }
+            appState.currentScreen = screenId;
+        }
+
+        function navigateTo(nextScreenId, payload = null) {
+            if (appState.currentScreen === nextScreenId && JSON.stringify(appState.currentScreenPayload) === JSON.stringify(payload) && nextScreenId !== 'creator-page-screen') return;
+
+            if (nextScreenId !== 'splash-screen') {
+                localStorage.setItem('shubhzone_lastScreen', nextScreenId);
+            }
+
+            if (appState.navigationStack[appState.navigationStack.length - 1] !== nextScreenId) {
+                appState.navigationStack.push(nextScreenId);
+            }
+
+            if (appState.currentScreen === 'home-screen' && activePlayerId && players[activePlayerId]) {
+                pauseActivePlayer();
+            }
+            if (appState.currentScreen === 'creator-page-screen') {
+                if (appState.creatorPagePlayers.long) {
+                    appState.creatorPagePlayers.long.destroy();
+                    appState.creatorPagePlayers.long = null;
+                }
+                const creatorContent = document.getElementById('creator-page-content');
+                if (creatorContent) creatorContent.innerHTML = '';
+                document.getElementById('app-container').classList.remove('fullscreen-active');
+            }
+            activePlayerId = null;
+
+            appState.currentScreenPayload = payload;
+            activateScreen(nextScreenId);
+            
+            // Initialize screen-specific logic
+            if (nextScreenId === 'long-video-screen') setupLongVideoScreen();
+            if (nextScreenId === 'history-screen') initializeHistoryScreen();
+            if (nextScreenId === 'home-screen') setupShortsScreen();
+            // ★★★ NEW MOVIES SECTION START ★★★
+            if (nextScreenId === 'movies-screen') setupMoviesScreen();
+            // ★★★ NEW MOVIES SECTION END ★★★
+            if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
+                initializeCreatorPage(payload);
+            }
+        }
+
+        function navigateBack() {
+            if (appState.currentScreen === 'creator-page-screen') {
+                if (appState.creatorPagePlayers.long) {
+                    appState.creatorPagePlayers.long.destroy();
+                    appState.creatorPagePlayers.long = null;
+                }
+                document.getElementById('app-container').classList.remove('fullscreen-active');
+            }
+
+            if (appState.navigationStack.length <= 1) {
+                navigateTo('main-home-screen'); // वापस होम पर जाएं
+                return;
+            }
+
+            appState.navigationStack.pop();
+
+            const previousScreenId = appState.navigationStack[appState.navigationStack.length - 1] || 'main-home-screen';
+
+            navigateTo(previousScreenId, null);
+        }
+
+        let appInitializationComplete = false;
+
         function initializeApp() {
             if (appInitializationComplete) return;
             appInitializationComplete = true;
@@ -3049,6 +2416,7 @@
                 if (user) {
                     console.log("User signed in anonymously:", user.uid);
                     appState.currentUser.uid = user.uid;
+                    // The check to run startAppLogic only once is handled inside the function itself.
                     startAppLogic();
                 } else {
                     auth.signInAnonymously().catch(error => console.error("Anonymous sign-in failed:", error));
@@ -3057,10 +2425,19 @@
 
             activateScreen('splash-screen');
         }
-        let appInitializationComplete = false;
+
+        function updateNavActiveState(activeNav) {
+            document.querySelectorAll('.bottom-nav').forEach(navBar => {
+                navBar.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                const currentItem = navBar.querySelector(`.nav-item[data-nav="${activeNav}"]`);
+                if (currentItem) currentItem.classList.add('active');
+            });
+        }
+        
         let appStartLogicHasRun = false;
         const startAppLogic = async () => {
             if (!appState.currentUser || !appState.currentUser.uid) {
+                console.warn("User data not ready yet, retrying in 100ms...");
                 setTimeout(startAppLogic, 100);
                 return;
             }
@@ -3087,6 +2464,280 @@
                 if (loadingContainer) loadingContainer.innerHTML = '<p style="color: var(--error-red);">App failed to start.</p>';
             }
         };
+
+        function renderVideoSwiper(videos, append = false) {
+            if (!videoSwiper) return;
+
+            if (!append) {
+                videoSwiper.innerHTML = '';
+                Object.values(players).forEach(player => {
+                    if (player && typeof player.destroy === 'function') player.destroy();
+                });
+                players = {};
+                if (videoObserver) videoObserver.disconnect();
+                setupVideoObserver();
+            }
+
+            if (!videos || videos.length === 0) {
+                if (!append) {
+                    if (homeStaticMessageContainer) {
+                        homeStaticMessageContainer.querySelector('.static-message').textContent = 'No shorts found for this category.';
+                        videoSwiper.appendChild(homeStaticMessageContainer);
+                        homeStaticMessageContainer.style.display = 'flex';
+                    }
+                }
+                return;
+            }
+
+            if (homeStaticMessageContainer) {
+                homeStaticMessageContainer.style.display = 'none';
+            }
+
+            const fragment = document.createDocumentFragment();
+            videos.forEach((video) => {
+                if (!video.id || !video.id.kind || video.id.kind !== 'youtube#video') return;
+                const videoId = video.id?.videoId || video.id;
+                if (!videoId) return;
+
+                const slide = document.createElement('div');
+                slide.className = 'video-slide';
+                slide.dataset.videoId = videoId;
+                slide.dataset.channelId = video.snippet.channelId;
+
+                slide.addEventListener('click', (e) => {
+                    if (e.target.closest('.video-meta-overlay')) return;
+                    togglePlayPause(videoId);
+                });
+
+                const playerHtml = `<div class="player-container" id="player-${videoId}"></div>`;
+                const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
+                const uploaderName = video.snippet.channelTitle;
+                const uploaderAvatar = 'https://via.placeholder.com/40';
+                const title = video.snippet.title;
+
+                const creatorProfileOnClick = `navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })`;
+                const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
+
+                slide.innerHTML = `
+                    <div class="video-preloader" style="background-image: url('${thumbnailUrl}');"><div class="loader"></div></div>
+                    ${playerHtml}
+                    <div class="video-meta-overlay">
+                        <div class="uploader-info" onclick="${creatorProfileOnClick}"><img src="${uploaderAvatar}" class="uploader-avatar"><span class="uploader-name">${escapeHTML(uploaderName)}</span></div>
+                        <p class="video-title">${escapeHTML(title)}</p>
+                        <button class="add-channel-btn haptic-trigger" onclick="${addChannelOnClick}"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                `;
+                fragment.appendChild(slide);
+                videoObserver.observe(slide);
+            });
+            videoSwiper.appendChild(fragment);
+
+            const oldTrigger = document.getElementById('shorts-load-more-trigger');
+            if (oldTrigger) oldTrigger.remove();
+
+            if (appState.youtubeNextPageTokens.shorts) {
+                const trigger = document.createElement('div');
+                trigger.id = 'shorts-load-more-trigger';
+                trigger.innerHTML = `<div class="loader-container" style="padding: 20px 0;"><div class="loader"></div></div>`;
+                videoSwiper.appendChild(trigger);
+                videoObserver.observe(trigger);
+            }
+        }
+
+        function onPlayerError(event) {
+            const videoId = event.target.getVideoData().video_id;
+            console.error(`[YT Player Error] Video ID: ${videoId}, Error Code: ${event.data}`);
+            
+            const iframe = event.target.getIframe();
+            if (iframe && iframe.parentElement) {
+                const container = iframe.parentElement;
+                container.innerHTML = `<div style="color:white; text-align:center; padding: 20px; font-size: 1.1em; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%;">
+                    <p>Could Not Play Video</p>
+                    <p style="font-size:0.8em; color: #aaa;">(Error Code: ${event.data})</p>
+                </div>`;
+            }
+        }
+
+        function onYouTubeIframeAPIReady() {
+            console.log("[YT API] YouTube IFrame API is ready.");
+            isYouTubeApiReady = true;
+
+            console.log(`[YT API] Processing ${youtubePlayerQueue.length} queued player requests.`);
+            youtubePlayerQueue.forEach(request => {
+                console.log(`[YT API] Creating queued player for container: ${request.containerId}`);
+                if (request.type === 'shorts') {
+                    createPlayerForSlide(request.slide, true);
+                } else if (request.type === 'long') {
+                    initializeCreatorPagePlayer(request.videoId, request.containerId, 'long', true);
+                }
+            });
+            youtubePlayerQueue = [];
+        }
+
+        function onPlayerReady(event) {
+            const iframe = event.target.getIframe();
+            const videoId = event.target.getVideoData().video_id;
+            console.log(`[YT Player] Player ready for video ID: ${videoId}`);
+            const slide = iframe.closest('.video-slide');
+            if (slide) {
+                const preloader = slide.querySelector('.video-preloader');
+                if (preloader) preloader.style.display = 'none';
+            }
+            if (userHasInteracted) {
+                event.target.unMute();
+            }
+        }
+
+        function onPlayerStateChange(event) {
+            const iframe = event.target.getIframe();
+            if (!iframe) return;
+            const isCreatorPlayer = iframe.id === 'creator-page-player-long';
+            if (isCreatorPlayer) {
+                handleCreatorPlayerStateChange(event);
+            }
+        }
+
+        function addVideoToHistory(videoData) {
+            if (!videoData || !videoData.id) return;
+            const videoId = videoData.id.videoId || videoData.id;
+
+            const historyItem = {
+                id: videoId,
+                watchedAt: new Date().toISOString(),
+                title: videoData.snippet.title,
+                channelTitle: videoData.snippet.channelTitle,
+                channelId: videoData.snippet.channelId,
+                thumbnailUrl: videoData.snippet.thumbnails.medium.url,
+                videoLengthType: 'short'
+            };
+
+            const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId);
+            if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1);
+            appState.viewingHistory.unshift(historyItem);
+            if (appState.viewingHistory.length > 100) appState.viewingHistory.pop();
+            localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
+        }
+
+        function addLongVideoToHistory(videoData) {
+            if (!videoData || !videoData.id) return;
+            const videoId = videoData.id.videoId || videoData.id;
+            const historyItem = {
+                id: videoId,
+                watchedAt: new Date().toISOString(),
+                title: videoData.snippet.title,
+                channelTitle: videoData.snippet.channelTitle,
+                channelId: videoData.snippet.channelId,
+                thumbnailUrl: videoData.snippet.thumbnails.medium.url,
+                videoLengthType: 'long'
+            };
+            const existingIndex = appState.viewingHistory.findIndex(item => item.id === videoId);
+            if (existingIndex > -1) appState.viewingHistory.splice(existingIndex, 1);
+            appState.viewingHistory.unshift(historyItem);
+            if (appState.viewingHistory.length > 100) appState.viewingHistory.pop();
+            localStorage.setItem('shubhzoneViewingHistory', JSON.stringify(appState.viewingHistory));
+        }
+
+        function togglePlayPause(videoId) {
+            const player = players[videoId];
+            if (!player || typeof player.getPlayerState !== 'function') return;
+            const state = player.getPlayerState();
+            if (state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING) {
+                player.pauseVideo();
+            } else {
+                player.playVideo();
+            }
+        }
+
+        function playActivePlayer(videoId) {
+            if (!videoId) return;
+            if (activePlayerId && activePlayerId !== videoId) {
+                pauseActivePlayer();
+            }
+            activePlayerId = videoId;
+            const videoData = currentVideoCache.get(videoId);
+            if (videoData) addVideoToHistory(videoData);
+
+            const player = players[videoId];
+            if (!player || typeof player.playVideo !== 'function' || !player.getIframe() || !document.body.contains(player.getIframe())) {
+                const slide = document.querySelector(`.video-slide[data-video-id="${videoId}"]`);
+                if (slide) createPlayerForSlide(slide);
+                return;
+            }
+
+            player.unMute();
+            player.playVideo();
+        }
+
+        function pauseActivePlayer() {
+            if (!activePlayerId) return;
+            const player = players[activePlayerId];
+            if (player && typeof player.pauseVideo === 'function') {
+                if (player.getPlayerState() === YT.PlayerState.PLAYING || player.getPlayerState() === YT.PlayerState.BUFFERING) {
+                    player.pauseVideo();
+                }
+            }
+        }
+
+        function createPlayerForSlide(slide, forceCreation = false) {
+            const videoId = slide.dataset.videoId;
+            if (!isYouTubeApiReady && !forceCreation) {
+                console.log(`[YT Player] API not ready. Queuing player for video ID: ${videoId}`);
+                if (!youtubePlayerQueue.some(item => item.videoId === videoId)) {
+                    youtubePlayerQueue.push({
+                        type: 'shorts',
+                        slide: slide,
+                        videoId: videoId
+                    });
+                }
+                return;
+            }
+
+
+            if (players[videoId]) {
+                if (typeof players[videoId].playVideo === 'function') {
+                    console.log(`[YT Player] Player for ${videoId} already exists. Playing.`);
+                    playActivePlayer(videoId);
+                }
+                return;
+            }
+
+            const playerId = `player-${videoId}`;
+            const playerElement = document.getElementById(playerId);
+            if (!playerElement || playerElement.tagName === 'IFRAME') return;
+
+            console.log(`[YT Player] Creating new shorts player for video ID: ${videoId}`);
+            players[videoId] = new YT.Player(playerId, {
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 0,
+                    'controls': 0,
+                    'mute': userHasInteracted ? 0 : 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'modestbranding': 1,
+                    'loop': 1,
+                    'playlist': videoId,
+                    'fs': 0,
+                    'iv_load_policy': 3,
+                    'origin': window.location.origin
+                },
+                events: {
+                    'onReady': (event) => {
+                        onPlayerReady(event);
+                        const slideRect = slide.getBoundingClientRect();
+                        const isInView = slideRect.top >= 0 && slideRect.bottom <= window.innerHeight;
+                        if (isInView) {
+                            playActivePlayer(videoId);
+                        }
+                    },
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
         function setupVideoObserver() {
             if (videoObserver) videoObserver.disconnect();
             if (!videoSwiper) return;
@@ -3141,24 +2792,595 @@
                 });
             });
         }
-        function onYouTubeIframeAPIReady() {
-            console.log("[YT API] YouTube IFrame API is ready.");
-            isYouTubeApiReady = true;
 
-            console.log(`[YT API] Processing ${youtubePlayerQueue.length} queued player requests.`);
-            youtubePlayerQueue.forEach(request => {
-                console.log(`[YT API] Creating queued player for container: ${request.containerId}`);
-                if (request.type === 'shorts') {
-                    createPlayerForSlide(request.slide, true);
-                } else if (request.type === 'long') {
-                    initializeCreatorPagePlayer(request.videoId, request.containerId, 'long', true);
+        function filterVideosByCategory(scrollerId, category, element) {
+            const scroller = document.getElementById(scrollerId);
+            if (!scroller) return;
+            scroller.querySelectorAll('.category-chip').forEach(chip => chip.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            const searchInput = document.getElementById('long-video-search-input');
+            if (searchInput) searchInput.value = '';
+
+            if (scrollerId === 'category-scroller') {
+                if (activePlayerId) pauseActivePlayer();
+                activePlayerId = null;
+                setupShortsScreen(category);
+            } else {
+                populateLongVideoGrid(category);
+            }
+        }
+
+        async function setupShortsScreen(category = 'All') {
+            const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
+            if (homeStaticMessageContainer) {
+                videoSwiper.innerHTML = '';
+                videoSwiper.appendChild(homeStaticMessageContainer);
+                homeStaticMessageContainer.style.display = 'flex';
+                homeStaticMessageContainer.querySelector('.static-message').innerHTML = '<div class="loader"></div>'; // सिर्फ लोडर दिखाएं
+            }
+
+            const data = await fetchFromYouTubeAPI('search', {
+                q: query,
+                videoDuration: 'short'
+            });
+            appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
+            if (data.items && data.items.length > 0) {
+                renderVideoSwiper(data.items, false);
+            } else {
+                renderVideoSwiper([], false);
+            }
+        }
+
+        async function loadMoreShorts() {
+            const activeCategoryChip = document.querySelector('#category-scroller .category-chip.active');
+            const category = activeCategoryChip ? activeCategoryChip.dataset.category : 'All';
+            const query = category.toLowerCase() === 'trending' ? 'trending shorts india' : (category.toLowerCase() === 'all' ? getRandomTopic() + ' shorts' : `${category} shorts`);
+            const data = await fetchFromYouTubeAPI('search', {
+                q: query,
+                videoDuration: 'short',
+                pageToken: appState.youtubeNextPageTokens.shorts
+            });
+
+            appState.youtubeNextPageTokens.shorts = data.nextPageToken || null;
+            if (data.items) {
+                renderVideoSwiper(data.items, true);
+            }
+        }
+
+        async function setupLongVideoScreen() {
+            renderCategoriesInBar();
+            await renderTrendingCarousel();
+            await populateLongVideoGrid('Trending');
+            const gridContainer = document.querySelector('.long-video-screen-content');
+            let loadMoreBtn = document.getElementById('long-video-load-more-btn');
+            if (!loadMoreBtn && gridContainer) {
+                loadMoreBtn = document.createElement('button');
+                loadMoreBtn.id = 'long-video-load-more-btn';
+                loadMoreBtn.className = 'haptic-trigger';
+                loadMoreBtn.textContent = 'Load More';
+                loadMoreBtn.style.display = 'none';
+                loadMoreBtn.onclick = loadMoreLongVideos;
+                gridContainer.appendChild(loadMoreBtn);
+            }
+        }
+
+        async function populateLongVideoGrid(category = 'All') {
+            const grid = document.getElementById('long-video-grid');
+            if (!grid) return;
+            grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            let query;
+            if (category.toLowerCase() === 'trending') {
+                query = 'trending videos';
+            } else {
+                query = category.toLowerCase() === 'all' ? getRandomTopic() : category;
+            }
+
+            appState.longVideoSearchContext = {
+                type: 'query',
+                value: query
+            };
+
+            const data = await fetchFromYouTubeAPI('search', {
+                q: query,
+                videoDuration: 'long'
+            });
+
+            appState.youtubeNextPageTokens.long = data.nextPageToken || null;
+            renderYouTubeLongVideos(data.items || [], false);
+        }
+
+        async function renderTrendingCarousel() {
+            const carouselWrapper = document.getElementById('long-video-carousel-wrapper');
+            if (!carouselWrapper) return;
+            carouselWrapper.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
+            const data = await fetchFromYouTubeAPI('search', {
+                q: 'latest trending videos',
+                videoDuration: 'long',
+                maxResults: 10
+            });
+
+            if (data.items && data.items.length > 0) {
+                carouselWrapper.innerHTML = data.items.map(video => {
+                    const videoId = video.id?.videoId || video.id;
+                    const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
+                    return `
+                        <div class="carousel-card haptic-trigger" 
+                             style="background-image: url('${escapeHTML(thumbnailUrl)}')"
+                             onclick="playYouTubeVideoFromCard('${videoId}')">
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                carouselWrapper.innerHTML = `<p class="static-message">Could not load trending videos.</p>`;
+            }
+        }
+
+        async function performLongVideoSearch() {
+            const input = document.getElementById('long-video-search-input');
+            let query = input.value.trim();
+            if (!query) return;
+
+            const videoIdFromUrl = extractYouTubeId(query);
+            if (videoIdFromUrl) {
+                playYouTubeVideoFromCard(videoIdFromUrl);
+                return;
+            }
+
+            document.querySelectorAll('#long-video-category-scroller .category-chip').forEach(chip => chip.classList.remove('active'));
+
+            const grid = document.getElementById('long-video-grid');
+            if (!grid) return;
+            grid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+
+            let searchParams = {
+                videoDuration: 'long'
+            };
+            let finalData;
+
+            try {
+                const channelData = await fetchFromYouTubeAPI('search', {
+                    q: query,
+                    type: 'channel',
+                    maxResults: 1
+                });
+                let channelId = null;
+                if (channelData.items && channelData.items.length > 0) {
+                    const channelTitle = channelData.items[0].snippet.title.toLowerCase();
+                    const queryLower = query.toLowerCase();
+                    if (channelTitle.includes(queryLower)) {
+                        channelId = channelData.items[0].id.channelId;
+                    }
+                }
+
+                if (channelId) {
+                    console.log(`Channel found: ${channelId}. Searching for videos in this channel.`);
+                    searchParams.channelId = channelId;
+                    appState.longVideoSearchContext = {
+                        type: 'channel',
+                        value: channelId
+                    };
+                } else {
+                    console.log(`No specific channel found. Performing general search for: ${query}`);
+                    searchParams.q = query;
+                    appState.longVideoSearchContext = {
+                        type: 'query',
+                        value: query
+                    };
+                }
+
+                finalData = await fetchFromYouTubeAPI('search', searchParams);
+
+            } catch (error) {
+                console.error("Error during search process:", error);
+                finalData = {
+                    items: [],
+                    nextPageToken: null
+                };
+                grid.innerHTML = '<p class="static-message">An error occurred during search.</p>';
+            }
+
+            appState.youtubeNextPageTokens.long = finalData.nextPageToken || null;
+            renderYouTubeLongVideos(finalData.items || [], false);
+        }
+
+        function createLongVideoCard(video) {
+            const videoId = video.id?.videoId || video.id;
+            if (!videoId || !video.snippet) return null;
+
+            const card = document.createElement('div');
+            card.className = 'long-video-card';
+            card.dataset.videoId = videoId;
+            card.dataset.channelId = video.snippet.channelId;
+
+            const thumbnailUrl = video.snippet.thumbnails.high?.url || video.snippet.thumbnails.medium?.url;
+            const addChannelOnClick = `addChannelToList(event, '${video.snippet.channelId}')`;
+
+            card.innerHTML = `
+                <div class="long-video-thumbnail" style="background-image: url('${escapeHTML(thumbnailUrl)}')" onclick="playYouTubeVideoFromCard('${videoId}')">
+                    <i class="fas fa-play play-icon-overlay"></i>
+                </div>
+                <div class="long-video-info-container">
+                    <div class="long-video-details" onclick="navigateTo('creator-page-screen', { creatorId: '${video.snippet.channelId}', startWith: 'home' })">
+                        <span class="long-video-name">${escapeHTML(video.snippet.title)}</span>
+                        <span class="long-video-uploader">${escapeHTML(video.snippet.channelTitle)}</span>
+                    </div>
+                </div>
+                <button class="add-channel-btn-long-grid haptic-trigger" onclick="${addChannelOnClick}"><i class="fas fa-plus"></i> Add Channel</button>
+            `;
+            return card;
+        }
+
+        function initializeHistoryScreen() {
+            const clearButton = document.getElementById('history-date-button');
+            if (clearButton) {
+                clearButton.innerHTML = `<i class="fas fa-trash-alt"></i> Clear All`;
+                clearButton.onclick = clearAllHistory;
+            }
+            appState.viewingHistory = JSON.parse(localStorage.getItem('shubhzoneViewingHistory') || '[]');
+            renderHistoryShortsScroller();
+            renderHistoryLongVideoList();
+        }
+
+        function renderHistoryShortsScroller() { /* Unchanged */ }
+
+        function renderHistoryLongVideoList() { /* Unchanged */ }
+
+        function clearAllHistory() { /* Unchanged */ }
+
+        function deleteFromHistory(videoId) { /* Unchanged */ }
+
+        // =======================================================
+        // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - START ★★★
+        // =======================================================
+
+        async function initializeCreatorPage(payload) {
+            const {
+                creatorId,
+                startWith = 'home',
+                videoId
+            } = payload;
+            appState.creatorPage.currentChannelId = creatorId;
+
+            if (startWith === 'play' && videoId) {
+                showCreatorPlayerView(videoId);
+                return;
+            }
+
+            appState.creatorPage.currentView = 'channel';
+            const creatorPageHeader = document.getElementById('creator-page-screen').querySelector('.screen-header');
+            const creatorPageTabsContainer = document.getElementById('creator-page-tabs');
+            const creatorPageContent = document.getElementById('creator-page-content');
+
+            creatorPageHeader.style.display = 'flex';
+            creatorPageTabsContainer.style.display = 'flex';
+            creatorPageContent.innerHTML = '';
+            creatorPageContent.classList.remove('player-active');
+
+            creatorPageTabsContainer.innerHTML = `
+                <button class="creator-page-tab-btn haptic-trigger" data-type="home">Home</button>
+                <button class="creator-page-tab-btn haptic-trigger" data-type="videos">Videos</button>
+                <button class="creator-page-tab-btn haptic-trigger" data-type="shorts">Shorts</button>
+                <button class="creator-page-tab-btn haptic-trigger" data-type="playlists">Playlists</button>
+            `;
+
+            creatorPageTabsContainer.querySelectorAll('.creator-page-tab-btn').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    creatorPageTabsContainer.querySelectorAll('.creator-page-tab-btn').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    loadCreatorPageContent({ ...payload,
+                        startWith: tab.dataset.type,
+                        videoId: null
+                    });
+                });
+            });
+
+            const effectiveStartWith = (startWith === 'videos') ? 'home' : startWith;
+            const initialTab = creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="${effectiveStartWith}"]`) || creatorPageTabsContainer.querySelector(`.creator-page-tab-btn[data-type="home"]`);
+            if (initialTab) initialTab.classList.add('active');
+
+            await loadCreatorPageContent({ ...payload,
+                startWith: effectiveStartWith
+            });
+        }
+
+        async function loadCreatorPageContent(payload) {
+            const {
+                creatorId,
+                startWith,
+                playlistId
+            } = payload;
+            const contentArea = document.getElementById('creator-page-content');
+            contentArea.innerHTML = '<div class="loader-container" style="height: 100%;"><div class="loader"></div></div>';
+            let data;
+            switch (startWith) {
+                case 'home':
+                case 'videos':
+                    data = await fetchFromYouTubeAPI('search', {
+                        channelId: creatorId,
+                        order: 'date',
+                        videoDuration: 'long'
+                    });
+                    renderCreatorVideoList(contentArea, data.items || [], 'long');
+                    break;
+                case 'shorts':
+                    data = await fetchFromYouTubeAPI('search', {
+                        channelId: creatorId,
+                        videoDuration: 'short',
+                        order: 'date'
+                    });
+                    renderCreatorVideoList(contentArea, data.items || [], 'short');
+                    break;
+                case 'playlists':
+                    data = await fetchFromYouTubeAPI('playlists', {
+                        channelId: creatorId
+                    });
+                    renderCreatorPlaylistList(contentArea, data.items || [], payload);
+                    break;
+                case 'playlistItems':
+                    data = await fetchFromYouTubeAPI('playlistItems', {
+                        playlistId: playlistId
+                    });
+                    renderCreatorVideoList(contentArea, data.items || [], 'long');
+                    break;
+            }
+        }
+
+        function renderCreatorVideoList(container, videos, type) { /* Unchanged */ }
+
+        function renderCreatorPlaylistList(container, playlists, payload) { /* Unchanged */ }
+
+        function showCreatorPlayerView(videoId) {
+            appState.creatorPage.currentView = 'player';
+            const creatorPageScreen = document.getElementById('creator-page-screen');
+            const contentArea = document.getElementById('creator-page-content');
+
+            creatorPageScreen.querySelector('.screen-header').style.display = 'none';
+            contentArea.classList.add('player-active');
+
+            contentArea.innerHTML = `
+                <div id="creator-page-player-container">
+                     <div class="player-controls-header">
+                        <div class="player-back-button haptic-trigger" onclick="navigateBack()">
+                            <i class="fas fa-arrow-left"></i>
+                        </div>
+                        <div class="player-zoom-controls">
+                            <button id="player-zoom-out-btn" class="haptic-trigger">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button id="player-zoom-in-btn" class="haptic-trigger">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                        </div>
+                        <button id="player-rotate-btn" class="haptic-trigger">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="player-wrapper">
+                        <div id="creator-page-player-long"></div>
+                    </div>
+                </div>
+            `;
+
+            initializeCreatorPagePlayer(videoId, 'creator-page-player-long', 'long');
+
+            document.getElementById('player-rotate-btn').addEventListener('click', () => {
+                document.getElementById('app-container').classList.toggle('fullscreen-active');
+            });
+
+            let currentZoom = 1.0;
+            const playerWrapper = contentArea.querySelector('.player-wrapper');
+            const zoomInBtn = document.getElementById('player-zoom-in-btn');
+            const zoomOutBtn = document.getElementById('player-zoom-out-btn');
+
+            zoomInBtn.addEventListener('click', () => {
+                currentZoom = Math.min(2.5, currentZoom + 0.1);
+                playerWrapper.style.transform = `scale(${currentZoom})`;
+            });
+
+            zoomOutBtn.addEventListener('click', () => {
+                currentZoom = Math.max(0.5, currentZoom - 0.1);
+                playerWrapper.style.transform = `scale(${currentZoom})`;
+            });
+        }
+
+        function initializeCreatorPagePlayer(videoId, containerId, type, forceCreation = false) {
+            if (appState.creatorPagePlayers[type]) {
+                console.log(`[YT Player] Destroying existing creator player of type: ${type}`);
+                appState.creatorPagePlayers[type].destroy();
+                appState.creatorPagePlayers[type] = null;
+            }
+
+            const playerContainer = document.getElementById(containerId);
+
+            if (!isYouTubeApiReady && !forceCreation) {
+                console.log(`[YT Player] API not ready. Queuing creator player for video ID: ${videoId}`);
+                youtubePlayerQueue.push({
+                    type: 'long',
+                    videoId: videoId,
+                    containerId: containerId
+                });
+                return;
+            }
+
+            if (!playerContainer) {
+                console.error(`[YT Player] Player container #${containerId} not found in DOM.`);
+                return;
+            }
+
+            console.log(`[YT Player] Creating new creator player for video ID: ${videoId} in container: #${containerId}`);
+            appState.creatorPagePlayers[type] = new YT.Player(containerId, {
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'mute': 0,
+                    'modestbranding': 1,
+                    'fs': 0,
+                    'origin': window.location.origin,
+                    'iv_load_policy': 3
+                },
+                events: {
+                    'onReady': (event) => {
+                        console.log(`[YT Player] Creator player ready for video ID: ${videoId}`);
+                        event.target.playVideo();
+                        event.target.unMute();
+                        const videoData = currentVideoCache.get(videoId);
+                        if (videoData) {
+                            addLongVideoToHistory(videoData);
+                        }
+                    },
+                    'onStateChange': handleCreatorPlayerStateChange,
+                    'onError': onPlayerError
                 }
             });
-            youtubePlayerQueue = [];
         }
-        function provideHapticFeedback() { /* Unchanged */ }
-        function loadHapticPreference() { /* Unchanged */ }
 
+        function handleCreatorPlayerStateChange(event) { /* Unchanged */ }
+
+        // =======================================================
+        // ★★★ CREATOR PAGE LOGIC (REWORKED & FIXED) - END ★★★
+        // =======================================================
+        
+        // ★★★ NEW MOVIES SECTION START ★★★
+
+        // Movies स्क्रीन को सेट अप करने वाला मुख्य फ़ंक्शन
+        function setupMoviesScreen() {
+            // currentPage को रीसेट करें और ग्रिड को साफ़ करें
+            appState.movies.currentPage = 1;
+            const grid = document.getElementById('movies-grid');
+            if (grid) {
+                grid.innerHTML = '';
+            }
+            // पहली बार फिल्में लोड करें
+            fetchAndShowMovies(false);
+        }
+
+        // VidSrc API से फिल्में लाने और दिखाने वाला फ़ंक्शन
+        async function fetchAndShowMovies(append = false) {
+            const moviesGrid = document.getElementById('movies-grid');
+            const loadMoreBtn = document.getElementById('movies-load-more-btn');
+            
+            // अगर पहले से लोड हो रहा है, तो कुछ न करें
+            if (appState.movies.isLoading) return;
+            appState.movies.isLoading = true;
+
+            // अगर नए सिरे से लोड हो रहा है, तो लोडर दिखाएं
+            if (!append && moviesGrid) {
+                moviesGrid.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            }
+            if (loadMoreBtn) {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.textContent = 'Loading...';
+            }
+
+            try {
+                // VidSrc API को कॉल करें
+                const response = await fetch(`https://vidsrc.xyz/movies/latest/page-${appState.movies.currentPage}.json`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (!append) {
+                    moviesGrid.innerHTML = ''; // लोडर को हटाएं
+                }
+
+                if (data.result && data.result.length > 0) {
+                    const fragment = document.createDocumentFragment();
+                    data.result.forEach(movie => {
+                        const movieCard = createMovieCard(movie);
+                        if (movieCard) {
+                            fragment.appendChild(movieCard);
+                        }
+                    });
+                    moviesGrid.appendChild(fragment);
+                    appState.movies.currentPage++; // अगले पेज के लिए पेज नंबर बढ़ाएं
+                } else {
+                    if (!append) {
+                         moviesGrid.innerHTML = '<p class="static-message">No movies found. Please try again later.</p>';
+                    }
+                    if(loadMoreBtn) loadMoreBtn.style.display = 'none'; // अगर और फिल्में नहीं हैं, तो बटन छिपा दें
+                }
+
+            } catch (error) {
+                console.error("Failed to fetch movies from VidSrc:", error);
+                if (!append) {
+                     moviesGrid.innerHTML = '<p class="static-message">Could not load movies. Check your connection.</p>';
+                }
+            } finally {
+                // लोडिंग स्टेट को रीसेट करें
+                appState.movies.isLoading = false;
+                if (loadMoreBtn) {
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'Load More Movies';
+                }
+            }
+        }
+        
+        // एक अकेली मूवी का कार्ड बनाने वाला फ़ंक्शन
+        function createMovieCard(movie) {
+            if (!movie || !movie.imdb_id || !movie.title) return null;
+
+            const card = document.createElement('div');
+            card.className = 'movie-card haptic-trigger';
+            // imdb_id और title को डेटा एट्रिब्यूट में स्टोर करें
+            card.dataset.imdbId = movie.imdb_id;
+            card.dataset.title = movie.title;
+            
+            // कार्ड पर क्लिक करने पर playMovie फ़ंक्शन कॉल होगा
+            card.onclick = () => playMovie(movie.imdb_id, movie.title);
+
+            card.innerHTML = `<span class="movie-card-title">${escapeHTML(movie.title)}</span>`;
+            return card;
+        }
+
+        // मूवी चलाने वाला फ़ंक्शन
+        function playMovie(imdbId, title) {
+            const modal = document.getElementById('movie-player-modal');
+            const iframe = document.getElementById('movie-player-iframe');
+            const modalTitle = document.getElementById('movie-player-title');
+            
+            if (modal && iframe && modalTitle) {
+                // iframe का src सेट करें
+                iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
+                // मोडल का टाइटल सेट करें
+                modalTitle.textContent = title;
+                // मोडल दिखाएं
+                modal.classList.add('active');
+            }
+        }
+
+        // मूवी प्लेयर मोडल को बंद करने वाला फ़ंक्शन
+        function closeMovieModal() {
+            const modal = document.getElementById('movie-player-modal');
+            const iframe = document.getElementById('movie-player-iframe');
+            
+            if (modal && iframe) {
+                 // मोडल छिपाएं
+                modal.classList.remove('active');
+                // iframe का src खाली कर दें ताकि वीडियो बैकग्राउंड में न चले
+                iframe.src = '';
+            }
+        }
+
+        // ★★★ NEW MOVIES SECTION END ★★★
+
+
+        async function addChannelToList(event, channelId) { /* Unchanged */ }
+
+        function renderMyChannelsList() { /* Unchanged */ }
+
+        function removeChannelFromList(event, channelId) { /* Unchanged */ }
+
+        function provideHapticFeedback() { /* Unchanged */ }
+
+        function loadHapticPreference() { /* Unchanged */ }
+        
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.add('haptic-trigger');
@@ -3166,7 +3388,7 @@
                     const targetNav = item.getAttribute('data-nav');
                     if (item.style.display === 'none') return;
                     let targetScreen;
-
+                    
                     switch (targetNav) {
                         case 'home':
                             targetScreen = 'main-home-screen';
@@ -3205,6 +3427,12 @@
             document.getElementById('long-video-search-input')?.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') performLongVideoSearch();
             });
+
+            // ★★★ NEW MOVIES SECTION START ★★★
+            document.getElementById('movies-load-more-btn')?.addEventListener('click', () => fetchAndShowMovies(true));
+            // ★★★ NEW MOVIES SECTION END ★★★
+
+            document.querySelector('#creator-page-screen .header-icon-left')?.addEventListener('click', () => navigateBack());
             
             const openSidebar = () => {
                 document.getElementById('main-sidebar').classList.add('open');
@@ -3212,8 +3440,10 @@
             };
             document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
+            // ★★★ NEW MOVIES SECTION START ★★★
+            // मूवी स्क्रीन के मेनू आइकन को भी साइडबार खोलने के लिए जोड़ें
             document.getElementById('movies-menu-icon')?.addEventListener('click', openSidebar);
-            document.getElementById('webseries-menu-icon')?.addEventListener('click', openSidebar);
+            // ★★★ NEW MOVIES SECTION END ★★★
             
             document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
                 document.getElementById('main-sidebar').classList.remove('open');
@@ -3231,8 +3461,9 @@
             if (enlargeModal) enlargeModal.addEventListener('click', () => enlargeModal.classList.remove('active'));
 
             loadHapticPreference();
+            
         });
-
+        
         const setAppHeight = () => {
             const doc = document.documentElement;
             doc.style.setProperty('--app-height', `${window.innerHeight}px`);
