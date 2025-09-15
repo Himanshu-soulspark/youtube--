@@ -1,6 +1,6 @@
 
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en"> <!-- ★★★ भाषा को 'en' (English) में बदला गया ★★★ -->
 
 <head>
     <meta charset="UTF-8">
@@ -17,9 +17,9 @@
 
     <style>
         /* ================================================= /
-        / === Shubhzone App Styles (Code 2) - FINAL v6.0 === /
-        / === MODIFIED AS PER USER REQUEST - AUG 2025    === /
-        / === SOLVED: Styles for Reward System & UI/UX   === /
+        / === Shubhzone App Styles (Code 2) - FINAL v7.0 === /
+        / === MODIFIED AS PER USER REQUEST - SEP 2025    === /
+        / === SOLVED: Movie Section Rework & Web Series  === /
         / ================================================= */
 
         /* Design Style Guide */
@@ -1592,7 +1592,6 @@
             }
         }
 
-        /* ★★★★★★★★★★ आपके अनुरोध के अनुसार नए स्टाइल यहाँ जोड़े गए हैं ★★★★★★★★★★ */
         .home-grid-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1645,8 +1644,8 @@
         }
 
 
-        /* ★★★ NEW MOVIE EXPERIENCE STYLES - START ★★★ */
-        #movies-screen-content {
+        /* ★★★ NEW MOVIE & WEBSERIES EXPERIENCE STYLES - START ★★★ */
+        #movies-screen-content, #webseries-screen-content {
             width: 100%;
             height: 100%;
             overflow-y: auto;
@@ -1656,7 +1655,7 @@
             padding-bottom: 60px; /* bottom-nav के लिए जगह */
         }
 
-        .movies-header {
+        .media-header { /* Common header for Movies/Webseries */
             padding: 10px 15px;
             background-color: var(--background);
             display: flex;
@@ -1666,17 +1665,31 @@
             border-bottom: 1px solid var(--secondary-background);
         }
 
-        #movie-language-selector {
-            background-color: var(--secondary-background);
-            color: var(--text-primary);
-            border: 1px solid var(--text-secondary);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 1em;
-            font-weight: 500;
+        .media-tabs { /* Tab container for Movies/Webseries */
+            display: flex;
+            gap: 10px;
+            flex-grow: 1;
+            justify-content: center;
         }
 
-        .movie-banner-container {
+        .media-tab {
+            padding: 8px 18px;
+            border: 1px solid var(--text-secondary);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .media-tab.active {
+            background-color: var(--primary-neon);
+            color: var(--background);
+            border-color: var(--primary-neon);
+            font-weight: 700;
+        }
+        
+        .media-banner-container {
             width: 100%;
             overflow: hidden; /* ताकि कार्ड बाहर न निकलें */
             position: relative;
@@ -1684,12 +1697,12 @@
             padding: 15px 0;
         }
         
-        #movie-banner-carousel {
+        .media-banner-carousel {
             display: flex;
             transition: transform 0.5s ease-in-out; /* स्मूथ स्क्रॉलिंग के लिए */
         }
 
-        .movie-banner-card {
+        .media-banner-card {
             flex: 0 0 90%; /* हर कार्ड की चौड़ाई स्क्रीन का 90% होगी */
             margin: 0 5%;
             aspect-ratio: 16 / 9;
@@ -1704,7 +1717,7 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
-        .movie-banner-card::after {
+        .media-banner-card::after {
              content: '';
              position: absolute;
              bottom: 0;
@@ -1714,7 +1727,7 @@
              background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
         }
 
-        .movie-banner-title {
+        .media-banner-title {
             color: var(--text-primary);
             font-size: 1.2em;
             font-weight: 700;
@@ -1722,27 +1735,64 @@
             z-index: 2;
             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
+        
+        .media-search-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 20px 15px 20px;
+            border-bottom: 1px solid var(--secondary-background);
+        }
 
-        #movie-category-rows {
+        .media-search-input {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--text-secondary);
+            background-color: var(--secondary-background);
+            color: var(--text-primary);
+            font-size: 1em;
+        }
+
+        .media-search-btn {
+            background-color: var(--secondary-background);
+            border: none;
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .media-search-btn:hover {
+            background-color: var(--primary-neon);
+        }
+
+        .media-category-rows {
             padding: 10px 15px;
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
 
-        .movie-category-row {
+        .media-category-row {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        .movie-category-title {
+        .media-category-title {
             font-size: 1.3em;
             font-weight: 700;
             color: var(--text-primary);
         }
 
-        .movie-row-scroller {
+        .media-row-scroller {
             display: flex;
             gap: 12px;
             overflow-x: auto;
@@ -1750,11 +1800,38 @@
             scrollbar-width: none; /* Firefox */
         }
         
-        .movie-row-scroller::-webkit-scrollbar {
+        .media-row-scroller::-webkit-scrollbar {
             display: none; /* Chrome, Safari, and Opera */
         }
+        
+        .load-more-card { /* Special card for loading more */
+            flex-shrink: 0;
+            width: 120px;
+            aspect-ratio: 9 / 16;
+            background-color: var(--secondary-background);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px dashed var(--text-secondary);
+            color: var(--text-secondary);
+        }
+        
+        .load-more-card:hover {
+            background-color: var(--dark-grey);
+            border-color: var(--primary-neon);
+            color: var(--primary-neon);
+        }
 
-        .movie-vertical-card {
+        .load-more-card i {
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .media-vertical-card {
             flex-shrink: 0;
             width: 120px;
             aspect-ratio: 9 / 16;
@@ -1768,13 +1845,13 @@
             border: 1px solid var(--secondary-background);
         }
 
-        .movie-vertical-card:hover {
+        .media-vertical-card:hover {
             transform: scale(1.05);
             box-shadow: 0 0 15px var(--primary-neon);
             border-color: var(--primary-neon);
         }
 
-        .movie-disclaimer {
+        .media-disclaimer {
             background-color: var(--secondary-background);
             color: var(--text-secondary);
             font-size: 0.8em;
@@ -1785,13 +1862,13 @@
             border: 1px dashed var(--text-disabled);
         }
 
-        /* ★★★ मूवी प्लेयर के लिए नया स्क्रीन स्टाइल ★★★ */
-        #movie-player-screen {
+        /* Movie/Webseries Player Screen */
+        #media-player-screen {
             background-color: #000;
             padding: 0;
         }
 
-        #movie-player-container {
+        #media-player-container {
             width: 100%;
             height: 100%;
             display: flex;
@@ -1802,17 +1879,113 @@
             position: relative;
         }
 
-        #movie-player-container .player-wrapper {
+        #media-player-container .player-wrapper {
             width: 100%;
             aspect-ratio: 16 / 9;
         }
 
-        #movie-player-iframe-container {
+        #media-player-iframe-container {
             width: 100%;
             height: 100%;
             border: none;
         }
-        /* ★★★ NEW MOVIE EXPERIENCE STYLES - END ★★★ */
+        
+        /* Episode List Screen */
+        #episode-list-screen {
+            background-color: var(--background);
+        }
+        #episode-list-content {
+             width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            display: flex;
+            flex-direction: column;
+            padding: 60px 0 60px 0; /* Header and Nav space */
+        }
+        .episode-list-header {
+            width: 100%;
+            min-height: 200px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 15px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+        }
+        .episode-list-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, rgba(var(--background-rgb), 1) 0%, rgba(var(--background-rgb), 0.5) 50%, transparent 100%);
+        }
+        .episode-series-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            position: relative;
+            z-index: 2;
+        }
+         .season-selector {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: var(--secondary-background);
+         }
+         #season-select-dropdown {
+            background-color: var(--dark-grey);
+            color: var(--text-primary);
+            border: 1px solid var(--text-secondary);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 1em;
+            font-weight: 500;
+         }
+         #episode-list-container {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+         }
+         .episode-item {
+            display: flex;
+            gap: 15px;
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--secondary-background);
+            cursor: pointer;
+            align-items: center;
+         }
+         .episode-item:hover {
+            background-color: var(--dark-grey);
+         }
+         .episode-thumbnail {
+            width: 120px;
+            height: 67.5px;
+            background-color: #000;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+         }
+         .episode-details {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+         }
+         .episode-title {
+            font-size: 1em;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+         }
+         .episode-number {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+         }
+
+        /* ★★★ NEW MOVIE & WEBSERIES EXPERIENCE STYLES - END ★★★ */
 
     </style>
 </head>
@@ -1893,7 +2066,6 @@
         <!-- ★★★ नया बदलाव: नया खाली होम स्क्रीन ★★★ -->
         <div id="main-home-screen" class="screen">
 
-            <!-- ★★★★★★★★★★ आपके अनुरोध के अनुसार यह नया सेक्शन जोड़ा गया है ★★★★★★★★★★ -->
             <div style="flex-grow: 1; width: 100%; overflow-y: auto;">
                 <div class="home-grid-container">
                     <!-- कार्ड 1 -->
@@ -1909,13 +2081,13 @@
                         <button class="btn-3d haptic-trigger">Profile</button>
                     </div>
                 </div>
-                <!-- आप चाहें तो ग्रिड के नीचे और भी कंटेंट जोड़ सकते हैं -->
             </div>
-            <!-- ★★★★★★★★★★ नया सेक्शन यहाँ खत्म होता है ★★★★★★★★★★ -->
 
+            <!-- ★★★ BOTTOM NAV: Web Series के लिए नया आइटम जोड़ा गया ★★★ -->
             <div class="bottom-nav">
                 <div class="nav-item active" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -1935,8 +2107,9 @@
                 </div>
             </div>
             <div class="bottom-nav">
-                <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item active" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -1963,81 +2136,157 @@
                 <!-- "Load More" button is dynamically added here by script.js -->
             </div>
             <div class="bottom-nav">
-                <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item active" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
 
-        <!-- ★★★ NEW MOVIE EXPERIENCE - START ★★★ -->
+        <!-- ★★★ NEW MOVIE EXPERIENCE (REWORKED) - START ★★★ -->
         <div id="movies-screen" class="screen">
             <div id="movies-screen-content">
-                <div class="movies-header">
+                <div class="media-header">
                     <div id="movies-menu-icon" class="home-menu-icon haptic-trigger">
                         <i class="fas fa-bars"></i>
                     </div>
-                    <select id="movie-language-selector" class="haptic-trigger">
-                        <option value="hi">हिन्दी (Hindi)</option>
-                        <option value="ta">தமிழ் (Tamil)</option>
-                        <option value="te">తెలుగు (Telugu)</option>
-                        <option value="kn">ಕನ್ನಡ (Kannada)</option>
-                        <option value="ml">മലയാളം (Malayalam)</option>
-                        <option value="bn">বাংলা (Bengali)</option>
-                        <option value="mr">मराठी (Marathi)</option>
-                    </select>
+                     <!-- ★★★ मूवी/वेब सीरीज के बीच स्विच करने के लिए टैब ★★★ -->
+                    <div class="media-tabs">
+                        <div class="media-tab active" onclick="navigateTo('movies-screen')">Movies</div>
+                        <div class="media-tab" onclick="navigateTo('webseries-screen')">Web Series</div>
+                    </div>
                 </div>
 
                 <!-- 16:9 Banner Carousel -->
-                <div class="movie-banner-container">
-                    <div id="movie-banner-carousel">
-                        <!-- Banner cards will be injected here -->
+                <div class="media-banner-container">
+                    <div id="movie-banner-carousel" class="media-banner-carousel">
                         <div class="loader-container"><div class="loader"></div></div>
                     </div>
                 </div>
                 
-                <!-- 9:16 Category Rows -->
-                <div id="movie-category-rows">
-                    <!-- Category rows will be injected here -->
+                <!-- Search Bar -->
+                <div class="media-search-container">
+                    <input type="text" id="movie-search-input" class="media-search-input" placeholder="Search for movies...">
+                    <button id="movie-search-btn" class="media-search-btn haptic-trigger"><i class="fas fa-search"></i></button>
+                </div>
+                
+                <!-- Category Rows -->
+                <div id="movie-category-rows" class="media-category-rows">
                     <div class="loader-container"><div class="loader"></div></div>
                 </div>
 
                 <!-- Disclaimer -->
-                <div class="movie-disclaimer">
-                    <strong>अस्वीकरण:</strong> यहाँ दिखाया गया कंटेंट थर्ड-पार्टी स्रोतों द्वारा प्रदान किया जाता है। हम किसी भी कंटेंट को होस्ट नहीं करते हैं। कंटेंट की उपलब्धता और गुणवत्ता प्रदाता पर निर्भर करती है और इसमें विज्ञापन हो सकते हैं।
+                <div class="media-disclaimer">
+                    <strong>Disclaimer:</strong> Content shown here is provided by third-party sources. We do not host any content. Availability, quality, and ads are determined by the provider.
                 </div>
             </div>
             <div class="bottom-nav">
-                <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item active" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
         </div>
-        <!-- ★★★ NEW MOVIE EXPERIENCE - END ★★★ -->
+        <!-- ★★★ NEW MOVIE EXPERIENCE (REWORKED) - END ★★★ -->
+
+        <!-- ★★★ NEW WEBSERIES SCREEN - START ★★★ -->
+        <div id="webseries-screen" class="screen">
+            <div id="webseries-screen-content">
+                 <div class="media-header">
+                    <div id="webseries-menu-icon" class="home-menu-icon haptic-trigger">
+                        <i class="fas fa-bars"></i>
+                    </div>
+                     <div class="media-tabs">
+                        <div class="media-tab" onclick="navigateTo('movies-screen')">Movies</div>
+                        <div class="media-tab active" onclick="navigateTo('webseries-screen')">Web Series</div>
+                    </div>
+                </div>
+
+                <!-- Banner Carousel -->
+                <div class="media-banner-container">
+                    <div id="webseries-banner-carousel" class="media-banner-carousel">
+                        <div class="loader-container"><div class="loader"></div></div>
+                    </div>
+                </div>
+                
+                <!-- Search Bar -->
+                <div class="media-search-container">
+                    <input type="text" id="webseries-search-input" class="media-search-input" placeholder="Search for web series...">
+                    <button id="webseries-search-btn" class="media-search-btn haptic-trigger"><i class="fas fa-search"></i></button>
+                </div>
+                
+                <!-- Category Rows -->
+                <div id="webseries-category-rows" class="media-category-rows">
+                    <div class="loader-container"><div class="loader"></div></div>
+                </div>
+
+                <!-- Disclaimer -->
+                <div class="media-disclaimer">
+                    <strong>Disclaimer:</strong> Content shown here is provided by third-party sources. We do not host any content. Availability, quality, and ads are determined by the provider.
+                </div>
+            </div>
+             <div class="bottom-nav">
+                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <div class="nav-item active" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
+                <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            </div>
+        </div>
+        <!-- ★★★ NEW WEBSERIES SCREEN - END ★★★ -->
+
+        <!-- ★★★ NEW EPISODE LIST SCREEN - START ★★★ -->
+        <div id="episode-list-screen" class="screen">
+            <div class="screen-header">
+                 <div class="header-icon-left haptic-trigger" onclick="navigateBack()"><i class="fas fa-arrow-left"></i></div>
+                 <h2 class="header-title">Episodes</h2>
+            </div>
+            <div id="episode-list-content">
+                <div id="episode-list-header" class="episode-list-header">
+                    <h1 id="episode-series-title" class="episode-series-title">Series Title</h1>
+                </div>
+                <div class="season-selector">
+                    <label for="season-select-dropdown">Season:</label>
+                    <select id="season-select-dropdown"></select>
+                </div>
+                <ul id="episode-list-container">
+                    <!-- Episodes will be injected here -->
+                </ul>
+            </div>
+            <div class="bottom-nav">
+                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <div class="nav-item active" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
+                <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
+                <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
+            </div>
+        </div>
+        <!-- ★★★ NEW EPISODE LIST SCREEN - END ★★★ -->
 
 
-        <!-- ★★★ NEW MOVIE PLAYER SCREEN - START ★★★ -->
-        <div id="movie-player-screen" class="screen">
-            <div id="movie-player-container">
+        <!-- ★★★ UNIFIED MEDIA PLAYER SCREEN - START ★★★ -->
+        <div id="media-player-screen" class="screen">
+            <div id="media-player-container">
                  <div class="player-controls-header">
-                    <div class="player-back-button haptic-trigger" onclick="navigateBackFromMoviePlayer()">
+                    <div class="player-back-button haptic-trigger" onclick="navigateBackFromMediaPlayer()">
                         <i class="fas fa-arrow-left"></i>
                     </div>
                     <div class="player-zoom-controls">
-                        <button id="movie-player-zoom-out-btn" class="haptic-trigger">
+                        <button id="media-player-zoom-out-btn" class="haptic-trigger">
                             <i class="fas fa-search-minus"></i>
                         </button>
-                        <button id="movie-player-zoom-in-btn" class="haptic-trigger">
+                        <button id="media-player-zoom-in-btn" class="haptic-trigger">
                             <i class="fas fa-search-plus"></i>
                         </button>
                     </div>
-                    <button id="movie-player-rotate-btn" class="haptic-trigger">
+                    <button id="media-player-rotate-btn" class="haptic-trigger">
                         <i class="fas fa-sync-alt"></i>
                     </button>
                 </div>
                 <div class="player-wrapper">
-                    <iframe id="movie-player-iframe-container" 
+                    <iframe id="media-player-iframe-container" 
                             src=""
                             allow="autoplay; encrypted-media"
                             allowfullscreen>
@@ -2045,7 +2294,7 @@
                 </div>
             </div>
         </div>
-        <!-- ★★★ NEW MOVIE PLAYER SCREEN - END ★★★ -->
+        <!-- ★★★ UNIFIED MEDIA PLAYER SCREEN - END ★★★ -->
 
 
         <!-- === HISTORY SCREEN === -->
@@ -2064,8 +2313,9 @@
                 <div id="history-long-video-list"></div>
             </div>
             <div class="bottom-nav">
-                <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
+                 <div class="nav-item" data-nav="home"><i class="fas fa-home"></i>Home</div>
                 <div class="nav-item" data-nav="movies"><i class="fas fa-film"></i>Movies</div>
+                <div class="nav-item" data-nav="webseries"><i class="fas fa-tv"></i>Web Series</div>
                 <div class="nav-item" data-nav="long-video"><i class="fas fa-video"></i>Long Video</div>
                 <div class="nav-item" data-nav="shorts"><i class="fas fa-compact-disc"></i>Shorts</div>
             </div>
@@ -2175,11 +2425,21 @@
                 channelShorts: null,
                 channelPlaylists: null,
             },
-            // ★★★ मूवी सेक्शन के लिए नया स्टेट ऑब्जेक्ट ★★★
-            movies: {
-                currentLanguage: 'hi', // डिफ़ॉल्ट भाषा
-                isLoading: false,
-                bannerInterval: null // बैनर के ऑटो-स्क्रॉल के लिए
+            // ★★★ मूवी/वेब सीरीज सेक्शन के लिए नया स्टेट ऑब्जेक्ट ★★★
+            media: {
+                movies: {
+                    isLoading: false,
+                    bannerInterval: null,
+                    categoryPages: {}, // 'category-id': pageNumber
+                    currentSearchQuery: null
+                },
+                webseries: {
+                    isLoading: false,
+                    bannerInterval: null,
+                    categoryPages: {},
+                    currentSearchQuery: null
+                },
+                currentSeriesData: null // Stores data for the episode list screen
             },
             longVideoSearchContext: {
                 type: 'query',
@@ -2242,7 +2502,7 @@
                 }
             }
 
-            console.log(`[API] सही सर्वर से डेटा लाया जा रहा है: ${url}`);
+            console.log(`[API] Fetching from server: ${url}`);
 
             try {
                 const response = await fetch(url);
@@ -2264,7 +2524,7 @@
 
                 return data;
             } catch (error) {
-                console.error(`सर्वर से डेटा लाने में गंभीर त्रुटि (${type}):`, error);
+                console.error(`Failed to fetch from server for (${type}):`, error);
                 if (type === 'search') {
                     const grid = document.getElementById('long-video-grid');
                     if (grid) grid.innerHTML = '<p class="static-message">Could not load videos. Please check your connection or API key.</p>';
@@ -2279,14 +2539,12 @@
             }
         }
         
-        // ★★★ NEW MOVIE EXPERIENCE - START ★★★
-        // TMDb API से डेटा लाने के लिए नया फंक्शन
+        // ★★★ TMDb API से डेटा लाने के लिए फंक्शन (कोई बदलाव नहीं) ★★★
         async function fetchFromTMDbAPI(endpoint, params = {}) {
+            // ★★★ IMPORTANT: This now relies on your server to check VidSrc availability ★★★
+            // The client-side code remains simple.
             let url = `/api/tmdb?endpoint=${endpoint}`;
             
-            // भाषा पैरामीटर को जोड़ें (यह हमेशा ज़रूरी है)
-            params.language = 'en-US'; 
-
             for (const key in params) {
                 if (params[key] !== undefined && params[key] !== null) {
                     url += `&${key}=${encodeURIComponent(params[key])}`;
@@ -2311,7 +2569,6 @@
                 };
             }
         }
-        // ★★★ NEW MOVIE EXPERIENCE - END ★★★
 
         function renderYouTubeLongVideos(videos, append = false) {
             const grid = document.getElementById('long-video-grid');
@@ -2479,10 +2736,10 @@
                 if (creatorContent) creatorContent.innerHTML = '';
                 document.getElementById('app-container').classList.remove('fullscreen-active');
             }
-            // ★★★ मूवी प्लेयर से बाहर निकलते समय क्लीनअप ★★★
-            if (appState.currentScreen === 'movie-player-screen') {
+            // ★★★ मीडिया प्लेयर से बाहर निकलते समय क्लीनअप ★★★
+            if (appState.currentScreen === 'media-player-screen') {
                 document.getElementById('app-container').classList.remove('fullscreen-active');
-                const iframe = document.getElementById('movie-player-iframe-container');
+                const iframe = document.getElementById('media-player-iframe-container');
                 if(iframe) iframe.src = 'about:blank'; // Iframe को रोकें
             }
             
@@ -2496,6 +2753,9 @@
             if (nextScreenId === 'history-screen') initializeHistoryScreen();
             if (nextScreenId === 'home-screen') setupShortsScreen();
             if (nextScreenId === 'movies-screen') setupMoviesScreen();
+            if (nextScreenId === 'webseries-screen') setupWebseriesScreen();
+            if (nextScreenId === 'episode-list-screen') setupEpisodeListScreen(payload);
+
             if (nextScreenId === 'creator-page-screen' && payload && payload.creatorId) {
                 initializeCreatorPage(payload);
             }
@@ -2509,10 +2769,10 @@
                 }
                 document.getElementById('app-container').classList.remove('fullscreen-active');
             }
-             // ★★★ मूवी प्लेयर से बाहर निकलते समय क्लीनअप ★★★
-            if (appState.currentScreen === 'movie-player-screen') {
+             // ★★★ मीडिया प्लेयर से बाहर निकलते समय क्लीनअप ★★★
+            if (appState.currentScreen === 'media-player-screen') {
                 document.getElementById('app-container').classList.remove('fullscreen-active');
-                const iframe = document.getElementById('movie-player-iframe-container');
+                const iframe = document.getElementById('media-player-iframe-container');
                 if(iframe) iframe.src = 'about:blank'; // Iframe को रोकें
             }
 
@@ -3305,194 +3565,551 @@
         // =======================================================
         
         
-        // ★★★ NEW MOVIE EXPERIENCE LOGIC - START ★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★ NEW REWORKED MOVIE & WEBSERIES LOGIC - START ★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
         const MOVIE_CATEGORIES = [
-            { title: "एक्शन (Action)", id: 28 },
-            { title: "कॉमेडी (Comedy)", id: 35 },
-            { title: "हॉरर (Horror)", id: 27 },
-            { title: "रोमांस (Romance)", id: 10749 },
-            { title: "थ्रिलर (Thriller)", id: 53 },
-            { title: "साइंस फिक्शन (Sci-Fi)", id: 878 },
-            { title: "ड्रामा (Drama)", id: 18 },
-            { title: "एनिमेटेड (Animated)", id: 16 },
-            { title: "फैमिली (Family)", id: 10751 },
-            { title: "क्राइम (Crime)", id: 80 },
-            { title: "मिस्ट्री (Mystery)", id: 9648 },
-            { title: "फैंटेसी (Fantasy)", id: 14 },
-            { title: "एडवेंचर (Adventure)", id: 12 },
-            { title: "डॉक्यूमेंट्री (Documentary)", id: 99 },
-            { title: "वॉर (War)", id: 10752 }
+            { id: 'bollywood', title: "Bollywood", params: { with_original_language: 'hi', sort_by: 'popularity.desc' } },
+            { id: 'hollywood', title: "Hollywood (Dubbed)", params: { with_original_language: 'en', sort_by: 'popularity.desc' } },
+            { id: 'south-tamil', title: "South - Tamil", params: { with_original_language: 'ta', sort_by: 'popularity.desc' } },
+            { id: 'south-telugu', title: "South - Telugu", params: { with_original_language: 'te', sort_by: 'popularity.desc' } },
+            { id: 'top-rated', title: "Top Rated Globally", params: { sort_by: 'vote_average.desc', 'vote_count.gte': 1000 } },
+        ];
+        
+        const WEBSERIES_CATEGORIES = [
+             { id: 'hindi-shows', title: "Popular Hindi Shows", params: { with_original_language: 'hi', sort_by: 'popularity.desc' } },
+             { id: 'eng-shows', title: "Popular English Shows", params: { with_original_language: 'en', sort_by: 'popularity.desc' } },
+             { id: 'korean-shows', title: "Korean Drama", params: { with_original_language: 'ko', sort_by: 'popularity.desc' } },
+             { id: 'top-rated-tv', title: "Top Rated Shows", params: { sort_by: 'vote_average.desc', 'vote_count.gte': 500 } },
         ];
 
-        // मूवी स्क्रीन को सेट अप करने वाला मुख्य फ़ंक्शन
+        // ------------------ MOVIE SCREEN LOGIC ------------------
+
         function setupMoviesScreen() {
-            const langSelector = document.getElementById('movie-language-selector');
-            if (langSelector) {
-                // इवेंट लिस्नर को केवल एक बार जोड़ें
-                if (!langSelector.dataset.listenerAttached) {
-                    langSelector.addEventListener('change', (e) => {
-                        appState.movies.currentLanguage = e.target.value;
-                        loadMovieContentForLanguage(e.target.value);
-                    });
-                    langSelector.dataset.listenerAttached = 'true';
-                }
+            loadMovieContent();
+            
+            const searchBtn = document.getElementById('movie-search-btn');
+            const searchInput = document.getElementById('movie-search-input');
+            
+            if (!searchBtn.dataset.listenerAttached) {
+                searchBtn.addEventListener('click', () => performMediaSearch('movie'));
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') performMediaSearch('movie');
+                });
+                searchBtn.dataset.listenerAttached = 'true';
             }
-            // डिफ़ॉल्ट भाषा के लिए कंटेंट लोड करें
-            loadMovieContentForLanguage(appState.movies.currentLanguage);
         }
 
-        async function loadMovieContentForLanguage(langCode) {
+        async function loadMovieContent(isSearch = false) {
             const bannerContainer = document.getElementById('movie-banner-carousel');
             const rowsContainer = document.getElementById('movie-category-rows');
+            const state = appState.media.movies;
+            
+            if (state.isLoading) return;
+            state.isLoading = true;
 
-            if (appState.movies.isLoading) return;
-            appState.movies.isLoading = true;
+            if (state.bannerInterval) clearInterval(state.bannerInterval);
 
-            // मौजूदा ऑटो-स्क्रॉल को रोकें
-            if (appState.movies.bannerInterval) {
-                clearInterval(appState.movies.bannerInterval);
+            // If it's not a search, clear previous search and show loaders
+            if (!isSearch) {
+                 appState.media.movies.currentSearchQuery = null;
+                 document.getElementById('movie-search-input').value = '';
+                 bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+                 rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+                 
+                 // Reset page counters for categories
+                 appState.media.movies.categoryPages = {};
+            } else {
+                 // For search, clear banner and rows for search results
+                 bannerContainer.innerHTML = '';
+                 rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
             }
 
-            // लोडर दिखाएं
-            bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
-            
-            // समानांतर में API कॉल करें
-            const [bannerData, ...categoryData] = await Promise.all([
-                fetchFromTMDbAPI('discover/movie', { sort_by: 'popularity.desc', with_original_language: langCode }),
-                ...MOVIE_CATEGORIES.map(cat => fetchFromTMDbAPI('discover/movie', { with_genres: cat.id, with_original_language: langCode, sort_by: 'popularity.desc' }))
-            ]);
+            try {
+                // Fetch banner data only if not in search mode
+                if (!isSearch) {
+                    const bannerData = await fetchFromTMDbAPI('discover/movie', { with_original_language: 'hi', sort_by: 'popularity.desc' });
+                    renderMediaBanner(bannerData.results || [], 'movie');
+                    
+                    rowsContainer.innerHTML = '';
+                    // Fetch data for all categories in parallel
+                    const categoryPromises = MOVIE_CATEGORIES.map(cat => {
+                        const page = 1;
+                        appState.media.movies.categoryPages[cat.id] = page;
+                        return fetchFromTMDbAPI('discover/movie', { ...cat.params, page });
+                    });
+                    
+                    const categoryResults = await Promise.all(categoryPromises);
+                    
+                    categoryResults.forEach((data, index) => {
+                        if (data.results && data.results.length > 0) {
+                            const category = MOVIE_CATEGORIES[index];
+                            renderMediaCategoryRow(category.title, category.id, data.results, 'movie');
+                        }
+                    });
 
-            renderMovieBanner(bannerData.results || []);
-
-            rowsContainer.innerHTML = '';
-            categoryData.forEach((data, index) => {
-                if (data.results && data.results.length > 0) {
-                     renderMovieCategoryRow(MOVIE_CATEGORIES[index].title, data.results);
+                } else { // Handle search results rendering
+                    const searchData = await fetchFromTMDbAPI('search/movie', { query: state.currentSearchQuery, language: 'en-US', include_adult: false });
+                    if (searchData.results && searchData.results.length > 0) {
+                        renderSearchResults(searchData.results, 'movie');
+                    } else {
+                        rowsContainer.innerHTML = `<p class="static-message">No results found for "${escapeHTML(state.currentSearchQuery)}".</p>`;
+                    }
                 }
-            });
-            
-            if (rowsContainer.innerHTML === '') {
-                rowsContainer.innerHTML = '<p class="static-message">इस भाषा में कोई मूवी नहीं मिली।</p>';
+
+            } catch (error) {
+                console.error("Error loading movie content:", error);
+                rowsContainer.innerHTML = '<p class="static-message">Failed to load content. Please try again later.</p>';
             }
 
-            appState.movies.isLoading = false;
+            state.isLoading = false;
+        }
+        
+        // ------------------ WEBSERIES SCREEN LOGIC ------------------
+
+        function setupWebseriesScreen() {
+            loadWebseriesContent();
+            
+            const searchBtn = document.getElementById('webseries-search-btn');
+            const searchInput = document.getElementById('webseries-search-input');
+            
+            if (!searchBtn.dataset.listenerAttached) {
+                searchBtn.addEventListener('click', () => performMediaSearch('webseries'));
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') performMediaSearch('webseries');
+                });
+                searchBtn.dataset.listenerAttached = 'true';
+            }
         }
 
-        function renderMovieBanner(movies) {
-            const bannerContainer = document.getElementById('movie-banner-carousel');
+        async function loadWebseriesContent(isSearch = false) {
+             const bannerContainer = document.getElementById('webseries-banner-carousel');
+            const rowsContainer = document.getElementById('webseries-category-rows');
+            const state = appState.media.webseries;
+            
+            if (state.isLoading) return;
+            state.isLoading = true;
+
+            if (state.bannerInterval) clearInterval(state.bannerInterval);
+
+            if (!isSearch) {
+                 appState.media.webseries.currentSearchQuery = null;
+                 document.getElementById('webseries-search-input').value = '';
+                 bannerContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+                 rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+                 appState.media.webseries.categoryPages = {};
+            } else {
+                 bannerContainer.innerHTML = '';
+                 rowsContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            }
+
+            try {
+                if (!isSearch) {
+                    const bannerData = await fetchFromTMDbAPI('discover/tv', { with_original_language: 'hi', sort_by: 'popularity.desc' });
+                    renderMediaBanner(bannerData.results || [], 'webseries');
+                    
+                    rowsContainer.innerHTML = '';
+                    const categoryPromises = WEBSERIES_CATEGORIES.map(cat => {
+                        const page = 1;
+                        appState.media.webseries.categoryPages[cat.id] = page;
+                        return fetchFromTMDbAPI('discover/tv', { ...cat.params, page });
+                    });
+                    
+                    const categoryResults = await Promise.all(categoryPromises);
+                    
+                    categoryResults.forEach((data, index) => {
+                        if (data.results && data.results.length > 0) {
+                            const category = WEBSERIES_CATEGORIES[index];
+                            renderMediaCategoryRow(category.title, category.id, data.results, 'webseries');
+                        }
+                    });
+                } else {
+                     const searchData = await fetchFromTMDbAPI('search/tv', { query: state.currentSearchQuery, language: 'en-US', include_adult: false });
+                    if (searchData.results && searchData.results.length > 0) {
+                        renderSearchResults(searchData.results, 'webseries');
+                    } else {
+                        rowsContainer.innerHTML = `<p class="static-message">No results found for "${escapeHTML(state.currentSearchQuery)}".</p>`;
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error loading webseries content:", error);
+                rowsContainer.innerHTML = '<p class="static-message">Failed to load content. Please try again later.</p>';
+            }
+
+            state.isLoading = false;
+        }
+
+        // ------------------ COMMON MEDIA RENDERING LOGIC ------------------
+
+        function renderMediaBanner(mediaItems, type) {
+            const containerId = type === 'movie' ? 'movie-banner-carousel' : 'webseries-banner-carousel';
+            const bannerContainer = document.getElementById(containerId);
             if (!bannerContainer) return;
             
-            if (!movies || movies.length === 0) {
-                bannerContainer.innerHTML = '<p class="static-message">कोई बैनर मूवी नहीं मिली।</p>';
+            if (!mediaItems || mediaItems.length === 0) {
+                bannerContainer.innerHTML = '<p class="static-message">No featured content found.</p>';
                 return;
             }
 
-            // केवल टॉप 10 फिल्में लें
-            const topMovies = movies.slice(0, 10);
-            bannerContainer.innerHTML = topMovies.map(movie => `
-                <div class="movie-banner-card haptic-trigger" 
-                     data-movie-id="${movie.id}" 
-                     data-movie-title="${escapeHTML(movie.title)}"
-                     style="background-image: url('https://image.tmdb.org/t/p/w780${movie.backdrop_path}')">
-                    <div class="movie-banner-title">${escapeHTML(movie.title)}</div>
-                </div>
-            `).join('');
-
-            // नए बैनर के लिए ऑटो-स्क्रॉल शुरू करें
-            setupBannerAutoscroll();
+            const topItems = mediaItems.slice(0, 10);
+            bannerContainer.innerHTML = topItems.map(item => {
+                const title = type === 'movie' ? item.title : item.name;
+                return `
+                    <div class="media-banner-card haptic-trigger" 
+                         data-id="${item.id}"
+                         data-type="${type}"
+                         style="background-image: url('https://image.tmdb.org/t/p/w780${item.backdrop_path}')">
+                        <div class="media-banner-title">${escapeHTML(title)}</div>
+                    </div>
+                `
+            }).join('');
             
-            bannerContainer.querySelectorAll('.movie-banner-card').forEach(card => {
+            bannerContainer.querySelectorAll('.media-banner-card').forEach(card => {
                 card.addEventListener('click', () => {
-                    playMovieFromTMDB(card.dataset.movieId, card.dataset.movieTitle);
+                    if (type === 'movie') {
+                        playMovieFromTMDB(card.dataset.id);
+                    } else {
+                        navigateTo('episode-list-screen', { seriesId: card.dataset.id });
+                    }
                 });
+            });
+
+            setupBannerAutoscroll(type);
+        }
+
+        function renderMediaCategoryRow(title, categoryId, items, type) {
+            const containerId = type === 'movie' ? 'movie-category-rows' : 'webseries-category-rows';
+            const rowsContainer = document.getElementById(containerId);
+            if (!rowsContainer) return;
+
+            const row = document.createElement('div');
+            row.className = 'media-category-row';
+            row.dataset.categoryId = categoryId;
+
+            // ★★★ हर बार लोड होने पर कंटेंट को शफल करें ★★★
+            const shuffledItems = shuffleArray(items);
+
+            const scrollerHTML = shuffledItems.slice(0, 19).map(item => { // Show 19 items to leave space for load more
+                 const itemTitle = type === 'movie' ? item.title : item.name;
+                 return `
+                    <div class="media-vertical-card haptic-trigger" 
+                         data-id="${item.id}"
+                         data-type="${type}"
+                         style="background-image: url('https://image.tmdb.org/t/p/w500${item.poster_path}')">
+                    </div>
+                 `
+            }).join('');
+            
+            // ★★★ Load More बटन जोड़ें ★★★
+            const loadMoreHTML = `
+                <div class="load-more-card haptic-trigger" data-category-id="${categoryId}" data-type="${type}">
+                    <i class="fas fa-plus"></i>
+                    <span>Load More</span>
+                </div>
+            `;
+
+            row.innerHTML = `
+                <h3 class="media-category-title">${title}</h3>
+                <div class="media-row-scroller">
+                    ${scrollerHTML}
+                    ${loadMoreHTML}
+                </div>
+            `;
+            rowsContainer.appendChild(row);
+             
+            row.querySelectorAll('.media-vertical-card').forEach(card => {
+                card.addEventListener('click', () => {
+                   if (type === 'movie') {
+                        playMovieFromTMDB(card.dataset.id);
+                    } else {
+                        navigateTo('episode-list-screen', { seriesId: card.dataset.id });
+                    }
+                });
+            });
+
+            row.querySelector('.load-more-card').addEventListener('click', (e) => {
+                const catId = e.currentTarget.dataset.categoryId;
+                const mediaType = e.currentTarget.dataset.type;
+                loadMoreInCategory(catId, mediaType);
             });
         }
         
-        function setupBannerAutoscroll() {
-             const carousel = document.getElementById('movie-banner-carousel');
+        async function loadMoreInCategory(categoryId, type) {
+            const state = type === 'movie' ? appState.media.movies : appState.media.webseries;
+            if (state.isLoading) return;
+            state.isLoading = true;
+
+            const nextPage = (state.categoryPages[categoryId] || 1) + 1;
+            const row = document.querySelector(`.media-category-row[data-category-id="${categoryId}"]`);
+            const scroller = row.querySelector('.media-row-scroller');
+            const loadMoreCard = row.querySelector('.load-more-card');
+            
+            if (loadMoreCard) loadMoreCard.innerHTML = `<div class="loader"></div>`;
+
+            const categories = type === 'movie' ? MOVIE_CATEGORIES : WEBSERIES_CATEGORIES;
+            const category = categories.find(c => c.id === categoryId);
+            
+            try {
+                const data = await fetchFromTMDbAPI(
+                    type === 'movie' ? 'discover/movie' : 'discover/tv', 
+                    { ...category.params, page: nextPage }
+                );
+
+                if (data.results && data.results.length > 0) {
+                    state.categoryPages[categoryId] = nextPage;
+                    const newItemsHTML = data.results.map(item => {
+                        const itemTitle = type === 'movie' ? item.title : item.name;
+                        return `
+                        <div class="media-vertical-card haptic-trigger" 
+                             data-id="${item.id}"
+                             data-type="${type}"
+                             style="background-image: url('https://image.tmdb.org/t/p/w500${item.poster_path}')">
+                        </div>
+                        `
+                    }).join('');
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = newItemsHTML;
+                    
+                    // Append new items before the load more card
+                    Array.from(tempDiv.children).forEach(child => {
+                        scroller.insertBefore(child, loadMoreCard);
+                        child.addEventListener('click', () => { // Add event listeners to new cards
+                           if (type === 'movie') {
+                                playMovieFromTMDB(child.dataset.id);
+                            } else {
+                                navigateTo('episode-list-screen', { seriesId: child.dataset.id });
+                            }
+                        });
+                    });
+
+                } else {
+                    // No more results
+                    loadMoreCard.innerHTML = `<span>End</span>`;
+                    loadMoreCard.style.pointerEvents = 'none';
+                }
+                
+                if (loadMoreCard && data.results.length > 0) {
+                    loadMoreCard.innerHTML = `<i class="fas fa-plus"></i><span>Load More</span>`;
+                }
+
+            } catch(error) {
+                console.error(`Error loading more for ${categoryId}:`, error);
+                 if (loadMoreCard) loadMoreCard.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span>Error</span>`;
+            }
+
+            state.isLoading = false;
+        }
+
+        function setupBannerAutoscroll(type) {
+             const state = type === 'movie' ? appState.media.movies : appState.media.webseries;
+             const carouselId = type === 'movie' ? 'movie-banner-carousel' : 'webseries-banner-carousel';
+             const carousel = document.getElementById(carouselId);
+             
              if (!carousel || carousel.children.length <= 1) return;
+             if (state.bannerInterval) clearInterval(state.bannerInterval);
 
              let currentIndex = 0;
              const totalItems = carousel.children.length;
 
-             appState.movies.bannerInterval = setInterval(() => {
+             state.bannerInterval = setInterval(() => {
                  currentIndex = (currentIndex + 1) % totalItems;
                  carousel.scrollTo({
-                    left: carousel.children[currentIndex].offsetLeft - (carousel.offsetWidth * 0.05), // 5% मार्जिन के लिए एडजस्ट करें
+                    left: carousel.children[currentIndex].offsetLeft - (carousel.offsetWidth * 0.05),
                     behavior: 'smooth'
                  });
-             }, 3000); // 3 सेकंड
+             }, 3000); // 3 seconds
         }
 
+        // ------------------ SEARCH LOGIC ------------------
 
-        function renderMovieCategoryRow(title, movies) {
-             const rowsContainer = document.getElementById('movie-category-rows');
-             if (!rowsContainer) return;
+        async function performMediaSearch(type) {
+             const inputId = type === 'movie' ? 'movie-search-input' : 'webseries-search-input';
+             const input = document.getElementById(inputId);
+             const query = input.value.trim();
 
-             const row = document.createElement('div');
-             row.className = 'movie-category-row';
-
-             const scrollerHTML = movies.slice(0, 15).map(movie => `
-                <div class="movie-vertical-card haptic-trigger" 
-                     data-movie-id="${movie.id}" 
-                     data-movie-title="${escapeHTML(movie.title)}"
-                     style="background-image: url('https://image.tmdb.org/t/p/w500${movie.poster_path}')">
-                </div>
-             `).join('');
-
-             row.innerHTML = `
-                <h3 class="movie-category-title">${title}</h3>
-                <div class="movie-row-scroller">
-                    ${scrollerHTML}
-                </div>
-             `;
-             rowsContainer.appendChild(row);
+             if (!query) {
+                // If search is cleared, reload original content
+                if (type === 'movie') loadMovieContent(false);
+                else loadWebseriesContent(false);
+                return;
+             }
              
-             row.querySelectorAll('.movie-vertical-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    playMovieFromTMDB(card.dataset.movieId, card.dataset.movieTitle);
+             if (type === 'movie') {
+                appState.media.movies.currentSearchQuery = query;
+                loadMovieContent(true);
+             } else {
+                appState.media.webseries.currentSearchQuery = query;
+                loadWebseriesContent(true);
+             }
+        }
+        
+        function renderSearchResults(results, type) {
+            const containerId = type === 'movie' ? 'movie-category-rows' : 'webseries-category-rows';
+            const rowsContainer = document.getElementById(containerId);
+            
+            rowsContainer.innerHTML = ''; // Clear previous content
+            
+            const grid = document.createElement('div');
+            // Re-use some existing styles for a grid layout
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(120px, 1fr))';
+            grid.style.gap = '15px';
+            grid.style.padding = '15px';
+
+            const shuffledResults = shuffleArray(results);
+            
+            grid.innerHTML = shuffledResults.map(item => {
+                 const itemTitle = type === 'movie' ? item.title : item.name;
+                 return `
+                    <div class="media-vertical-card haptic-trigger" 
+                         data-id="${item.id}"
+                         data-type="${type}"
+                         style="background-image: url('https://image.tmdb.org/t/p/w500${item.poster_path}')">
+                    </div>
+                 `
+            }).join('');
+            
+            rowsContainer.appendChild(grid);
+            
+            grid.querySelectorAll('.media-vertical-card').forEach(card => {
+                 card.addEventListener('click', () => {
+                   if (type === 'movie') {
+                        playMovieFromTMDB(card.dataset.id);
+                    } else {
+                        navigateTo('episode-list-screen', { seriesId: card.dataset.id });
+                    }
                 });
             });
         }
-
-        async function playMovieFromTMDB(movieId, movieTitle) {
-            console.log(`Playing movie: ${movieTitle} (ID: ${movieId})`);
-            
-            // पहले IMDB ID प्राप्त करें
-            const externalIdsData = await fetchFromTMDbAPI(`movie/${movieId}/external_ids`);
-            
-            if (externalIdsData && externalIdsData.imdb_id) {
-                const imdbId = externalIdsData.imdb_id;
-                navigateTo('movie-player-screen');
-                
-                // स्क्रीन लोड होने के बाद Iframe सेट करें
-                setTimeout(() => {
-                    const iframe = document.getElementById('movie-player-iframe-container');
-                    if(iframe) {
-                        iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
-                    }
-                    
-                    // प्लेयर कंट्रोलर को इनिशियलाइज़ करें
-                    setupMoviePlayerControls();
-                }, 100);
-
-            } else {
-                alert('इस मूवी के लिए प्लेयर सोर्स नहीं मिला।');
-                console.error("Could not fetch IMDB ID for movie:", movieId);
+        
+        // ------------------ PLAYER & EPISODE LOGIC ------------------
+        
+        async function playMovieFromTMDB(movieId) {
+            if (!movieId) {
+                alert('Error: Movie ID is missing.');
+                return;
+            }
+            // The logic to get IMDB ID should be on the server for reliability.
+            // For now, we assume the server can handle a TMDB ID directly or we fetch it here.
+            try {
+                const externalIdsData = await fetchFromTMDbAPI(`movie/${movieId}/external_ids`);
+                if (externalIdsData && externalIdsData.imdb_id) {
+                    const imdbId = externalIdsData.imdb_id;
+                    navigateTo('media-player-screen');
+                    setTimeout(() => {
+                        const iframe = document.getElementById('media-player-iframe-container');
+                        if(iframe) iframe.src = `https://vidsrc.xyz/embed/movie?imdb=${imdbId}`;
+                        setupMediaPlayerControls();
+                    }, 100);
+                } else {
+                    alert('Could not find a playable source for this movie.');
+                }
+            } catch (error) {
+                 alert('Failed to fetch movie details. Please try again.');
+                 console.error("Could not fetch IMDB ID for movie:", movieId, error);
             }
         }
         
-        function setupMoviePlayerControls() {
-            document.getElementById('movie-player-rotate-btn').onclick = () => {
+        async function setupEpisodeListScreen(payload) {
+            const { seriesId } = payload;
+            const header = document.getElementById('episode-list-header');
+            const titleEl = document.getElementById('episode-series-title');
+            const seasonDropdown = document.getElementById('season-select-dropdown');
+            const episodeContainer = document.getElementById('episode-list-container');
+            
+            header.style.backgroundImage = '';
+            titleEl.textContent = 'Loading...';
+            seasonDropdown.innerHTML = '';
+            episodeContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            
+            try {
+                const seriesData = await fetchFromTMDbAPI(`tv/${seriesId}`);
+                appState.media.currentSeriesData = seriesData;
+
+                header.style.backgroundImage = `url('https://image.tmdb.org/t/p/w780${seriesData.backdrop_path}')`;
+                titleEl.textContent = seriesData.name;
+                
+                seasonDropdown.innerHTML = seriesData.seasons
+                    .filter(s => s.season_number > 0) // Exclude "Specials" (season 0)
+                    .map(s => `<option value="${s.season_number}">${s.name}</option>`)
+                    .join('');
+
+                seasonDropdown.onchange = () => {
+                    loadEpisodesForSeason(seriesId, seasonDropdown.value);
+                };
+                
+                // Load episodes for the first season by default
+                if (seasonDropdown.options.length > 0) {
+                    loadEpisodesForSeason(seriesId, seasonDropdown.value);
+                } else {
+                     episodeContainer.innerHTML = `<p class="static-message">No seasons found for this series.</p>`;
+                }
+
+            } catch (error) {
+                console.error("Failed to load series details:", error);
+                titleEl.textContent = 'Error';
+                episodeContainer.innerHTML = `<p class="static-message">Could not load series details.</p>`;
+            }
+        }
+        
+        async function loadEpisodesForSeason(seriesId, seasonNumber) {
+            const episodeContainer = document.getElementById('episode-list-container');
+            episodeContainer.innerHTML = '<div class="loader-container"><div class="loader"></div></div>';
+            
+            try {
+                const seasonData = await fetchFromTMDbAPI(`tv/${seriesId}/season/${seasonNumber}`);
+                if (seasonData.episodes && seasonData.episodes.length > 0) {
+                    episodeContainer.innerHTML = seasonData.episodes.map(ep => `
+                        <li class="episode-item haptic-trigger" data-episode-number="${ep.episode_number}" data-season-number="${seasonNumber}">
+                            <div class="episode-thumbnail" style="background-image: url('https://image.tmdb.org/t/p/w500${ep.still_path}')"></div>
+                            <div class="episode-details">
+                                <span class="episode-title">${ep.episode_number}. ${escapeHTML(ep.name)}</span>
+                                <span class="episode-number">Season ${seasonNumber}, Episode ${ep.episode_number}</span>
+                            </div>
+                        </li>
+                    `).join('');
+                    
+                    episodeContainer.querySelectorAll('.episode-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            playEpisode(
+                                seriesId, 
+                                item.dataset.seasonNumber,
+                                item.dataset.episodeNumber
+                            );
+                        });
+                    });
+
+                } else {
+                    episodeContainer.innerHTML = `<p class="static-message">No episodes found for this season.</p>`;
+                }
+            } catch (error) {
+                console.error("Failed to load episodes:", error);
+                episodeContainer.innerHTML = `<p class="static-message">Could not load episodes for this season.</p>`;
+            }
+        }
+
+        function playEpisode(seriesId, seasonNumber, episodeNumber) {
+            navigateTo('media-player-screen');
+            setTimeout(() => {
+                const iframe = document.getElementById('media-player-iframe-container');
+                // VidSrc uses TMDB ID for TV shows
+                if(iframe) iframe.src = `https://vidsrc.xyz/embed/tv?tmdb=${seriesId}&s=${seasonNumber}&e=${episodeNumber}`;
+                setupMediaPlayerControls();
+            }, 100);
+        }
+        
+        function setupMediaPlayerControls() {
+            document.getElementById('media-player-rotate-btn').onclick = () => {
                 document.getElementById('app-container').classList.toggle('fullscreen-active');
             };
 
             let currentZoom = 1.0;
-            const playerWrapper = document.querySelector('#movie-player-container .player-wrapper');
-            const zoomInBtn = document.getElementById('movie-player-zoom-in-btn');
-            const zoomOutBtn = document.getElementById('movie-player-zoom-out-btn');
+            const playerWrapper = document.querySelector('#media-player-container .player-wrapper');
+            const zoomInBtn = document.getElementById('media-player-zoom-in-btn');
+            const zoomOutBtn = document.getElementById('media-player-zoom-out-btn');
 
             zoomInBtn.onclick = () => {
                 currentZoom = Math.min(2.5, currentZoom + 0.1);
@@ -3505,13 +4122,13 @@
             };
         }
 
-        // मूवी प्लेयर से वापस जाने के लिए विशेष फंक्शन
-        function navigateBackFromMoviePlayer() {
-            navigateBack(); // मौजूदा navigateBack फंक्शन का उपयोग करें
+        function navigateBackFromMediaPlayer() {
+            navigateBack();
         }
 
-        // ★★★ NEW MOVIE EXPERIENCE LOGIC - END ★★★
-
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★ NEW REWORKED MOVIE & WEBSERIES LOGIC - END ★★★
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
         async function addChannelToList(event, channelId) { /* Unchanged */ }
         function renderMyChannelsList() { /* Unchanged */ }
@@ -3574,8 +4191,9 @@
             };
             document.getElementById('shorts-menu-icon')?.addEventListener('click', openSidebar);
             document.getElementById('long-video-menu-icon')?.addEventListener('click', openSidebar);
-            // ★★★ मूवी स्क्रीन के मेनू आइकन को भी साइडबार खोलने के लिए जोड़ें ★★★
+            // ★★★ मूवी और वेब सीरीज स्क्रीन के मेनू आइकन को भी साइडबार खोलने के लिए जोड़ें ★★★
             document.getElementById('movies-menu-icon')?.addEventListener('click', openSidebar);
+            document.getElementById('webseries-menu-icon')?.addEventListener('click', openSidebar);
             
             document.getElementById('close-sidebar-btn')?.addEventListener('click', () => {
                 document.getElementById('main-sidebar').classList.remove('open');
