@@ -1,150 +1,144 @@
 // ====================================================================
-// === Shubhzone - API Server (Node.js) - ★★★ FINAL SECURE VERSION ★★★ ===
-// === ★★★ TMDb API को सुरक्षित करने के लिए इसमें ज़रूरी बदलाव किए गए हैं ★★★ ===
+// === Shubhzone - मुख्य सर्वर (The Manager) v2.0 ===
+// === काम: यूजर को ऐप दिखाना, डेटाबेस और API से बात करना ===
 // ====================================================================
 
-// 1. ज़रूरी पैकेज इम्पोर्ट करें
+// 1. ज़रूरी टूल्स को इम्पोर्ट करें
 const express = require('express');
-const fetch = require('node-fetch');
 const cors = require('cors');
-const admin = require('firebase-admin');
-const path = require('path');
+const admin = 'firebase-admin';
+const fetch = 'node-fetch';
+const path = 'path';
 
-// 2. Firebase एडमिन को शुरू करें
-let db;
+// 2. Express ऐप को शुरू करें
+const app = express();
+const PORT = process.env.PORT || 3000;
+app.use(cors());
+app.use(express.static(path.join(__dirname, ''))); // index.html जैसी फाइलों के लिए
+
+// 3. Firebase से कनेक्ट करें
+// यह Render के Environment Variable से आपकी Firebase Credentials उठाएगा
 try {
-    const serviceAccount = require('/etc/secrets/firebase-credentials.json');
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-    db = admin.firestore();
-    console.log("Firebase Admin SDK सफलतापूर्वक शुरू हो गया है।");
+  if (!process.env.FIREBASE_CREDENTIALS) {
+    throw new Error('FIREBASE_CREDENTIALS एनवायरनमेंट वेरिएबल सेट नहीं है!');
+  }
+  const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+  const db = admin.firestore();
+  console.log('Firebase डेटाबेस से सफलतापूर्वक कनेक्ट हो गया है।');
 } catch (error) {
-    console.error("Firebase Admin SDK शुरू करने में विफल:", error.message);
-    console.log("चेतावनी: सर्वर बिना Firebase कैशिंग के चलेगा।");
+  console.error('Firebase Admin SDK को शुरू करने में गंभीर त्रुटि:', error.message);
 }
 
-// 3. सर्वर सेटअप करें
-const app = express();
-const port = process.env.PORT || 3000;
-app.use(cors());
-
-// 4. Render के Environment Variable से दोनों API कुंजियाँ पढ़ें
-const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
-const TMDB_API_KEY = process.env.TMDB_API_KEY; // ★★★ नया बदलाव: TMDb की कुंजी यहाँ सुरक्षित रूप से पढ़ी गई
-
 // ====================================================================
-// === YouTube API रूट (इसमें कोई बदलाव नहीं किया गया है) ===
+// === API Endpoints (यहीं से ऐप को सारा डेटा मिलता है) ===
 // ====================================================================
-app.get('/api/youtube', async (req, res) => {
-    if (!YOUTUBE_API_KEY) {
-        console.error("त्रुटि: YOUTUBE_API_KEY एनवायरनमेंट वेरिएबल सेट नहीं है।");
-        return res.status(500).json({ error: "सर्वर ठीक से कॉन्फ़िगर नहीं है। YouTube API कुंजी गायब है।" });
+
+// ★★★ नया और ज़रूरी API: वर्किंग लिंक वाली फिल्में डेटाबेस से लाएगा ★★★
+app.get('/api/get-available-movies', async (req, res) => {
+  try {
+    const moviesRef = db.collection('available_movies');
+    // हाल ही में चेक की गई फिल्मों को सबसे ऊपर दिखाएगा
+    const snapshot = await moviesRef.orderBy('lastChecked', 'desc').get();
+
+    if (snapshot.empty) {
+      return res.status(200).json([]);
     }
-    const { type, ...queryParams } = req.query;
-    const safeParams = Object.keys(queryParams).sort().map(key =>
-        `${key}=${queryParams[key]}`).join('&');
-    const cacheKey = Buffer.from(`youtube_${type}_${safeParams}`).toString('base64');
-    let cacheRef;
-    if (db) {
-        cacheRef = db.collection('api_cache').doc(cacheKey);
-    }
-    let youtubeApiUrl;
-    const baseUrl = 'https://www.googleapis.com/youtube/v3/';
-    switch (type) {
-        case 'search':
-            youtubeApiUrl = `${baseUrl}search?part=snippet&key=${YOUTUBE_API_KEY}&${safeParams}`;
-            break;
-        case 'playlists':
-            youtubeApiUrl = `${baseUrl}playlists?part=snippet&key=${YOUTUBE_API_KEY}&${safeParams}`;
-            break;
-        default:
-            youtubeApiUrl = `${baseUrl}videos?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}&${safeParams}`;
-    }
-    try {
-        console.log(`YouTube API को कॉल किया जा रहा है (Type: ${type})।`);
-        const youtubeResponse = await fetch(youtubeApiUrl, { timeout: 8000 });
-        if (!youtubeResponse.ok) { const errorBody = await youtubeResponse.text(); throw new Error(`YouTube API ने एरर दिया: ${youtubeResponse.statusText}`); }
-        const data = await youtubeResponse.json();
-        if (data.error) { throw new Error(`YouTube API से त्रुटि: ${data.error.message}`); }
-        if (db && cacheRef) { await cacheRef.set({ data: data, timestamp: Date.now() }); console.log("YouTube API कॉल सफल! डेटा कैश किया गया।"); }
-        return res.status(200).json(data);
-    } catch (error) {
-        console.warn(`YouTube API कॉल विफल हुई: ${error.message}। कैश से प्रयास किया जा रहा है।`);
-        if (db && cacheRef) {
-            try {
-                const cachedDoc = await cacheRef.get();
-                if (cachedDoc.exists) { console.log("बैकअप कैश का उपयोग किया गया।"); return res.status(200).json(cachedDoc.data().data); }
-                else { return res.status(503).json({ error: "Service unavailable and no cache found." }); }
-            } catch (cacheError) { return res.status(500).json({ error: "API and cache both failed." }); }
-        } else { return res.status(503).json({ error: "Service unavailable and caching is not configured." }); }
-    }
+
+    const movies = [];
+    snapshot.forEach(doc => {
+      movies.push(doc.data());
+    });
+
+    res.status(200).json(movies);
+  } catch (error) {
+    console.error('Firebase से फिल्में लाने में त्रुटि:', error);
+    res.status(500).json({ error: 'सर्वर से फिल्में लाने में विफल।' });
+  }
 });
 
-// ====================================================================
-// ★★★ नया ज़रूरी बदलाव: TMDb API के लिए सुरक्षित रूट ★★★
-// ====================================================================
-app.get('/api/tmdb', async (req, res) => {
-    // जांचें कि TMDb API कुंजी मौजूद है या नहीं
-    if (!TMDB_API_KEY) {
-        console.error("त्रुटि: TMDB_API_KEY एनवायरनमेंट वेरिएबल सेट नहीं है।");
-        return res.status(500).json({ error: "सर्वर ठीक से कॉन्फ़िगर नहीं है। TMDb API कुंजी गायब है।" });
+// ★★★ नया API: लोकप्रिय वेब-सीरीज़ TMDb से लाएगा ★★★
+app.get('/api/get-web-series', async (req, res) => {
+  try {
+    if (!process.env.TMDB_API_KEY) {
+      return res.status(500).json({ error: 'TMDB API कुंजी सर्वर पर सेट नहीं है।' });
     }
-
-    // index.html से आने वाले अनुरोध से endpoint और बाकी पैरामीटर निकालें
-    const { endpoint, ...queryParams } = req.query;
-
-    // अगर endpoint नहीं भेजा गया है, तो एरर दें
-    if (!endpoint) {
-        return res.status(400).json({ error: "TMDb endpoint is required." });
-    }
-
-    // TMDb API को भेजने के लिए URL तैयार करें
-    const paramsString = new URLSearchParams(queryParams).toString();
+    const TMDB_API_KEY = process.env.TMDB_API_KEY;
+    // 2021 के बाद की, भारत में लोकप्रिय वेब-सीरीज़
+    const seriesApiUrl = `https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=hi-IN&region=IN&sort_by=popularity.desc&primary_release_date.gte=2021-01-01&page=1`;
     
-    // ★★★★★★★★★★ यही एकमात्र जरूरी बदलाव है ★★★★★★★★★★
-    // यहाँ &language=hi-IN&region=IN जोड़ा गया है। 
-    // यह सुनिश्चित करेगा कि API हमेशा भारत के लिए हिंदी में रिजल्ट्स दे।
-    const tmdbApiUrl = `https://api.themoviedb.org/3/${endpoint}?api_key=${TMDB_API_KEY}&language=hi-IN&region=IN&${paramsString}`;
-    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    const response = await fetch(seriesApiUrl);
+    if (!response.ok) {
+      throw new Error(`TMDb API से त्रुटि: ${response.statusText}`);
+    }
+    const data = await response.json();
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('TMDb से वेब-सीरीज़ लाने में त्रुटि:', error);
+    res.status(500).json({ error: 'सर्वर से वेब-सीरीज़ लाने में विफल।' });
+  }
+});
 
-    try {
-        console.log(`TMDb API को कॉल किया जा रहा है (Endpoint: ${endpoint})।`);
-        const tmdbResponse = await fetch(tmdbApiUrl);
 
-        if (!tmdbResponse.ok) {
-            const errorData = await tmdbResponse.json();
-            console.error("TMDb API से त्रुटि:", errorData);
-            return res.status(tmdbResponse.status).json(errorData);
-        }
+// ★★★ फिक्स किया हुआ YouTube API: अब यह सही से काम करेगा ★★★
+app.get('/api/youtube', async (req, res) => {
+  if (!process.env.YOUTUBE_API_KEY) {
+    return res.status(500).json({ error: 'YouTube API कुंजी सर्वर पर सेट नहीं है।' });
+  }
+  const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+  
+  const { type, ...queryParams } = req.query;
+  const baseUrl = 'https://www.googleapis.com/youtube/v3/';
+  let apiUrl = '';
 
-        const data = await tmdbResponse.json();
+  // URLSearchParams का इस्तेमाल करना ज़्यादा सुरक्षित और भरोसेमंद है
+  const params = new URLSearchParams(queryParams);
 
-        // TMDb से मिले डेटा को सीधे index.html पर वापस भेज दें
-        return res.status(200).json(data);
+  switch (type) {
+    case 'search':
+      apiUrl = `${baseUrl}search?part=snippet&key=${YOUTUBE_API_KEY}&${params.toString()}`;
+      break;
+    case 'playlists':
+      apiUrl = `${baseUrl}playlists?part=snippet&key=${YOUTUBE_API_KEY}&${params.toString()}`;
+      break;
+    case 'videoDetails':
+      apiUrl = `${baseUrl}videos?part=snippet,contentDetails&key=${YOUTUBE_API_KEY}&${params.toString()}`;
+      break;
+    default:
+      return res.status(400).json({ error: 'अमान्य YouTube API प्रकार।' });
+  }
 
-    } catch (error) {
-        console.error("TMDb API को कॉल करने में सर्वर पर त्रुटि:", error);
-        return res.status(500).json({ error: "Failed to fetch data from TMDb." });
+  try {
+    const youtubeResponse = await fetch(apiUrl);
+    const data = await youtubeResponse.json();
+
+    if (!youtubeResponse.ok || data.error) {
+      console.error('YouTube API से त्रुटि:', data.error);
+      return res.status(youtubeResponse.status).json({ error: data.error.message || 'YouTube API से डेटा लाने में विफल।' });
     }
 
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('YouTube API को कॉल करने में त्रुटि:', error);
+    res.status(500).json({ error: 'YouTube API से कनेक्ट करने में सर्वर पर त्रुटि।' });
+  }
 });
-// ★★★ नया बदलाव यहाँ समाप्त होता है ★★★
+
+// ====================================================================
+// === फाइनल सेटअप: ऐप को चलाना ===
 // ====================================================================
 
-// 6. स्टैटिक फाइलें (जैसे index.html) सर्व करें
-const publicPath = path.join(__dirname, '');
-app.use(express.static(publicPath));
-
-// 7. किसी भी अन्य रिक्वेस्ट के लिए index.html भेजें
+// किसी भी और रिक्वेस्ट के लिए index.html भेजें ताकि ऐप सही से लोड हो
 app.get('*', (req, res) => {
-    res.sendFile(path.join(publicPath, 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// 8. सर्वर शुरू करें
-app.listen(port, () => {
-    console.log("/////////////////////////////////////////////////////");
-    console.log("===> 🚀 Shubhzone सर्वर सफलतापूर्वक चल रहा है! 🚀");
-    console.log(`===> पोर्ट ${port} पर सुना जा रहा है।`);
-    console.log("/////////////////////////////////////////////////////");
+// सर्वर को सुनना शुरू करें
+app.listen(PORT, () => {
+  console.log('/////////////////////////////////////////////////////');
+  console.log(`===> 🚀 Shubhzone सर्वर v2.0 सफलतापूर्वक चल रहा है! 🚀`);
+  console.log(`===> पोर्ट ${PORT} पर सुना जा रहा है।`);
+  console.log('/////////////////////////////////////////////////////');
 });
