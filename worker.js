@@ -1,14 +1,16 @@
 // ====================================================================
-// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v2.0 (GitHub Actions Final) ===
+// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v2.1 (Final Scope Fix) ===
 // === काम: इंटरनेट से वर्किंग मूवी लिंक ढूंढना और डेटाबेस में सेव करना ===
 // ====================================================================
 
-// ★★★ बदलाव: अब हम सीधे और शक्तिशाली puppeteer का इस्तेमाल करेंगे ★★★
 const puppeteer = require('puppeteer');
 const cron = require('node-cron');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 require('dotenv').config();
+
+// ★★★ बदलाव 1: db को बाहर निकालें ताकि वह हर जगह उपलब्ध हो ★★★
+let db;
 
 // Firebase से कनेक्ट करें
 try {
@@ -16,7 +18,8 @@ try {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
-    const db = admin.firestore();
+    // ★★★ बदलाव 2: अब हम सिर्फ चाबी को सेट कर रहे हैं, नया नहीं बना रहे ★★★
+    db = admin.firestore();
     console.log('Firebase डेटाबेस से सफलतापूर्वक कनेक्ट हो गया है।');
 } catch (error)
 {
@@ -39,7 +42,6 @@ async function findAndSaveMovies() {
     let browser = null;
     try {
         console.log('Puppeteer ब्राउज़र लॉन्च किया जा रहा है...');
-        // ★★★ यही है वह फाइनल बदलाव जो GitHub Actions पर 100% काम करता है ★★★
         browser = await puppeteer.launch({
             headless: "new",
             args: [
@@ -70,7 +72,7 @@ async function findAndSaveMovies() {
 
                 await page.goto(searchUrl, {
                     waitUntil: 'networkidle2',
-                    timeout: 45000 // थोड़ा और समय दिया गया है
+                    timeout: 45000
                 });
 
                 const content = await page.content();
@@ -89,6 +91,7 @@ async function findAndSaveMovies() {
                     lastChecked: new Date()
                 };
 
+                // अब मैनेजर के पास चाबी है और वह गोदाम का इस्तेमाल कर सकता है
                 await db.collection('available_movies').doc(String(movie.id)).set(movieRecord);
                 console.log(`✅ [सफलता]: "${movieTitle}" का वर्किंग लिंक मिला और डेटाबेस में सेव कर दिया गया!`);
 
