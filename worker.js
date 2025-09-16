@@ -1,6 +1,6 @@
 // ====================================================================
-// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v6.0 (Guaranteed Final) ===
-// === काम: मूवी/वेब-सीरीज़ को कैटेगरी के अनुसार ढूंढना (बिना किसी एरर के) ===
+// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v7.0 (Multi-Server) ===
+// === काम: कई सर्वरों पर वर्किंग लिंक खोजना जो भारत में चलते हों     ===
 // ====================================================================
 
 const puppeteer = require('puppeteer');
@@ -28,6 +28,13 @@ try {
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
+// ★★★ मुख्य बदलाव: जांच करने के लिए सर्वरों की लिस्ट ★★★
+const SERVERS_TO_CHECK = [
+    { name: 'Vidsrc.me', urlFormat: 'https://vidsrc.me/embed/{type}/{id}' },
+    { name: 'Multiembed.mov', urlFormat: 'https://multiembed.mov/directstream.php?video_id={id}&tmdb=1' }, // इसका URL फॉर्मेट अलग है
+    { name: '2embed.to', urlFormat: 'https://www.2embed.to/embed/tmdb/{type}?id={id}' }
+];
+
 const GENRES_TO_FETCH = [
     { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 35, name: 'Comedy' },
     { id: 27, name: 'Horror' }, { id: 10749, name: 'Romance' }, { id: 53, name: 'Thriller' },
@@ -49,7 +56,7 @@ async function fetchExistingIds(collectionName) {
 // ====================================================================
 async function findAndSaveContent() {
     console.log('----------------------------------------------------');
-    console.log('वर्कर (फाइनल वर्जन) शुरू हो रहा है... नया कंटेंट ढूंढ रहा है...');
+    console.log('सुपर-स्मार्ट वर्कर (Multi-Server) शुरू हो रहा है...');
     console.log('----------------------------------------------------');
 
     let browser = null;
@@ -83,35 +90,60 @@ async function findAndSaveContent() {
                 if (itemsToCheck.length === 0) continue;
 
                 for (const item of itemsToCheck) {
-                    try {
-                        const isMovie = !!item.title;
-                        const collectionName = isMovie ? 'Available_Movies' : 'Available_WebSeries';
-                        const existingIds = isMovie ? existingMovieIds : existingSeriesIds;
-                        const itemName = isMovie ? item.title : item.name;
-                        const itemYear = isMovie ? (item.release_date || 'N/A').substring(0, 4) : (item.first_air_date || 'N/A').substring(0, 4);
+                    const isMovie = !!item.title;
+                    const collectionName = isMovie ? 'Available_Movies' : 'Available_WebSeries';
+                    const existingIds = isMovie ? existingMovieIds : existingSeriesIds;
+                    const itemName = isMovie ? item.title : item.name;
 
-                        if (existingIds.has(item.id)) {
-                            console.log(`[छोड़ा गया]: "${itemName}" पहले से डेटाबेस में है।`);
-                            continue;
-                        }
-                        
-                        console.log(`\n[जांच जारी है]: "${itemName} (${itemYear})"`);
-                        const searchUrl = `https://vidsrc.to/embed/${isMovie ? 'movie' : 'tv'}/${item.id}`;
-                        await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
-                        
-                        const content = await page.content();
-                        if (content.includes('404 Not Found') || content.includes('movie not found')) {
-                            console.log(`[परिणाम]: "${itemName}" इस सर्वर पर नहीं मिली।`);
-                            continue;
-                        }
+                    if (existingIds.has(item.id)) {
+                        console.log(`[छोड़ा गया]: "${itemName}" पहले से डेटाबेस में है।`);
+                        continue;
+                    }
+                    
+                    console.log(`\n[खोज जारी है]: "${itemName}" के लिए वर्किंग लिंक ढूंढा जा रहा है...`);
+                    
+                    // ★★★ बदला हुआ लॉजिक: एक-एक करके हर सर्वर पर जांचें ★★★
+                    let workingLinkFound = null;
 
-                        const record = { tmdbId: item.id, title: itemName, overview: item.overview, posterPath: item.poster_path, releaseDate: isMovie ? item.release_date : item.first_air_date, genres: item.genre_ids, workingLink: searchUrl, lastChecked: new Date() };
+                    for (const server of SERVERS_TO_CHECK) {
+                        try {
+                            const mediaTypeString = isMovie ? 'movie' : 'tv';
+                            let searchUrl = server.urlFormat.replace('{type}', mediaTypeString).replace('{id}', item.id);
+                            
+                            // Multiembed के लिए URL फॉर्मेट अलग है, उसे ठीक करें
+                            if (server.name === 'Multiembed.mov' && !isMovie) {
+                                // Multiembed सिर्फ TMDB ID लेता है, movie/tv नहीं
+                                searchUrl = `https://multiembed.mov/directstream.php?video_id=${item.id}&tmdb=1&s=1&e=1`; // Season 1, Ep 1 का लिंक
+                            } else if (server.name === 'Multiembed.mov' && isMovie) {
+                                searchUrl = `https://multiembed.mov/directstream.php?video_id=${item.id}&tmdb=1`;
+                            }
+
+
+                            console.log(`  -> सर्वर "${server.name}" पर जांचा जा रहा है...`);
+                            await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 45000 });
+                            
+                            const content = await page.content();
+                            if (content.includes('404 Not Found') || content.includes('movie not found') || content.includes('Page not found')) {
+                                throw new Error('Content not available on this server.');
+                            }
+
+                            workingLinkFound = searchUrl; // लिंक काम कर रहा है!
+                            console.log(`  ✅ [सफलता]: "${server.name}" पर "${itemName}" का वर्किंग लिंक मिला!`);
+                            break; // लिंक मिल गया, तो बाकी सर्वर जांचने की ज़रूरत नहीं
+
+                        } catch (error) {
+                            console.log(`  ❌ [विफल]: "${server.name}" पर लिंक नहीं मिला या एरर आया। अगले सर्वर पर जांचा जा रहा है...`);
+                        }
+                    }
+
+                    // अगर किसी भी सर्वर पर लिंक मिला, तो उसे Firebase में सेव करें
+                    if (workingLinkFound) {
+                        const record = { tmdbId: item.id, title: itemName, overview: item.overview, posterPath: item.poster_path, releaseDate: isMovie ? item.release_date : item.first_air_date, genres: item.genre_ids, workingLink: workingLinkFound, lastChecked: new Date() };
                         await db.collection(collectionName).doc(String(item.id)).set(record);
-                        console.log(`✅ [सफलता]: "${itemName}" का वर्किंग लिंक मिला और '${collectionName}' में सेव कर दिया गया!`);
+                        console.log(`[सेव किया गया]: "${itemName}" को '${collectionName}' में सफलतापूर्वक सेव कर दिया गया!`);
                         existingIds.add(item.id);
-
-                    } catch (error) {
-                        console.error(`त्रुटि: "${itemName}" की जांच के दौरान समस्या हुई, अगली आइटम पर जा रहे हैं...`, error.message);
+                    } else {
+                        console.log(`[परिणाम]: "${itemName}" किसी भी सर्वर पर नहीं मिली।`);
                     }
                 }
             }
