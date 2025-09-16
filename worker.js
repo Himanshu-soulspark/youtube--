@@ -1,6 +1,6 @@
 // ====================================================================
-// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v5.0 (Invincible) ===
-// === काम: मूवी/वेब-सीरीज़ को कैटेगरी के अनुसार ढूंढना (बिना क्रैश हुए) ===
+// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v6.0 (Guaranteed Final) ===
+// === काम: मूवी/वेब-सीरीज़ को कैटेगरी के अनुसार ढूंढना (बिना किसी एरर के) ===
 // ====================================================================
 
 const puppeteer = require('puppeteer');
@@ -44,40 +44,37 @@ async function fetchExistingIds(collectionName) {
     return ids;
 }
 
-// ब्राउज़र बनाने और बंद करने के लिए हेल्पर फंक्शन
-async function createBrowser() {
-    console.log('एक नया, ताज़ा Puppeteer ब्राउज़र लॉन्च किया जा रहा है...');
-    const browser = await puppeteer.launch({
-        headless: "new",
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
-    });
-    console.log('ब्राउज़र सफलतापूर्वक लॉन्च हो गया।');
-    return browser;
-}
-
 // ====================================================================
 // === मुख्य फंक्शन: फिल्में और सीरीज़ ढूंढने का काम यहीं होता है ===
 // ====================================================================
 async function findAndSaveContent() {
     console.log('----------------------------------------------------');
-    console.log('वर्कर (अजेय वर्जन) शुरू हो रहा है... नया कंटेंट ढूंढ रहा है...');
+    console.log('वर्कर (फाइनल वर्जन) शुरू हो रहा है... नया कंटेंट ढूंढ रहा है...');
     console.log('----------------------------------------------------');
 
-    const existingMovieIds = await fetchExistingIds('Available_Movies');
-    const existingSeriesIds = await fetchExistingIds('Available_WebSeries');
+    let browser = null;
+    try {
+        const existingMovieIds = await fetchExistingIds('Available_Movies');
+        const existingSeriesIds = await fetchExistingIds('Available_WebSeries');
 
-    let browser = await createBrowser();
-    let itemsCheckedSinceRestart = 0;
+        console.log('Puppeteer ब्राउज़र लॉन्च किया जा रहा है...');
+        browser = await puppeteer.launch({
+            headless: "new",
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu']
+        });
+        console.log('ब्राउज़र सफलतापूर्वक लॉन्च हो गया।');
+        
+        const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36');
 
-    for (const genre of GENRES_TO_FETCH) {
-        console.log(`\n\n★★★ कैटेगरी "${genre.name}" की जांच शुरू... ★★★`);
-        for (let i = 1; i <= TOTAL_PAGES_PER_GENRE; i++) {
-            console.log(`\n--- "${genre.name}" कैटेगरी का पन्ना ${i}/${TOTAL_PAGES_PER_GENRE} जांचा जा रहा है ---`);
+        for (const genre of GENRES_TO_FETCH) {
+            console.log(`\n\n★★★ कैटेगरी "${genre.name}" की जांच शुरू... ★★★`);
+            for (let i = 1; i <= TOTAL_PAGES_PER_GENRE; i++) {
+                console.log(`\n--- "${genre.name}" कैटेगरी का पन्ना ${i}/${TOTAL_PAGES_PER_GENRE} जांचा जा रहा है ---`);
 
-            const movieApiUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&primary_release_date.gte=2021-01-01&page=${i}&with_genres=${genre.id}&with_original_language=hi|kn|ml|ta|te&watch_region=IN`;
-            const seriesApiUrl = `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&first_air_date.gte=2021-01-01&page=${i}&with_genres=${genre.id}&with_original_language=hi|kn|ml|ta|te&watch_region=IN`;
-            
-            try {
+                const movieApiUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&primary_release_date.gte=2021-01-01&page=${i}&with_genres=${genre.id}&with_original_language=hi|kn|ml|ta|te&watch_region=IN`;
+                const seriesApiUrl = `${TMDB_BASE_URL}/discover/tv?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&first_air_date.gte=2021-01-01&page=${i}&with_genres=${genre.id}&with_original_language=hi|kn|ml|ta|te&watch_region=IN`;
+                
                 const [movieResponse, seriesResponse] = await Promise.all([fetch(movieApiUrl), fetch(seriesApiUrl)]);
                 const movieData = await movieResponse.json();
                 const seriesData = await seriesResponse.json();
@@ -85,22 +82,19 @@ async function findAndSaveContent() {
                 
                 if (itemsToCheck.length === 0) continue;
 
-                const page = await browser.newPage();
-                await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36');
-
                 for (const item of itemsToCheck) {
-                    const isMovie = !!item.title;
-                    const collectionName = isMovie ? 'Available_Movies' : 'Available_WebSeries';
-                    const existingIds = isMovie ? existingMovieIds : existingSeriesIds;
-                    const itemName = isMovie ? item.title : item.name;
-                    const itemYear = isMovie ? (item.release_date || 'N/A').substring(0, 4) : (item.first_air_date || 'N/A').substring(0, 4);
-
-                    if (existingIds.has(item.id)) {
-                        console.log(`[छोड़ा गया]: "${itemName}" पहले से डेटाबेस में है।`);
-                        continue;
-                    }
-                    
                     try {
+                        const isMovie = !!item.title;
+                        const collectionName = isMovie ? 'Available_Movies' : 'Available_WebSeries';
+                        const existingIds = isMovie ? existingMovieIds : existingSeriesIds;
+                        const itemName = isMovie ? item.title : item.name;
+                        const itemYear = isMovie ? (item.release_date || 'N/A').substring(0, 4) : (item.first_air_date || 'N/A').substring(0, 4);
+
+                        if (existingIds.has(item.id)) {
+                            console.log(`[छोड़ा गया]: "${itemName}" पहले से डेटाबेस में है।`);
+                            continue;
+                        }
+                        
                         console.log(`\n[जांच जारी है]: "${itemName} (${itemYear})"`);
                         const searchUrl = `https://vidsrc.to/embed/${isMovie ? 'movie' : 'tv'}/${item.id}`;
                         await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -115,24 +109,11 @@ async function findAndSaveContent() {
                         await db.collection(collectionName).doc(String(item.id)).set(record);
                         console.log(`✅ [सफलता]: "${itemName}" का वर्किंग लिंक मिला और '${collectionName}' में सेव कर दिया गया!`);
                         existingIds.add(item.id);
-                        
-                        itemsCheckedSinceRestart++;
-                        
-                        // ★★★ ब्राउज़र को ताज़ा रखने के लिए ब्रेक ★★★
-                        if (itemsCheckedSinceRestart >= 50) {
-                            console.log('\n--- 50 आइटम चेक हो गए, मेमोरी को ताज़ा करने के लिए ब्राउज़र को रीस्टार्ट किया जा रहा है... ---\n');
-                            await browser.close();
-                            browser = await createBrowser();
-                            itemsCheckedSinceRestart = 0;
-                        }
 
                     } catch (error) {
                         console.error(`त्रुटि: "${itemName}" की जांच के दौरान समस्या हुई, अगली आइटम पर जा रहे हैं...`, error.message);
                     }
                 }
-                await page.close(); // हर पन्ने के बाद टैब को बंद करें
-            } catch(e){
-                console.error("API या पेज लूप में बड़ी त्रुटि:", e.message)
             }
         }
     } catch (error) {
@@ -151,7 +132,7 @@ async function findAndSaveContent() {
 // ====================================================================
 // === शेड्यूलर और पहला रन ===
 // ====================================================================
-cron.schedule('0 */1 * * *', () => { // हर घंटे चलेगा
+cron.schedule('0 */1 * * *', () => {
     console.log('शेड्यूल के अनुसार, वर्कर को चलाने का समय हो गया है!');
     findAndSaveContent();
 });
