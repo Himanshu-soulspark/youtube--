@@ -1,14 +1,17 @@
 // ====================================================================
-// === Shubhzone - मुख्य सर्वर (The Manager) v2.0 ===
+// === Shubhzone - मुख्य सर्वर (The Manager) v2.1 (Final Fix) ===
 // === काम: यूजर को ऐप दिखाना, डेटाबेस और API से बात करना ===
 // ====================================================================
 
 // 1. ज़रूरी टूल्स को इम्पोर्ट करें
 const express = require('express');
 const cors = require('cors');
-const admin = 'firebase-admin';
-const fetch = 'node-fetch';
-const path = 'path';
+
+// ★★★ ज़रूरी बदलाव: 'require' का इस्तेमाल करें ताकि टूल सही से लोड हों ★★★
+const admin = require('firebase-admin');
+const fetch = require('node-fetch');
+const path = require('path');
+// ★★★ बदलाव खत्म ★★★
 
 // 2. Express ऐप को शुरू करें
 const app = express();
@@ -17,7 +20,6 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, ''))); // index.html जैसी फाइलों के लिए
 
 // 3. Firebase से कनेक्ट करें
-// यह Render के Environment Variable से आपकी Firebase Credentials उठाएगा
 try {
   if (!process.env.FIREBASE_CREDENTIALS) {
     throw new Error('FIREBASE_CREDENTIALS एनवायरनमेंट वेरिएबल सेट नहीं है!');
@@ -39,8 +41,8 @@ try {
 // ★★★ नया और ज़रूरी API: वर्किंग लिंक वाली फिल्में डेटाबेस से लाएगा ★★★
 app.get('/api/get-available-movies', async (req, res) => {
   try {
+    const db = admin.firestore(); // db को दोबारा एक्सेस करें
     const moviesRef = db.collection('available_movies');
-    // हाल ही में चेक की गई फिल्मों को सबसे ऊपर दिखाएगा
     const snapshot = await moviesRef.orderBy('lastChecked', 'desc').get();
 
     if (snapshot.empty) {
@@ -66,7 +68,6 @@ app.get('/api/get-web-series', async (req, res) => {
       return res.status(500).json({ error: 'TMDB API कुंजी सर्वर पर सेट नहीं है।' });
     }
     const TMDB_API_KEY = process.env.TMDB_API_KEY;
-    // 2021 के बाद की, भारत में लोकप्रिय वेब-सीरीज़
     const seriesApiUrl = `https://api.themoviedb.org/3/discover/tv?api_key=${TMDB_API_KEY}&language=hi-IN&region=IN&sort_by=popularity.desc&primary_release_date.gte=2021-01-01&page=1`;
     
     const response = await fetch(seriesApiUrl);
@@ -93,7 +94,6 @@ app.get('/api/youtube', async (req, res) => {
   const baseUrl = 'https://www.googleapis.com/youtube/v3/';
   let apiUrl = '';
 
-  // URLSearchParams का इस्तेमाल करना ज़्यादा सुरक्षित और भरोसेमंद है
   const params = new URLSearchParams(queryParams);
 
   switch (type) {
@@ -116,7 +116,7 @@ app.get('/api/youtube', async (req, res) => {
 
     if (!youtubeResponse.ok || data.error) {
       console.error('YouTube API से त्रुटि:', data.error);
-      return res.status(youtubeResponse.status).json({ error: data.error.message || 'YouTube API से डेटा लाने में विफल।' });
+      return res.status(youtubeResponse.status).json({ error: data.error ? data.error.message : 'YouTube API से डेटा लाने में विफल।' });
     }
 
     res.status(200).json(data);
@@ -130,15 +130,13 @@ app.get('/api/youtube', async (req, res) => {
 // === फाइनल सेटअप: ऐप को चलाना ===
 // ====================================================================
 
-// किसी भी और रिक्वेस्ट के लिए index.html भेजें ताकि ऐप सही से लोड हो
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// सर्वर को सुनना शुरू करें
 app.listen(PORT, () => {
   console.log('/////////////////////////////////////////////////////');
-  console.log(`===> 🚀 Shubhzone सर्वर v2.0 सफलतापूर्वक चल रहा है! 🚀`);
+  console.log(`===> 🚀 Shubhzone सर्वर v2.1 सफलतापूर्वक चल रहा है! 🚀`);
   console.log(`===> पोर्ट ${PORT} पर सुना जा रहा है।`);
   console.log('/////////////////////////////////////////////////////');
 });
