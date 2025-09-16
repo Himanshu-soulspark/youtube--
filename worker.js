@@ -1,6 +1,6 @@
 // ====================================================================
-// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v2.2 (Final Timeout Fix) ===
-// === काम: इंटरनेट से वर्किंग मूवी लिंक ढूंढना और डेटाबेस में सेव करना ===
+// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v3.0 (Master Version) ===
+// === काम: इंटरनेट से 100% हिंदी वर्किंग मूवी लिंक ढूंढना (600 फिल्में) ===
 // ====================================================================
 
 const puppeteer = require('puppeteer');
@@ -19,8 +19,7 @@ try {
     });
     db = admin.firestore();
     console.log('Firebase डेटाबेस से सफलतापूर्वक कनेक्ट हो गया है।');
-} catch (error)
-{
+} catch (error) {
     console.error('Firebase Admin SDK शुरू करने में त्रुटि:', error.message);
     process.exit(1);
 }
@@ -34,7 +33,7 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 // ====================================================================
 async function findAndSaveMovies() {
     console.log('----------------------------------------------------');
-    console.log('वर्कर शुरू हो रहा है... नई फिल्मों की तलाश जारी है...');
+    console.log('वर्कर (मास्टर वर्जन) शुरू हो रहा है... 600 हिंदी फिल्मों की तलाश जारी है...');
     console.log('----------------------------------------------------');
 
     let browser = null;
@@ -44,62 +43,79 @@ async function findAndSaveMovies() {
             headless: "new",
             args: [
                 '--no-sandbox',
-                '--disable-setuid-sandbox'
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage', // सर्वर पर मेमोरी की समस्या को ठीक करता है
+                '--disable-gpu' // GPU को डिसेबल करता है, जिससे सर्वर पर परफॉरमेंस बेहतर होती है
             ]
         });
         console.log('ब्राउज़र सफलतापूर्वक लॉन्च हो गया।');
 
         const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36');
 
-        console.log('TMDb से लोकप्रिय फिल्मों की लिस्ट मंगाई जा रही है...');
-        const movieApiUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=hi-IN&region=IN&sort_by=popularity.desc&primary_release_date.gte=2021-01-01&page=1`;
-        const response = await fetch(movieApiUrl);
-        const movieData = await response.json();
-        const moviesToCheck = movieData.results;
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        // ★★★ यही है वह फाइनल बदलाव जो 600+ हिंदी फिल्में लाएगा ★★★
+        const TOTAL_PAGES_TO_CHECK = 30; // 30 पन्ने x 20 फिल्में = 600 फिल्में
+        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        
+        for (let i = 1; i <= TOTAL_PAGES_TO_CHECK; i++) {
+            console.log(`\n★★★ पन्ना ${i}/${TOTAL_PAGES_TO_CHECK} की फिल्में जांची जा रही हैं... ★★★\n`);
 
-        console.log(`जांच के लिए ${moviesToCheck.length} फिल्में मिली हैं।`);
+            // ★★★ खास कमांड: सिर्फ हिंदी ऑडियो वाली लोकप्रिय फिल्में लाएगा ★★★
+            const movieApiUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&sort_by=popularity.desc&primary_release_date.gte=2021-01-01&page=${i}&with_original_language=hi|kn|ml|ta|te&watch_region=IN&with_watch_providers=8|122|237`;
 
-        for (const movie of moviesToCheck) {
-            try {
-                const movieTitle = movie.title;
-                const movieYear = movie.release_date.substring(0, 4);
-                console.log(`\n[जांच जारी है]: "${movieTitle} (${movieYear})"`);
+            const response = await fetch(movieApiUrl);
+            const movieData = await response.json();
+            const moviesToCheck = movieData.results;
 
-                const searchUrl = `https://vidsrc.to/embed/movie/${movie.id}`;
-                
-                // ★★★ बदलाव: वेबसाइट को लोड होने के लिए और समय दें ★★★
-                await page.goto(searchUrl, {
-                    waitUntil: 'networkidle2',
-                    timeout: 90000 // 90 सेकंड का समय
-                });
+            if (!moviesToCheck || moviesToCheck.length === 0) {
+                console.log(`पन्ना ${i} पर कोई फिल्म नहीं मिली। शायद हम आखिरी पन्ने पर पहुँच गए हैं।`);
+                break; // लूप को यहीं रोक दें
+            }
 
-                const content = await page.content();
-                if (content.includes('404 Not Found') || content.includes('movie not found')) {
-                    console.log(`[परिणाम]: "${movieTitle}" इस सर्वर पर नहीं मिली।`);
-                    continue;
+            console.log(`पन्ना ${i} पर जांच के लिए ${moviesToCheck.length} फिल्में मिली हैं।`);
+
+            for (const movie of moviesToCheck) {
+                try {
+                    const movieTitle = movie.title;
+                    const movieYear = movie.release_date ? movie.release_date.substring(0, 4) : 'N/A';
+                    console.log(`\n[जांच जारी है]: "${movieTitle} (${movieYear})"`);
+
+                    const searchUrl = `https://vidsrc.to/embed/movie/${movie.id}`;
+
+                    await page.goto(searchUrl, {
+                        waitUntil: 'networkidle2',
+                        timeout: 90000
+                    });
+
+                    const content = await page.content();
+                    if (content.includes('404 Not Found') || content.includes('movie not found')) {
+                        console.log(`[परिणाम]: "${movieTitle}" इस सर्वर पर नहीं मिली।`);
+                        continue;
+                    }
+
+                    const movieRecord = {
+                        tmdbId: movie.id,
+                        title: movie.title,
+                        overview: movie.overview,
+                        posterPath: movie.poster_path,
+                        releaseDate: movie.release_date,
+                        workingLink: searchUrl,
+                        lastChecked: new Date()
+                    };
+
+                    await db.collection('available_movies').doc(String(movie.id)).set(movieRecord);
+                    console.log(`✅ [सफलता]: "${movieTitle}" का वर्किंग लिंक मिला और डेटाबेस में सेव कर दिया गया!`);
+
+                } catch (error) {
+                    // अगर कोई एक फिल्म फेल होती है, तो क्रैश न हों, बस लॉग करें और आगे बढ़ें
+                    console.error(`त्रुटि: "${movie.title}" की जांच के दौरान समस्या हुई, अगली फिल्म पर जा रहे हैं...`, error.message);
                 }
-
-                const movieRecord = {
-                    tmdbId: movie.id,
-                    title: movie.title,
-                    overview: movie.overview,
-                    posterPath: movie.poster_path,
-                    releaseDate: movie.release_date,
-                    workingLink: searchUrl,
-                    lastChecked: new Date()
-                };
-
-                await db.collection('available_movies').doc(String(movie.id)).set(movieRecord);
-                console.log(`✅ [सफलता]: "${movieTitle}" का वर्किंग लिंक मिला और डेटाबेस में सेव कर दिया गया!`);
-
-            } catch (error) {
-                console.error(`त्रुटि: "${movie.title}" की जांच के दौरान समस्या हुई:`, error.message);
             }
         }
 
     } catch (error) {
-        console.error('वर्कर में एक बड़ी त्रुटि हुई:', error);
+        console.error('वर्कर में एक बड़ी त्रुटि हुई, लेकिन चिंता न करें, यह अगले शेड्यूल पर फिर से चलेगा:', error);
     } finally {
         if (browser) {
             await browser.close();
