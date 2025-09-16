@@ -1,5 +1,5 @@
 // ====================================================================
-// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v1.2 (Final Fix) ===
+// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v1.4 (Final Headless Fix) ===
 // === काम: इंटरनेट से वर्किंग मूवी लिंक ढूंढना और डेटाबेस में सेव करना ===
 // ====================================================================
 
@@ -38,20 +38,21 @@ async function findAndSaveMovies() {
 
     let browser = null;
     try {
-        // ★★★ ज़रूरी बदलाव: ब्राउज़र को सही रास्ता दिखाने के लिए ★★★
-        // यह पक्का करेगा कि ब्राउज़र हमेशा मिले, चाहे वह कहीं भी हो।
         const executablePath = await chromium.executablePath || '/usr/bin/google-chrome';
 
         console.log('हल्का Chromium ब्राउज़र लॉन्च किया जा रहा है...');
         browser = await puppeteer.launch({
-            args: chromium.args,
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            // ★★★ यही है वह फाइनल बदलाव जो सारी समस्या ठीक कर देगा ★★★
+            // ★★★ यह ब्राउज़र को बताता है कि बिना स्क्रीन के चलना है ★★★
+            args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+            // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
             defaultViewport: chromium.defaultViewport,
             executablePath: executablePath,
             headless: chromium.headless,
             ignoreHTTPSErrors: true,
         });
         console.log('ब्राउज़र सफलतापूर्वक लॉन्च हो गया।');
-        // ★★★ बदलाव खत्म ★★★
 
         const page = await browser.newPage();
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
@@ -123,4 +124,5 @@ cron.schedule('0 */6 * * *', () => {
 });
 
 // पहली बार सर्वर शुरू होते ही तुरंत वर्कर को एक बार चलाएं
-findAndSaveMovies();
+// नोट: GitHub Actions में यह अपने आप चलेगा, इसलिए यह लाइन सिर्फ लोकल टेस्टिंग के लिए है।
+// findAndSaveMovies();
