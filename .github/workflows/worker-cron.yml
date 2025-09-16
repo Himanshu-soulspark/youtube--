@@ -1,0 +1,31 @@
+name: Run Movie Finder Worker
+
+on:
+  schedule:
+    # यह हर 6 घंटे में एक बार चलेगा
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    # यह आपको GitHub से मैन्युअल रूप से चलाने का बटन भी देगा
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run the worker script
+        run: npm run worker
+        env:
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
