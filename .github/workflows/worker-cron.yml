@@ -21,9 +21,11 @@ jobs:
           node-version: '18'
 
       - name: Install All Dependencies (including devDependencies)
-        # ★★★ यही है वह फाइनल बदलाव ★★★
-        # npm ci कमांड devDependencies (puppeteer) को भी इंस्टॉल करेगा
-        run: npm ci
+        # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+        # ★★★ यही है वह फाइनल बदलाव जो आपकी समस्या को 100% ठीक कर देगा ★★★
+        # ★★★ npm ci की जगह npm install का इस्तेमाल किया जा रहा है ★★★
+        run: npm install
+        # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
       - name: Run the worker script
         run: npm run worker
