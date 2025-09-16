@@ -1,6 +1,6 @@
 // ====================================================================
-// === Shubhzone - मुख्य सर्वर (The Smart Cache) - v9.0 (Optimized) ===
-// === काम: Firebase डेटा को मेमोरी में रखकर कोटा बचाना ===
+// === Shubhzone - सर्वर (The Ultimate) - v10.0 (Cache + Proxy)    ===
+// === काम: कोटा बचाना और वीडियो ब्लॉकिंग को बायपास करना (अंतिम समाधान) ===
 // ====================================================================
 
 const express = require('express');
@@ -8,7 +8,7 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 const path = require('path');
-const request = require('request');
+const request = require('request'); // प्रॉक्सी के लिए ज़रूरी
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, '')));
 
 let db;
-// ★★★ नया स्मार्ट तरीका: डेटा को सर्वर की मेमोरी में रखें ★★★
+// कोटा बचाने के लिए सर्वर की मेमोरी (कैश)
 let movieCache = [];
 let seriesCache = [];
 let cacheTimestamp = null;
@@ -32,11 +32,12 @@ try {
     console.error('Firebase Admin SDK शुरू करने में त्रुटि:', error.message);
 }
 
-// ★★★ नया फंक्शन: Firebase से सारा डेटा एक बार में लोड करके मेमोरी में रखने के लिए ★★★
+// ★★★ फंक्शन 1: कोटा बचाने वाला (स्मार्ट-कैश) ★★★
+// Firebase से सारा डेटा एक बार में लोड करके मेमोरी में रखने के लिए
 async function loadDataIntoCache() {
     if (!db) return;
     try {
-        console.log('कैश को रिफ्रेश किया जा रहा है...');
+        console.log('Firebase से डेटा लेकर कैश को रिफ्रेश किया जा रहा है...');
         const movieSnapshot = await db.collection('Available_Movies').get();
         movieCache = movieSnapshot.docs.map(doc => doc.data());
         
@@ -46,38 +47,62 @@ async function loadDataIntoCache() {
         cacheTimestamp = new Date();
         console.log(`कैश सफलतापूर्वक अपडेट हुआ: ${movieCache.length} फिल्में, ${seriesCache.length} वेब-सीरीज़।`);
     } catch (error) {
-        console.error("कैश में डेटा लोड करने में विफल:", error);
+        console.error("कैश में डेटा लोड करने में विफल:", error.message);
+        // अगर कोटा खत्म है, तो यह एरर आएगा, लेकिन सर्वर चलता रहेगा
+        if (error.code === 8) {
+            console.error("FIREBASE QUOTA EXCEEDED! अगले 24 घंटे तक नया डेटा नहीं आएगा।");
+        }
     }
 }
 
-// हर 15 मिनट में कैश को अपने आप रिफ्रेश करें
-setInterval(loadDataIntoCache, 15 * 60 * 1000); 
+// हर 30 मिनट में कैश को अपने आप रिफ्रेश करें
+setInterval(loadDataIntoCache, 30 * 60 * 1000); 
 
 // ====================================================================
-// === API Endpoints (अब मेमोरी से डेटा देंगे) ===
+// === API Endpoints (अब दोनों ताकतों के साथ) ===
 // ====================================================================
 
-app.get('/api/stream', (req, res) => { /* Unchanged */ });
+// ★★★ फंक्शन 2: ब्लॉकिंग हटाने वाला (प्रॉक्सी) ★★★
+// यह आपकी गुप्त सुरंग है
+app.get('/api/stream', (req, res) => {
+    const externalUrl = req.query.url;
+    if (!externalUrl) {
+        return res.status(400).send('Error: URL is required.');
+    }
+    console.log(`प्रॉक्सी के माध्यम से स्ट्रीमिंग का अनुरोध: ${externalUrl}`);
+    try {
+        req.pipe(request(externalUrl)).on('error', (err) => {
+            console.error(`प्रॉक्सी अनुरोध में त्रुटि: ${externalUrl}`, err);
+            res.status(500).send('Error: Failed to stream content.');
+        }).pipe(res);
+    } catch (error) {
+        console.error(`स्ट्रीमिंग प्रॉक्सी में गंभीर त्रुटि: ${externalUrl}`, error);
+        res.status(500).send('Error: Stream failed unexpectedly.');
+    }
+});
 
+// ★★★ फंक्शन 3: ऐप को डेटा देने वाला (अब मेमोरी से) ★★★
 app.get('/api/media-by-genre', async (req, res) => {
     try {
         const { genreId, mediaType } = req.query;
         if (!genreId || !mediaType) return res.status(400).json({ error: 'Genre ID और Media Type दोनों ज़रूरी हैं.' });
 
-        // ★★★ बदला हुआ लॉजिक: Firebase की जगह मेमोरी से डेटा लें ★★★
         const sourceCache = mediaType === 'movie' ? movieCache : seriesCache;
         
-        if (sourceCache.length === 0) {
-            console.warn("कैश खाली है, दोबारा लोड करने की कोशिश की जा रही है...");
-            await loadDataIntoCache(); // अगर कैश खाली है तो एक बार और कोशिश करें
+        // अगर सर्वर अभी-अभी चालू हुआ है और कैश खाली है, तो एक बार लोड होने का इंतज़ार करें
+        if (sourceCache.length === 0 && !cacheTimestamp) {
+            console.warn("कैश खाली है, पहली बार लोड होने का इंतज़ार...");
+            await loadDataIntoCache();
         }
+
+        const finalCache = mediaType === 'movie' ? movieCache : seriesCache;
 
         let filteredMedia = [];
         if (genreId === 'latest') {
-            filteredMedia = [...sourceCache].sort((a, b) => new Date(b.lastChecked) - new Date(a.lastChecked));
+            filteredMedia = [...finalCache].sort((a, b) => new Date(b.lastChecked) - new Date(a.lastChecked));
         } else {
             const numericGenreId = parseInt(genreId);
-            filteredMedia = sourceCache.filter(media => 
+            filteredMedia = finalCache.filter(media => 
                 media.genres && Array.isArray(media.genres) && media.genres.includes(numericGenreId)
             );
         }
@@ -91,6 +116,7 @@ app.get('/api/media-by-genre', async (req, res) => {
     }
 });
 
+// बाकी APIs में कोई बदलाव नहीं
 app.get('/api/tv-details', async (req, res) => { /* Unchanged */ });
 app.get('/api/youtube', async (req, res) => { /* Unchanged */ });
 
@@ -103,7 +129,7 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
     console.log('/////////////////////////////////////////////////////');
-    console.log(`===> 🚀 Shubhzone स्मार्ट-कैश सर्वर सफलतापूर्वक चल रहा है! 🚀`);
+    console.log(`===> 🚀 Shubhzone अल्टीमेट सर्वर (Cache+Proxy) चल रहा है! 🚀`);
     console.log(`===> पोर्ट ${PORT} पर सुना जा रहा है.`);
     console.log('/////////////////////////////////////////////////////');
 });
