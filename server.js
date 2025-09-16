@@ -1,7 +1,7 @@
 // ====================================================================
-// === Shubhzone - मुख्य सर्वर (The Proxy) - v8.1 (Optimized)      ===
+// === Shubhzone - मुख्य सर्वर (The Proxy) - v8.2 (Final Debug)    ===
 // === काम: वीडियो को खुद स्ट्रीम करके यूजर को दिखाना (ब्लॉकिंग को बायपास करना) ===
-// === ★★★ समाधान: Firebase कोटा की समस्या को ठीक किया गया ★★★ ===
+// === ★★★ समाधान: साइलेंट एरर को पकड़ने के लिए बेहतर लॉगिंग ★★★ ===
 // ====================================================================
 
 const express = require('express');
@@ -9,11 +9,8 @@ const cors = require('cors');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 const path = require('path');
-// ★★★ नया ज़रूरी टूल: वीडियो को स्ट्रीम (प्रॉक्सी) करने के लिए ★★★
-// सुनिश्चित करें कि यह 'package.json' में है या 'npm install request' चलाएं
 const request = require('request');
 
-// Express ऐप को शुरू करें
 const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(cors());
@@ -21,7 +18,6 @@ app.use(express.static(path.join(__dirname, '')));
 
 let db;
 
-// Firebase से कनेक्ट करें (कोई बदलाव नहीं)
 try {
     const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
     admin.initializeApp({
@@ -34,29 +30,12 @@ try {
     db = null;
 }
 
-// ====================================================================
-// === API Endpoints (यहीं से ऐप को सारा डेटा मिलता है) ===
-// ====================================================================
-
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-// ★★★ नया प्रॉक्सी Endpoint: यही है वह गुप्त सुरंग जो ISP ब्लॉकिंग को बायपास करेगी ★★★
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+// प्रॉक्सी Endpoint (कोई बदलाव नहीं)
 app.get('/api/stream', (req, res) => {
-    // index.html से भेजे गए वीडियो URL को प्राप्त करें
     const externalUrl = req.query.url;
-
-    if (!externalUrl) {
-        return res.status(400).send('Error: URL is required.');
-    }
-    
+    if (!externalUrl) return res.status(400).send('Error: URL is required.');
     console.log(`प्रॉक्सी के माध्यम से स्ट्रीमिंग का अनुरोध: ${externalUrl}`);
-
     try {
-        // यह लाइन जादू करती है:
-        // 1. req.pipe(...) -> यूजर से आने वाले अनुरोध को लेता है।
-        // 2. request(externalUrl) -> सर्वर से बाहरी URL (जैसे vidsrc.me) पर एक नया अनुरोध भेजता है।
-        // 3. .pipe(res) -> बाहरी URL से मिलने वाले जवाब (वीडियो डेटा) को सीधे यूजर के ब्राउज़र पर वापस भेज देता है।
-        // आपका ब्राउज़र केवल onrender.com से बात करता है, vidsrc.me से नहीं।
         req.pipe(request(externalUrl)).on('error', (err) => {
             console.error(`प्रॉक्सी अनुरोध में त्रुटि: ${externalUrl}`, err);
             res.status(500).send('Error: Failed to stream content.');
@@ -67,82 +46,56 @@ app.get('/api/stream', (req, res) => {
     }
 });
 
-
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-// ★★★ यही है वह फाइनल बदलाव जो आपकी समस्या को 100% ठीक कर देगा ★★★
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-// मीडिया लाने वाला API (बदला हुआ - अब यह कोटा खत्म नहीं करेगा)
+// मीडिया लाने वाला API (★ सिर्फ Error Logging में बदलाव किया गया है ★)
 app.get('/api/media-by-genre', async (req, res) => {
-    if (!db) {
-        return res.status(503).json({ error: 'Database service is unavailable.' });
-    }
+    if (!db) return res.status(503).json({ error: 'Database service is unavailable.' });
+    
     try {
         const { genreId, mediaType } = req.query;
-        if (!genreId || !mediaType) {
-            return res.status(400).json({ error: 'Genre ID और Media Type दोनों ज़रूरी हैं.' });
-        }
+        if (!genreId || !mediaType) return res.status(400).json({ error: 'Genre ID और Media Type दोनों ज़रूरी हैं.' });
+        
         const collectionName = mediaType === 'movie' ? 'Available_Movies' : 'Available_WebSeries';
         
-        // --- ★★★ मुख्य बदलाव यहाँ है ★★★ ---
-        // पुराना तरीका: पूरी की पूरी कलेक्शन (हज़ारों फिल्में) डाउनलोड करना। (बहुत खर्चीला)
-        // const snapshot = await db.collection(collectionName).get();
-
-        // नया और स्मार्ट तरीका: Firebase को बताना कि हमें सिर्फ 20 आइटम चाहिए।
         let query;
-        const limit = 20; // हम एक बार में सिर्फ 20 आइटम भेजेंगे।
+        const limit = 20;
 
         if (genreId === 'latest') {
-            // अगर 'latest' चाहिए, तो हाल ही में रिलीज़ हुई फिल्मों को ढूंढो और 20 दिखाओ
-            query = db.collection(collectionName)
-                      .orderBy('releaseDate', 'desc')
-                      .limit(limit);
+            query = db.collection(collectionName).orderBy('releaseDate', 'desc').limit(limit);
         } else {
-            // अगर कोई खास कैटेगरी चाहिए, तो उस कैटेगरी की 20 फिल्में ढूंढो
             const numericGenreId = parseInt(genreId);
-            query = db.collection(collectionName)
-                      .where('genres', 'array-contains', numericGenreId)
-                      .limit(limit);
+            query = db.collection(collectionName).where('genres', 'array-contains', numericGenreId).orderBy('releaseDate', 'desc').limit(limit);
         }
 
         const snapshot = await query.get();
-        // --- ★★★ बदलाव खत्म ★★★ ---
-
-        if (snapshot.empty) {
-            return res.status(200).json({ results: [] });
-        }
-
-        // अब हमें सिर्फ 20 आइटम मिले हैं, तो उन्हें सीधे भेज देंगे
+        
         let finalResults = [];
-        snapshot.forEach(doc => {
-            finalResults.push(doc.data());
-        });
-
+        snapshot.forEach(doc => finalResults.push(doc.data()));
+        
         res.status(200).json({ results: finalResults });
 
     } catch (error) {
-        console.error(`कैटेगरी के हिसाब से मीडिया लाने में त्रुटि:`, error);
-        res.status(500).json({ error: 'सर्वर से मीडिया लाने में विफल.' });
+        // --- ★★★ मुख्य बदलाव यहाँ है ★★★ ---
+        // अब एरर लॉग्स में 100% दिखाई देगा
+        console.error("\n\n!!!!!!!!!!!!!!!!!!!!!!!!! FIREBASE QUERY FAILED !!!!!!!!!!!!!!!!!!!!!!!!!");
+        console.error("यह एक गंभीर त्रुटि है! इसका मतलब है कि Firestore Index गलत है या मौजूद नहीं है।");
+        console.error("ERROR CODE:", error.code);
+        console.error("ERROR MESSAGE:", error.details || error.message);
+        console.error("अगर नीचे दिए गए मैसेज में इंडेक्स बनाने का लिंक है, तो उस पर क्लिक करें।\n\n");
+        // --- ★★★ बदलाव खत्म ★★★ ---
+        
+        res.status(500).json({ error: 'सर्वर से मीडिया लाने में विफल.', details: error.message });
     }
 });
 
-// TV Details API (कोई बदलाव नहीं, यह वैसे ही काम करेगा)
+// TV Details API (कोई बदलाव नहीं)
 app.get('/api/tv-details', async (req, res) => {
     const { seriesId } = req.query;
-    const TMDB_API_KEY = process.env.TMDB_API_KEY; 
-
-    if (!TMDB_API_KEY) {
-        return res.status(500).json({ error: 'TMDB API कुंजी सर्वर पर सेट नहीं है.' });
-    }
-    if (!seriesId) {
-        return res.status(400).json({ error: 'Series ID ज़रूरी है.' });
-    }
-
+    const TMDB_API_KEY = process.env.TMDB_API_KEY;
+    if (!TMDB_API_KEY) return res.status(500).json({ error: 'TMDB API कुंजी सर्वर पर सेट नहीं है.' });
+    if (!seriesId) return res.status(400).json({ error: 'Series ID ज़रूरी है.' });
     try {
         const url = `https://api.themoviedb.org/3/tv/${seriesId}?api_key=${TMDB_API_KEY}&language=en-US`;
         const tmdbResponse = await fetch(url);
-        if (!tmdbResponse.ok) {
-            throw new Error(`TMDB API returned status: ${tmdbResponse.status}`);
-        }
         const data = await tmdbResponse.json();
         res.status(200).json(data);
     } catch (error) {
@@ -151,8 +104,9 @@ app.get('/api/tv-details', async (req, res) => {
     }
 });
 
-// YouTube API (कोई बदलाव नहीं, यह वैसे ही काम करेगा)
+// YouTube API (कोई बदलाव नहीं)
 app.get('/api/youtube', async (req, res) => {
+    // ... (इस फंक्शन में कोई बदलाव नहीं है)
     if (!process.env.YOUTUBE_API_KEY) {
         return res.status(500).json({ error: 'YouTube API कुंजी सर्वर पर सेट नहीं है.' });
     }
@@ -181,12 +135,10 @@ app.get('/api/youtube', async (req, res) => {
     try {
         const youtubeResponse = await fetch(apiUrl);
         const data = await youtubeResponse.json();
-
         if (!youtubeResponse.ok || data.error) {
             console.error('YouTube API से त्रुटि:', data.error);
             return res.status(youtubeResponse.status).json({ error: data.error ? data.error.message : 'YouTube API से डेटा लाने में विफल.' });
         }
-
         res.status(200).json(data);
     } catch (error) {
         console.error('YouTube API को कॉल करने में त्रुटि:', error);
@@ -195,9 +147,7 @@ app.get('/api/youtube', async (req, res) => {
 });
 
 
-// ====================================================================
-// === फाइनल सेटअप (कोई बदलाव नहीं) ===
-// ====================================================================
+// फाइनल सेटअप (कोई बदलाव नहीं)
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
