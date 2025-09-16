@@ -2,8 +2,8 @@ name: Run Movie Finder Worker
 
 on:
   schedule:
-    # यह हर 6 घंटे में एक बार चलेगा
-    - cron: '0 */6 * * *'
+    # ★★★ यह अब हर 1 घंटे में एक बार चलेगा ★★★
+    - cron: '0 */1 * * *'
   workflow_dispatch:
     # यह आपको GitHub से मैन्युअल रूप से चलाने का बटन भी देगा
 
