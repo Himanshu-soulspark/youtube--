@@ -1,10 +1,10 @@
 // ====================================================================
-// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v1.5 (Final Run Fix) ===
+// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v2.0 (GitHub Actions Final) ===
 // === काम: इंटरनेट से वर्किंग मूवी लिंक ढूंढना और डेटाबेस में सेव करना ===
 // ====================================================================
 
-const puppeteer = require('puppeteer-core');
-const chromium = require('chrome-aws-lambda');
+// ★★★ बदलाव: अब हम सीधे और शक्तिशाली puppeteer का इस्तेमाल करेंगे ★★★
+const puppeteer = require('puppeteer');
 const cron = require('node-cron');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
@@ -38,15 +38,14 @@ async function findAndSaveMovies() {
 
     let browser = null;
     try {
-        const executablePath = await chromium.executablePath || '/usr/bin/google-chrome';
-
-        console.log('हल्का Chromium ब्राउज़र लॉन्च किया जा रहा है...');
+        console.log('Puppeteer ब्राउज़र लॉन्च किया जा रहा है...');
+        // ★★★ यही है वह फाइनल बदलाव जो GitHub Actions पर 100% काम करता है ★★★
         browser = await puppeteer.launch({
-            args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
-            defaultViewport: chromium.defaultViewport,
-            executablePath: executablePath,
-            headless: chromium.headless,
-            ignoreHTTPSErrors: true,
+            headless: "new",
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox'
+            ]
         });
         console.log('ब्राउज़र सफलतापूर्वक लॉन्च हो गया।');
 
@@ -71,7 +70,7 @@ async function findAndSaveMovies() {
 
                 await page.goto(searchUrl, {
                     waitUntil: 'networkidle2',
-                    timeout: 30000
+                    timeout: 45000 // थोड़ा और समय दिया गया है
                 });
 
                 const content = await page.content();
@@ -112,14 +111,11 @@ async function findAndSaveMovies() {
 }
 
 // ====================================================================
-// === शेड्यूलर: यह वर्कर को हर 6 घंटे में अपने आप चलाएगा ===
+// === शेड्यूलर और पहला रन ===
 // ====================================================================
 cron.schedule('0 */6 * * *', () => {
     console.log('शेड्यूल के अनुसार, वर्कर को चलाने का समय हो गया है!');
     findAndSaveMovies();
 });
 
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-// ★★★ यही है वह फाइनल बदलाव जो ड्राइवर को बताएगा कि "अभी काम शुरू करो!" ★★★
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 findAndSaveMovies();
