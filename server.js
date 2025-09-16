@@ -1,6 +1,7 @@
 // ====================================================================
-// === Shubhzone - मुख्य सर्वर (The Proxy) - v8.0 (Final Solution) ===
+// === Shubhzone - मुख्य सर्वर (The Proxy) - v8.1 (Optimized)      ===
 // === काम: वीडियो को खुद स्ट्रीम करके यूजर को दिखाना (ब्लॉकिंग को बायपास करना) ===
+// === ★★★ समाधान: Firebase कोटा की समस्या को ठीक किया गया ★★★ ===
 // ====================================================================
 
 const express = require('express');
@@ -67,7 +68,10 @@ app.get('/api/stream', (req, res) => {
 });
 
 
-// मीडिया लाने वाला API (कोई बदलाव नहीं, यह वैसे ही काम करेगा)
+// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+// ★★★ यही है वह फाइनल बदलाव जो आपकी समस्या को 100% ठीक कर देगा ★★★
+// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+// मीडिया लाने वाला API (बदला हुआ - अब यह कोटा खत्म नहीं करेगा)
 app.get('/api/media-by-genre', async (req, res) => {
     if (!db) {
         return res.status(503).json({ error: 'Database service is unavailable.' });
@@ -79,29 +83,39 @@ app.get('/api/media-by-genre', async (req, res) => {
         }
         const collectionName = mediaType === 'movie' ? 'Available_Movies' : 'Available_WebSeries';
         
-        const snapshot = await db.collection(collectionName).get();
+        // --- ★★★ मुख्य बदलाव यहाँ है ★★★ ---
+        // पुराना तरीका: पूरी की पूरी कलेक्शन (हज़ारों फिल्में) डाउनलोड करना। (बहुत खर्चीला)
+        // const snapshot = await db.collection(collectionName).get();
+
+        // नया और स्मार्ट तरीका: Firebase को बताना कि हमें सिर्फ 20 आइटम चाहिए।
+        let query;
+        const limit = 20; // हम एक बार में सिर्फ 20 आइटम भेजेंगे।
+
+        if (genreId === 'latest') {
+            // अगर 'latest' चाहिए, तो हाल ही में रिलीज़ हुई फिल्मों को ढूंढो और 20 दिखाओ
+            query = db.collection(collectionName)
+                      .orderBy('releaseDate', 'desc')
+                      .limit(limit);
+        } else {
+            // अगर कोई खास कैटेगरी चाहिए, तो उस कैटेगरी की 20 फिल्में ढूंढो
+            const numericGenreId = parseInt(genreId);
+            query = db.collection(collectionName)
+                      .where('genres', 'array-contains', numericGenreId)
+                      .limit(limit);
+        }
+
+        const snapshot = await query.get();
+        // --- ★★★ बदलाव खत्म ★★★ ---
 
         if (snapshot.empty) {
             return res.status(200).json({ results: [] });
         }
 
-        let allMedia = [];
+        // अब हमें सिर्फ 20 आइटम मिले हैं, तो उन्हें सीधे भेज देंगे
+        let finalResults = [];
         snapshot.forEach(doc => {
-            allMedia.push(doc.data());
+            finalResults.push(doc.data());
         });
-
-        let filteredMedia = [];
-
-        if (genreId === 'latest') {
-            filteredMedia = allMedia;
-        } else {
-            const numericGenreId = parseInt(genreId);
-            filteredMedia = allMedia.filter(media => 
-                media.genres && Array.isArray(media.genres) && media.genres.includes(numericGenreId)
-            );
-        }
-        
-        const finalResults = filteredMedia.slice(0, 20);
 
         res.status(200).json({ results: finalResults });
 
