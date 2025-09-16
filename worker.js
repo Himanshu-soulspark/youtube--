@@ -1,27 +1,33 @@
 // ====================================================================
-// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) ===
+// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v1.1 (Render Friendly) ===
 // === काम: इंटरनेट से वर्किंग मूवी लिंक ढूंढना और डेटाबेस में सेव करना ===
 // ====================================================================
 
-// 1. ज़रूरी टूल्स को इम्पोर्ट करें
-const puppeteer = require('puppeteer');
+// ★★★ बदलाव 1: puppeteer को puppeteer-core और chromium से बदलें ★★★
+const puppeteer = require('puppeteer-core');
+const chromium = require('chrome-aws-lambda');
+// ★★★ बदलाव खत्म ★★★
+
 const cron = require('node-cron');
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
-require('dotenv').config(); // API Key जैसी सीक्रेट जानकारी लोड करने के लिए
+require('dotenv').config(); 
 
-// 2. Firebase से कनेक्ट करें
-// नोट: यह credentials आपको Firebase से मिलेंगे और .env फाइल में रखने होंगे
-const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+// Firebase से कनेक्ट करें
+try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    const db = admin.firestore();
+    console.log('Firebase डेटाबेस से सफलतापूर्वक कनेक्ट हो गया है।');
+} catch (error) {
+    console.error('Firebase Admin SDK शुरू करने में त्रुटि:', error.message);
+    // अगर क्रेडेंशियल नहीं हैं तो वर्कर को रोक दें
+    process.exit(1); 
+}
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-const db = admin.firestore();
-console.log('Firebase डेटाबेस से सफलतापूर्वक कनेक्ट हो गया है।');
-
-// 3. TMDb API की जानकारी
+// TMDb API की जानकारी
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
@@ -33,19 +39,24 @@ async function findAndSaveMovies() {
   console.log('वर्कर शुरू हो रहा है... नई फिल्मों की तलाश जारी है...');
   console.log('----------------------------------------------------');
 
-  let browser;
+  let browser = null; // इसे null से शुरू करें
   try {
-    // 4. एक ऑटोमेटेड ब्राउज़र (Puppeteer) लॉन्च करें
-    // Render पर चलाने के लिए ये arguments बहुत ज़रूरी हैं
+    // ★★★ बदलाव 2: ब्राउज़र को लॉन्च करने का तरीका बदलें (हल्का वाला) ★★★
+    console.log('हल्का Chromium ब्राउज़र लॉन्च किया जा रहा है...');
     browser = await puppeteer.launch({
-      headless: "new", // ब्राउज़र को बैकग्राउंड में चलाता है
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath,
+        headless: chromium.headless,
+        ignoreHTTPSErrors: true,
     });
+    console.log('ब्राउज़र सफलतापूर्वक लॉन्च हो गया।');
+    // ★★★ बदलाव खत्म ★★★
+
     const page = await browser.newPage();
-    // पेज को एक सामान्य ब्राउज़र की तरह दिखाते हैं ताकि वेबसाइट ब्लॉक न करे
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
-    // 5. TMDb से 2021 के बाद की लोकप्रिय फिल्मों की लिस्ट निकालें
+    // TMDb से 2021 के बाद की लोकप्रिय फिल्मों की लिस्ट निकालें
     console.log('TMDb से लोकप्रिय फिल्मों की लिस्ट मंगाई जा रही है...');
     const movieApiUrl = `${TMDB_BASE_URL}/discover/movie?api_key=${TMDB_API_KEY}&language=hi-IN&region=IN&sort_by=popularity.desc&primary_release_date.gte=2021-01-01&page=1`;
     const response = await fetch(movieApiUrl);
@@ -54,38 +65,33 @@ async function findAndSaveMovies() {
 
     console.log(`जांच के लिए ${moviesToCheck.length} फिल्में मिली हैं।`);
 
-    // 6. एक-एक करके हर फिल्म का वर्किंग लिंक ढूंढें
+    // एक-एक करके हर फिल्म का वर्किंग लिंक ढूंढें
     for (const movie of moviesToCheck) {
       try {
         const movieTitle = movie.title;
         const movieYear = movie.release_date.substring(0, 4);
         console.log(`\n[जांच जारी है]: "${movieTitle} (${movieYear})"`);
 
-        // हम VidSrc.to को उदाहरण के तौर पर इस्तेमाल कर रहे हैं
         const searchUrl = `https://vidsrc.to/embed/movie/${movie.id}`;
         
-        // पेज पर जाएं और देखें कि मूवी उपलब्ध है या नहीं
         await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
-        // यह चेक करें कि पेज पर "404" या "Not Found" तो नहीं लिखा है
         const content = await page.content();
         if (content.includes('404 Not Found') || content.includes('movie not found')) {
           console.log(`[परिणाम]: "${movieTitle}" इस सर्वर पर नहीं मिली।`);
-          continue; // अगली मूवी पर जाएं
+          continue;
         }
 
-        // अगर मूवी मिल गई, तो उसका डेटा Firebase में सेव करें
         const movieRecord = {
           tmdbId: movie.id,
           title: movie.title,
           overview: movie.overview,
           posterPath: movie.poster_path,
           releaseDate: movie.release_date,
-          workingLink: searchUrl, // हमें वर्किंग लिंक मिल गया है!
+          workingLink: searchUrl,
           lastChecked: new Date()
         };
 
-        // डेटाबेस में मूवी को उसकी TMDB ID से सेव करें ताकि डुप्लीकेट न बने
         await db.collection('available_movies').doc(String(movie.id)).set(movieRecord);
         console.log(`✅ [सफलता]: "${movieTitle}" का वर्किंग लिंक मिला और डेटाबेस में सेव कर दिया गया!`);
 
@@ -97,7 +103,6 @@ async function findAndSaveMovies() {
   } catch (error) {
     console.error('वर्कर में एक बड़ी त्रुटि हुई:', error);
   } finally {
-    // 7. काम खत्म होने पर ब्राउज़र को हमेशा बंद करें
     if (browser) {
       await browser.close();
       console.log('\nऑटोमेटेड ब्राउज़र बंद कर दिया गया है।');
@@ -111,7 +116,6 @@ async function findAndSaveMovies() {
 // ====================================================================
 // === शेड्यूलर: यह वर्कर को हर 6 घंटे में अपने आप चलाएगा ===
 // ====================================================================
-// '0 */6 * * *' का मतलब है "हर 6 घंटे में"।
 cron.schedule('0 */6 * * *', () => {
   console.log('शेड्यूल के अनुसार, वर्कर को चलाने का समय हो गया है!');
   findAndSaveMovies();
