@@ -1,5 +1,5 @@
 // ====================================================================
-// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v2.1 (Final Scope Fix) ===
+// === Shubhzone - ऑटोमेटेड वर्कर (The Brain) - v2.2 (Final Timeout Fix) ===
 // === काम: इंटरनेट से वर्किंग मूवी लिंक ढूंढना और डेटाबेस में सेव करना ===
 // ====================================================================
 
@@ -9,7 +9,6 @@ const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 require('dotenv').config();
 
-// ★★★ बदलाव 1: db को बाहर निकालें ताकि वह हर जगह उपलब्ध हो ★★★
 let db;
 
 // Firebase से कनेक्ट करें
@@ -18,7 +17,6 @@ try {
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
-    // ★★★ बदलाव 2: अब हम सिर्फ चाबी को सेट कर रहे हैं, नया नहीं बना रहे ★★★
     db = admin.firestore();
     console.log('Firebase डेटाबेस से सफलतापूर्वक कनेक्ट हो गया है।');
 } catch (error)
@@ -69,10 +67,11 @@ async function findAndSaveMovies() {
                 console.log(`\n[जांच जारी है]: "${movieTitle} (${movieYear})"`);
 
                 const searchUrl = `https://vidsrc.to/embed/movie/${movie.id}`;
-
+                
+                // ★★★ बदलाव: वेबसाइट को लोड होने के लिए और समय दें ★★★
                 await page.goto(searchUrl, {
                     waitUntil: 'networkidle2',
-                    timeout: 45000
+                    timeout: 90000 // 90 सेकंड का समय
                 });
 
                 const content = await page.content();
@@ -91,7 +90,6 @@ async function findAndSaveMovies() {
                     lastChecked: new Date()
                 };
 
-                // अब मैनेजर के पास चाबी है और वह गोदाम का इस्तेमाल कर सकता है
                 await db.collection('available_movies').doc(String(movie.id)).set(movieRecord);
                 console.log(`✅ [सफलता]: "${movieTitle}" का वर्किंग लिंक मिला और डेटाबेस में सेव कर दिया गया!`);
 
